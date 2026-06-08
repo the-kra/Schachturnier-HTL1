@@ -412,17 +412,17 @@ function fmtDur(min){
   const h=Math.floor(min/60), m=min%60;
   return h ? (m? `${h} h ${m} min` : `${h} h`) : `${m} min`;
 }
-/* Grobe Dauer-Schätzung: Partien laufen parallel, also zählt Runden × Rundenlänge.
-   Rundenlänge ~ längste Partie (volle Uhren) + Overhead fürs Setzen/Eintragen. */
+/* Grobe Dauer-Schätzung (reine Spielzeit): Partien laufen parallel, also zählt
+   Runden × Rundenlänge. In der Praxis dauert eine Runde etwa eine Grundbedenkzeit
+   pro Spieler — die meisten Partien sind vor Ablauf der vollen Uhr entschieden. */
 function forecast(){
   const n=state.players.filter(p=>!p.withdrawn).length;
   const rounds=state.num_rounds||0;
   const { base, inc }=parseTC(state.time_control);
   const games=Math.floor(n/2);
-  const perGameMax = 2*(base + inc*45/60);     // Min: 2 Spieler × (Grundzeit + Inkrement über ~45 Züge)
-  const overhead   = 4;                         // Min/Runde: setzen, Ergebnis melden, nächste Auslosung
-  const lo = rounds*(0.5*perGameMax + overhead);// viele Partien enden vor Zeitablauf
-  const hi = rounds*(perGameMax + overhead);    // Worst Case (Brett spielt voll aus)
+  const perSide = base + inc*40/60;     // effektive Bedenkzeit/Spieler über ~40 Züge (Min)
+  const lo = rounds * perSide * 0.7;    // viele Partien enden früh
+  const hi = rounds * perSide;          // Runde ~ volle Grundbedenkzeit (z.B. 6×15 = 1:30)
   const recRounds=Math.max(3, Math.ceil(Math.log2(Math.max(2,n))));
   return { n, rounds, games, lo, hi, recRounds };
 }
