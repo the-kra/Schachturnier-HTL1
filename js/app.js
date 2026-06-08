@@ -952,4 +952,4 @@ async function boot(){
   if(IS_BEAMER){ setInterval(()=>{ ui.beamerIdx++; render(); }, 12000); }
   render();
 }
-boot();
+boot(); 
