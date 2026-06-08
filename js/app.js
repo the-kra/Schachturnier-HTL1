@@ -1,7 +1,5 @@
 /* ============================ CONFIG ============================ */
 const CONFIG = {
-  //url: "",   // z.B. "https://xxxx.supabase.co"
-  //key: ""    // anon public key
   url: "https://txsrxjywegakgjizuejb.supabase.co",
   key: "sb_publishable_YhF2rLcsO8ibyZ4d9UDezA_oEwntvm5"
 };
@@ -446,8 +444,14 @@ function renderRegistration(app){
       <div class="ab-actions">
         <button class="btn" id="btnStart" ${active.length<2?"disabled":""}>🎲 Anmeldung schließen & auslosen</button>
         <a class="btn ghost sm" href="${esc(location.origin+location.pathname+"?beamer")}" target="_blank" rel="noopener">📺 Beamer</a>
-        ${SB_MODE?"":'<button class="btn ghost sm" id="btnDemo">+ 20 Demo-Teilnehmer</button>'}
         ${adminCommonBtns()}
+      </div>
+      <div class="ab-actions" style="margin-top:8px;border-top:1px dashed rgba(255,255,255,.12);padding-top:10px">
+        <span class="code-hint" style="width:100%">🧪 Zum Testen vor dem Event:</span>
+        <button class="btn ghost sm" id="btnDemo">+20 Testdaten</button>
+        <button class="btn ghost sm" id="btnImport">📥 Import Excel/CSV</button>
+        <button class="btn ghost sm" id="btnSim">▶️ Testlauf simulieren</button>
+        <input type="file" id="impFile" accept=".xlsx,.xls,.csv" style="display:none">
       </div>`;
     app.appendChild(ab);
     $("#cfgName").onchange=e=>patchState({tournament_name:e.target.value||"Schachturnier"}).then(render);
@@ -455,6 +459,9 @@ function renderRegistration(app){
     $("#cfgTime").onchange=e=>patchState({time_control:e.target.value});
     $("#btnStart").onclick=startTournament;
     const demo=$("#btnDemo"); if(demo) demo.onclick=addDemo;
+    const imp=$("#btnImport"); if(imp) imp.onclick=()=>{ const f=$("#impFile"); if(f) f.click(); };
+    const impF=$("#impFile"); if(impF) impF.onchange=e=>handleImportFile(e.target.files[0]);
+    const sim=$("#btnSim"); if(sim) sim.onclick=simulateTournament;
     const cc=$("#cfgCode"); if(cc) cc.onchange=e=>patchState({event_code:e.target.value.trim()}).then(render);
     const gc=$("#btnGenCode"); if(gc) gc.onclick=()=>{ patchState({event_code:String(Math.floor(1000+Math.random()*9000))}).then(render); };
     wireAdminCommon();
@@ -873,7 +880,59 @@ async function addDemo(){
   const namen=["Lena M.","Paul K.","Mia S.","Jonas W.","Emma H.","Felix B.","Anna R.","Noah T.","Sophie L.","David P.","Marie F.","Lukas G.","Hannah Z.","Tobias N.","Laura D.","Simon V.","Julia A.","Florian E.","Sarah O.","Daniel U."];
   const klassen=["1AHET","1BHET","2AHET","2BHET","3AHET"];
   for(const n of namen){ await addPlayer(n, klassen[Math.floor(Math.random()*klassen.length)]); }
-  render(); toast("20 Demo-Teilnehmer hinzugefügt");
+  render(); toast("20 Testdaten hinzugefügt");
+}
+
+/* Spielt ein komplettes Turnier mit Zufallsergebnissen durch (zum Testen). */
+async function simulateTournament(){
+  if(!isAdmin()) return;
+  if(state.status==="finished"){ toast("Schon beendet — erst 'Neues Turnier'"); return; }
+  const active=state.players.filter(p=>!p.withdrawn);
+  if(active.length<2){ toast("Erst Testdaten/Teilnehmer laden"); return; }
+  toast("Testlauf läuft…");
+  if(state.status==="registration"){ await startTournament(); if(SB_MODE) await loadAll(); }
+  let guard=0;
+  while(state.status==="running" && guard++<40){
+    const cur=state.current_round;
+    for(const p of state.pairings.filter(x=>x.round===cur && !x.result)){
+      if(p.black_id==null){ await setResult(p.id,"bye"); }
+      else { const r=Math.random(); await setResult(p.id, r<0.45?"1-0":(r<0.9?"0-1":"draw")); }
+    }
+    if(cur>=state.num_rounds){ await finishTournament(); break; }
+    await nextRound();
+    if(SB_MODE) await loadAll();
+  }
+  if(SB_MODE) await loadAll();
+  render();
+  toast("Testlauf fertig — jetzt 'Pokale vergeben' testen ✓");
+}
+
+/* Importiert Teilnehmer aus Excel/CSV (Spalten 'Name' und 'Klasse'). */
+async function handleImportFile(file){
+  if(!file) return;
+  if(typeof XLSX==="undefined"){ toast("Bitte kurz warten (Bibliothek lädt)"); return; }
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:"array"});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,blankrows:false});
+    if(!rows.length){ toast("Datei ist leer"); return; }
+    let start=0,nameCol=0,klasseCol=1;
+    const head=(rows[0]||[]).map(x=>String(x).trim().toLowerCase());
+    const ni=head.findIndex(h=>h.includes("name"));
+    const ki=head.findIndex(h=>h.includes("klasse")||h.includes("class"));
+    if(ni>-1){ start=1; nameCol=ni; klasseCol=(ki>-1?ki:(ni===0?1:0)); }
+    let n=0;
+    for(let i=start;i<rows.length;i++){
+      const row=rows[i]||[];
+      const name=String(row[nameCol]==null?"":row[nameCol]).trim();
+      const klasse=String(row[klasseCol]==null?"":row[klasseCol]).trim();
+      if(name.length<2) continue;
+      if(state.players.some(p=>p.name.toLowerCase()===name.toLowerCase() && (p.klasse||"").toLowerCase()===klasse.toLowerCase())) continue;
+      await addPlayer(name,klasse); n++;
+    }
+    render(); toast(n+" Teilnehmer importiert ✓");
+  }catch(e){ console.error(e); toast("Import fehlgeschlagen — Spalten 'Name'/'Klasse' prüfen"); }
 }
 
 /* ============================ START ============================ */
