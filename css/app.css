@@ -239,7 +239,8 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-logo{width:4.6vw;height:4.6vw;flex:none;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(232,150,56,.3))}
 .bm-title{font-family:"Bricolage Grotesque";font-weight:800;font-size:2.6vw;letter-spacing:-.02em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bm-status{font-weight:700;font-size:1.5vw;color:var(--accent-d);background:var(--accent-soft);padding:.6vw 1.2vw;border-radius:999px;white-space:nowrap}
-.bm-stage{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
+.bm-stage{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden}
+.bm-stage.center{justify-content:center}
 .bm-section-title{font-family:"Bricolage Grotesque";font-weight:700;font-size:1.9vw;color:var(--ink-soft);margin-bottom:1.4vw}
 .bm-dots{display:flex;gap:.7vw;justify-content:center;padding-top:1.2vw}
 .bm-dots span{width:.8vw;height:.8vw;border-radius:50%;background:var(--line)}

@@ -908,7 +908,7 @@ function renderBeamer(){
   if(state.status==="registration"){
     panels=["join","champions"];
   }else if(state.status==="running"){
-    panels=["pairings","standings"];
+    panels=["pairings"];               // nur Spielplan — kein Umschalten in die Liste
   }else{
     panels=["podium","standings"];
   }
@@ -958,7 +958,7 @@ function renderBeamer(){
       <div class="bm-title">${esc(state.tournament_name)}</div>
       <div class="bm-status">${statusTxt}</div>
     </div>
-    <div class="bm-stage">${body}</div>
+    <div class="bm-stage${(panel==="pairings"||panel==="standings")?"":" center"}">${body}</div>
     ${panels.length>1?`<div class="bm-dots">${panels.map((_,i)=>`<span class="${i===ui.beamerIdx%panels.length?"on":""}"></span>`).join("")}</div>`:""}`;
 
   if(panel==="join"){ try{ new QRCode($("#bmqr"),{text:location.origin+location.pathname,width:260,height:260,colorDark:"#20211d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }catch(e){} }
