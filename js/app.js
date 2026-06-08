@@ -100,7 +100,8 @@ const ICONS = {
   pawn:     '<path d="M12 3a2.6 2.6 0 0 1 1.5 4.8C14.7 8.6 15 10 14.3 12l1.2 5.5h-7L9.7 12C9 10 9.3 8.6 10.5 7.8A2.6 2.6 0 0 1 12 3Z"/><path d="M6.5 20.5h11"/>',
   check:    '<path d="M5 12.5 10 17.5 19.5 6.5"/>',
   checkCircle:'<circle cx="12" cy="12" r="8.5"/><path d="M8 12.2 11 15.2 16.2 8.8"/>',
-  reset:    '<path d="M4 12a8 8 0 1 0 2.5-5.8M4 4.5V9h4.5"/>'
+  reset:    '<path d="M4 12a8 8 0 1 0 2.5-5.8M4 4.5V9h4.5"/>',
+  trash:    '<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/>'
 };
 const ic = n => '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[n]||'')+'</svg>';
 
@@ -177,6 +178,21 @@ async function awardTrophies(){
   const champs = top.map((s,i)=>({ rank:i+1, name:s.name, klasse:s.klasse||"", tournament:state.tournament_name, date:today }));
   await patchState({ champions: champs, awarded: true });
   render(); toast("Pokale graviert ✓");
+}
+/* Aktuelle Gravur (Titelverteidiger) von den Pokalen entfernen — z.B. nach einem Test. */
+async function clearTrophies(){
+  if(!(state.champions||[]).length){ toast("Keine Gravur vorhanden"); return; }
+  if(!confirm("Aktuelle Gravur (Titelverteidiger) von den Pokalen löschen?\n(Die Wall of Fame bleibt unberührt.)")) return;
+  await patchState({ champions: [], awarded: false });
+  render(); toast("Gravur gelöscht");
+}
+/* Komplette Wall of Fame leeren — nur zum Aufräumen von Testdaten. */
+async function clearHallOfFame(){
+  if(!(state.halloffame||[]).length){ toast("Wall of Fame ist leer"); return; }
+  if(!confirm("Wirklich die GESAMTE Wall of Fame löschen? Das kann nicht rückgängig gemacht werden.")) return;
+  state.halloffame = [];
+  if(SB_MODE){ await sb.from("chess_halloffame").delete().neq("rank",-1); }
+  render(); toast("Wall of Fame geleert");
 }
 
 /* ============================ SCHWEIZER SYSTEM ============================ */
@@ -490,6 +506,8 @@ function renderRegistration(app){
         <button class="btn ghost sm" id="btnDemo" title="20 Beispiel-Teilnehmer zum Ausprobieren hinzufügen.">+20 Testdaten</button>
         <button class="btn ghost sm" id="btnImport" title="Teilnehmer aus Excel/CSV laden. Erste Zeile als Überschrift, Spalten 'Name' und 'Klasse'. Duplikate werden übersprungen.">${ic('import')} Import Excel/CSV</button>
         <button class="btn ghost sm" id="btnSim" title="Spielt ein komplettes Turnier mit Zufallsergebnissen durch — testet Auslosung, Tabelle und Pokale.">${ic('play')} Testlauf simulieren</button>
+        ${(state.champions||[]).length?`<button class="btn ghost sm" id="btnClearCup" title="Test-Gravur von den Pokalen entfernen (Wall of Fame bleibt).">${ic('trash')} Gravur löschen</button>`:""}
+        ${(state.halloffame||[]).length?`<button class="btn ghost sm" id="btnClearWall" title="Gesamte Wall of Fame löschen — nur zum Aufräumen von Testdaten.">${ic('trash')} Wall of Fame leeren</button>`:""}
         <input type="file" id="impFile" accept=".xlsx,.xls,.csv" style="display:none">
       </div>`;
     app.appendChild(ab);
@@ -507,6 +525,8 @@ function renderRegistration(app){
     const imp=$("#btnImport"); if(imp) imp.onclick=()=>{ const f=$("#impFile"); if(f) f.click(); };
     const impF=$("#impFile"); if(impF) impF.onchange=e=>handleImportFile(e.target.files[0]);
     const sim=$("#btnSim"); if(sim) sim.onclick=simulateTournament;
+    const clr=$("#btnClearCup"); if(clr) clr.onclick=()=>clearTrophies().then(()=>render());
+    const clw=$("#btnClearWall"); if(clw) clw.onclick=()=>clearHallOfFame().then(()=>render());
     const cc=$("#cfgCode"); if(cc) cc.onchange=e=>patchState({event_code:e.target.value.trim()}).then(render);
     const gc=$("#btnGenCode"); if(gc) gc.onclick=()=>{ patchState({event_code:String(Math.floor(1000+Math.random()*9000))}).then(render); };
     wireAdminCommon();
@@ -708,6 +728,7 @@ function renderFinished(app){
     ab.innerHTML=`<div class="ab-top">${ic('teacher')}Turnier beendet <span class="lk">${esc(state.time_control)} · ${state.num_rounds} Runden</span></div>
       <div class="ab-actions">
         ${state.awarded?`<span class="ab-note">${ic('checkCircle')} Pokale graviert</span>`:`<button class="btn" id="btnAward">${ic('trophy')} Pokale gravieren (Top 3)</button>`}
+        ${(state.champions||[]).length?`<button class="btn ghost sm" id="btnClearCup" title="Gravur von den Pokalen entfernen (z.B. nach einem Test). Wall of Fame bleibt.">${ic('trash')} Gravur löschen</button>`:""}
         <a class="btn ghost sm" href="${esc(beamer)}" target="_blank" rel="noopener">${ic('monitor')} Beamer</a>
         <button class="btn danger sm" id="btnReset">${ic('reset')} Neues Turnier</button>
         ${adminCommonBtns()}
@@ -715,6 +736,7 @@ function renderFinished(app){
       ${state.awarded?"":'<div class="ab-hint">Bisherige Pokal-Inhaber wandern dabei in die Wall of Fame, die neuen Top 3 kommen auf die Pokale.</div>'}`;
     app.appendChild(ab);
     if($("#btnAward")) $("#btnAward").onclick=awardTrophies;
+    if($("#btnClearCup")) $("#btnClearCup").onclick=()=>clearTrophies().then(()=>render());
     $("#btnReset").onclick=()=>{ if(confirm("Neues Turnier starten? Teilnehmer & Spielplan werden gelöscht (Pokale und Wall of Fame bleiben).")){ resetAll().then(()=>{ui.tab="plan";ui.viewRound=0;render();}); } };
     wireAdminCommon();
   }
