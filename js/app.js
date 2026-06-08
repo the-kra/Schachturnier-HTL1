@@ -399,7 +399,6 @@ async function regeneratePairings(round){
 /* ============================ RENDER ============================ */
 function nm(id){ const p=state.players.find(x=>x.id===id); return p?p.name:"?"; }
 function kl(id){ const p=state.players.find(x=>x.id===id); return p?(p.klasse||""):""; }
-function initials(s){ return (s||"?").trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase(); }
 
 function render(){
   if(IS_BEAMER){ document.body.classList.add("beamer-body"); renderBeamer(); return; }
@@ -606,9 +605,9 @@ function renderRegistration(app){
     ${list.length===0?'<div class="empty"><div class="ico">'+ic('pawn')+'</div>Noch niemand angemeldet — sei die/der Erste!</div>':""}`;
   app.appendChild(l);
   const pl=$("#plist");
-  list.forEach(p=>{
+  list.forEach((p,i)=>{
     const d=document.createElement("div"); d.className="pl"+(p.withdrawn?" out":"");
-    d.innerHTML=`<span class="ava">${initials(p.name)}</span><span class="nm">${esc(p.name)}</span>${p.verified?'<span class="vchk" title="bestätigt">✓</span>':""}${p.klasse?`<span class="kl">${esc(p.klasse)}</span>`:""}`;
+    d.innerHTML=`<span class="idx">${i+1}</span><span class="nm">${esc(p.name)}</span>${p.verified?'<span class="vchk" title="bestätigt">✓</span>':""}${p.klasse?`<span class="kl">${esc(p.klasse)}</span>`:""}`;
     if(IS_ADMIN){ const x=document.createElement("button"); x.className="x"; x.textContent="×"; x.title="Entfernen"; x.onclick=()=>{ removePlayer(p.id).then(render); }; d.appendChild(x); }
     pl.appendChild(d);
   });
