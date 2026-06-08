@@ -427,7 +427,10 @@ function forecast(){
   return { n, rounds, games, lo, hi, recRounds };
 }
 
+let _painted=false;
 function render(){
+  // Einblend-Animation nur beim allerersten Aufbau — sonst flackert jeder Re-Render
+  document.body.classList.toggle("no-anim", _painted); _painted=true;
   if(IS_BEAMER){ document.body.classList.add("beamer-body"); renderBeamer(); return; }
   $("#tName").textContent = state.tournament_name || "Schachturnier";
   document.title = (state.tournament_name||"Schachturnier")+" · HTL1";
@@ -648,6 +651,12 @@ function renderRegistration(app){
   renderHall(app);
 }
 
+/* Sicherheits-Reset: Rückfrage, dann alles löschen (Pokale + Wall of Fame bleiben). */
+function confirmReset(extraWarn){
+  const msg=(extraWarn?extraWarn+"\n\n":"")+"Neues Turnier starten?\nTeilnehmer & Spielplan werden gelöscht (Pokale und Wall of Fame bleiben).";
+  if(confirm(msg)){ resetAll().then(()=>{ ui.tab="plan"; ui.viewRound=0; render(); }); }
+}
+
 /* ---------- TURNIER LÄUFT ---------- */
 function renderRunning(app){
   if(IS_ADMIN) renderAdminBarRunning(app);
@@ -680,11 +689,13 @@ function renderAdminBarRunning(app){
       ${noResultsYet?`<button class="btn ghost sm" id="btnRe">${ic('shuffle')} Runde ${cur} neu auslosen</button>`:""}
       <a class="btn ghost sm" href="${esc(location.origin+location.pathname+"?beamer")}" target="_blank" rel="noopener">${ic('monitor')} Beamer</a>
       ${adminCommonBtns()}
+      <button class="btn danger sm" id="btnReset" title="Laufendes Turnier abbrechen und von vorne beginnen.">${ic('reset')} Turnier neu starten</button>
     </div>`;
   app.appendChild(ab);
   if($("#btnNext")) $("#btnNext").onclick=nextRound;
   if($("#btnFin"))  $("#btnFin").onclick=finishTournament;
   if($("#btnRe"))   $("#btnRe").onclick=()=>regeneratePairings(cur);
+  if($("#btnReset"))$("#btnReset").onclick=()=>confirmReset("Das laufende Turnier wird ABGEBROCHEN.");
   wireAdminCommon();
 }
 function renderPlan(app){
@@ -766,7 +777,7 @@ function renderFinished(app){
     app.appendChild(ab);
     if($("#btnAward")) $("#btnAward").onclick=awardTrophies;
     if($("#btnClearCup")) $("#btnClearCup").onclick=()=>clearTrophies().then(()=>render());
-    $("#btnReset").onclick=()=>{ if(confirm("Neues Turnier starten? Teilnehmer & Spielplan werden gelöscht (Pokale und Wall of Fame bleiben).")){ resetAll().then(()=>{ui.tab="plan";ui.viewRound=0;render();}); } };
+    $("#btnReset").onclick=()=>confirmReset();
     wireAdminCommon();
   }
   const st=computeStandings();
@@ -1038,11 +1049,17 @@ async function boot(){
     try{ const { data:{ session } } = await sb.auth.getSession(); authUser = session ? session.user : null; }catch(e){ authUser=null; }
     sb.auth.onAuthStateChange((_evt, sess)=>{ authUser = sess ? sess.user : null; if(IS_ADMIN) render(); });
     await loadAll();
+    // Realtime-Änderungen coalescen: mehrere Events kurz hintereinander -> ein Reload+Render
+    let _syncT=null, _syncing=false;
+    const scheduleSync=()=>{ clearTimeout(_syncT); _syncT=setTimeout(async()=>{
+      if(_syncing) return; _syncing=true;
+      try{ await loadAll(); render(); } finally{ _syncing=false; }
+    }, 120); };
     sb.channel("chess-live")
-      .on("postgres_changes",{event:"*",schema:"public",table:"chess_state"},async()=>{await loadAll();render();})
-      .on("postgres_changes",{event:"*",schema:"public",table:"chess_players"},async()=>{await loadAll();render();})
-      .on("postgres_changes",{event:"*",schema:"public",table:"chess_pairings"},async()=>{await loadAll();render();})
-      .on("postgres_changes",{event:"*",schema:"public",table:"chess_halloffame"},async()=>{await loadAll();render();})
+      .on("postgres_changes",{event:"*",schema:"public",table:"chess_state"},scheduleSync)
+      .on("postgres_changes",{event:"*",schema:"public",table:"chess_players"},scheduleSync)
+      .on("postgres_changes",{event:"*",schema:"public",table:"chess_pairings"},scheduleSync)
+      .on("postgres_changes",{event:"*",schema:"public",table:"chess_halloffame"},scheduleSync)
       .subscribe();
   }
   if(IS_BEAMER){ setInterval(()=>{ ui.beamerIdx++; render(); }, 12000); }

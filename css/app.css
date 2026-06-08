@@ -52,6 +52,8 @@ a{color:var(--accent-d)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px;animation:rise .5s both}
 .card.lg{box-shadow:var(--shadow-lg)}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* Nach dem ersten Aufbau Einblend-Animationen abschalten (verhindert Flackern bei Re-Renders) */
+body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .card h2{font-size:1.18rem;margin-bottom:4px}
 .card .lead{color:var(--ink-soft);font-size:.92rem;margin-bottom:16px}
 .muted{color:var(--ink-soft)}
