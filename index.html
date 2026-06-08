@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Schachturnier · HTL1 Lastenstraße</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="logo">
+      <img id="brandLogo" class="brand-logo" alt="HTL1">
+      <div style="min-width:0">
+        <h1 id="tName">Schachturnier</h1>
+        <div class="sub">HTL1 Lastenstraße · Schweizer System</div>
+      </div>
+    </div>
+    <div id="statuschip" class="statuschip chip-reg">Anmeldung</div>
+  </div>
+
+  <div id="banner"></div>
+  <div id="app"></div>
+
+  <div class="foot">
+    Live-Spielplan · <b>kranzlab</b> · jede Runde aktualisiert sich automatisch
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+<script src="js/app.js"></script>
+</body>
+</html>
