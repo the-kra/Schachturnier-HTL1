@@ -101,7 +101,8 @@ const ICONS = {
   check:    '<path d="M5 12.5 10 17.5 19.5 6.5"/>',
   checkCircle:'<circle cx="12" cy="12" r="8.5"/><path d="M8 12.2 11 15.2 16.2 8.8"/>',
   reset:    '<path d="M4 12a8 8 0 1 0 2.5-5.8M4 4.5V9h4.5"/>',
-  trash:    '<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/>'
+  trash:    '<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/>',
+  clock:    '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.3V12l3.2 2"/>'
 };
 const ic = n => '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[n]||'')+'</svg>';
 
@@ -400,6 +401,32 @@ async function regeneratePairings(round){
 function nm(id){ const p=state.players.find(x=>x.id===id); return p?p.name:"?"; }
 function kl(id){ const p=state.players.find(x=>x.id===id); return p?(p.klasse||""):""; }
 
+/* Bedenkzeit "Grund+Inkrement" parsen, z.B. "5+3" -> {base:5, inc:3} (Minuten / Sekunden) */
+function parseTC(tc){
+  const m=String(tc||"").match(/(\d+)\s*\+\s*(\d+)/);
+  if(m) return { base:+m[1], inc:+m[2] };
+  const b=parseInt(tc,10); return { base:isNaN(b)?5:b, inc:0 };
+}
+function fmtDur(min){
+  min=Math.max(0,Math.round(min));
+  const h=Math.floor(min/60), m=min%60;
+  return h ? (m? `${h} h ${m} min` : `${h} h`) : `${m} min`;
+}
+/* Grobe Dauer-Schätzung: Partien laufen parallel, also zählt Runden × Rundenlänge.
+   Rundenlänge ~ längste Partie (volle Uhren) + Overhead fürs Setzen/Eintragen. */
+function forecast(){
+  const n=state.players.filter(p=>!p.withdrawn).length;
+  const rounds=state.num_rounds||0;
+  const { base, inc }=parseTC(state.time_control);
+  const games=Math.floor(n/2);
+  const perGameMax = 2*(base + inc*45/60);     // Min: 2 Spieler × (Grundzeit + Inkrement über ~45 Züge)
+  const overhead   = 4;                         // Min/Runde: setzen, Ergebnis melden, nächste Auslosung
+  const lo = rounds*(0.5*perGameMax + overhead);// viele Partien enden vor Zeitablauf
+  const hi = rounds*(perGameMax + overhead);    // Worst Case (Brett spielt voll aus)
+  const recRounds=Math.max(3, Math.ceil(Math.log2(Math.max(2,n))));
+  return { n, rounds, games, lo, hi, recRounds };
+}
+
 function render(){
   if(IS_BEAMER){ document.body.classList.add("beamer-body"); renderBeamer(); return; }
   $("#tName").textContent = state.tournament_name || "Schachturnier";
@@ -473,6 +500,7 @@ function renderRegistration(app){
   const active=state.players.filter(p=>!p.withdrawn);
 
   if(IS_ADMIN){
+    const fc=forecast();
     const ab=document.createElement("div"); ab.className="adminbar";
     ab.innerHTML=`
       <div class="ab-top">${ic('teacher')}Lehrer-Steuerung <span class="lk">Auslosung startet Runde 1</span></div>
@@ -483,6 +511,8 @@ function renderRegistration(app){
         <div class="field" style="margin:0;max-width:140px"><label>Bedenkzeit</label>
           <select id="cfgTime">${["3+2","5+0","5+3","10+0","10+5","15+0"].map(t=>`<option ${t==state.time_control?"selected":""}>${t}</option>`).join("")}</select></div>
       </div>
+      <div class="forecast">${ic('clock')}<span>Geschätzte Dauer: <b>${fc.n<2?"—":`ca. ${fmtDur(fc.lo)} – ${fmtDur(fc.hi)}`}</b></span>
+        <span class="fc-sub">${fc.rounds} Runden · ${fc.games} Bretter · ${fc.n} Spieler${fc.n>=2&&fc.rounds<fc.recRounds?` · Tipp: ${fc.recRounds} Runden für ${fc.n} Spieler`:""}</span></div>
       <div class="modepick">
         <div class="mp-head"><span class="mp-label">Anmeldung</span>
           <div class="mp-opts">${["none","code","email"].map(m=>`<button class="mp${VMODE()===m?" on":""}" data-m="${m}" title="${esc(MODE_INFO[m].desc)}">${esc(MODE_INFO[m].label)}</button>`).join("")}</div>
@@ -511,8 +541,8 @@ function renderRegistration(app){
       </div>`;
     app.appendChild(ab);
     $("#cfgName").onchange=e=>patchState({tournament_name:e.target.value||"Schachturnier"}).then(render);
-    $("#cfgRounds").onchange=e=>patchState({num_rounds:+e.target.value});
-    $("#cfgTime").onchange=e=>patchState({time_control:e.target.value});
+    $("#cfgRounds").onchange=e=>patchState({num_rounds:+e.target.value}).then(render);
+    $("#cfgTime").onchange=e=>patchState({time_control:e.target.value}).then(render);
     ab.querySelectorAll(".mp").forEach(b=>b.onclick=()=>{
       const m=b.dataset.m;
       if(m===VMODE()) return;

@@ -180,6 +180,11 @@ a{color:var(--accent-d)}
 .mp-opts .mp:hover{color:var(--ink)}
 .mp-opts .mp.on{background:var(--accent);color:#1a1306;box-shadow:0 1px 6px rgba(232,150,56,.3)}
 .mp-desc{margin-top:9px;font-size:.78rem;line-height:1.45;color:var(--ink-soft)}
+/* Dauer-Schätzung */
+.forecast{margin-bottom:12px;padding:9px 12px;background:#15171b;border:1px solid var(--line);border-radius:11px;font-size:.86rem;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.forecast .ic{color:var(--accent-d)}
+.forecast b{color:var(--accent-d);font-weight:700}
+.forecast .fc-sub{color:var(--ink-soft);font-size:.8rem;font-weight:500;margin-left:auto}
 .vchk{color:var(--accent);font-weight:800;font-size:.8rem;flex:none}
 
 /* Pokale */
