@@ -2,3 +2,14 @@
 node_modules/
 tools/roh/
 *.log
+
+# Editor / OS-Kram
+.vscode/
+.idea/
+Thumbs.db
+
+# Lokale/geheime Overrides (Service-Role-Key, SMTP etc. NIE committen)
+.env
+.env.*
+*.local
+config.local.js

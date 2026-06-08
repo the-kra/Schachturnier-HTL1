@@ -4,14 +4,16 @@ const CONFIG = {
   key: "sb_publishable_YhF2rLcsO8ibyZ4d9UDezA_oEwntvm5"
 };
 
-/* Anmeldebestätigung:
+/* Anmeldebestätigung — wird LIVE im Admin-Panel umgeschaltet (in der DB-Spalte
+   chess_state.verify_mode gespeichert, via Realtime auf allen Geräten). Werte:
    "none"  = offene Anmeldung (nur Name/Klasse)
    "code"  = Event-Code (Lehrer legt Code fest, steht am Beamer; keine Kontaktdaten) [EMPFOHLEN]
    "email" = 6-stelliger Code per E-Mail (Supabase Auth; braucht eigenen SMTP-Anbieter!)
    SMS:     E-Mail-Variante auf Telefon umstellen — in doRequestCode/doVerifyCode
             { phone } statt { email } und type:"sms" verwenden. Erfordert einen
-            kostenpflichtigen SMS-Provider in Supabase (Twilio/MessageBird/Vonage). */
-const VERIFY = "email";
+            kostenpflichtigen SMS-Provider in Supabase (Twilio/MessageBird/Vonage).
+   VERIFY_DEFAULT greift nur, solange in der DB (noch) nichts gesetzt ist. */
+const VERIFY_DEFAULT = "code";
 
 /* LEHRER-LOGIN
    Mit Supabase (Online): echtes Login per E-Mail + Passwort über Supabase Auth.
@@ -60,7 +62,8 @@ let state = {
   current_round: 0,
   time_control: "5+3",
   awarded: false,
-  event_code: "",                  // Anmeldecode (VERIFY="code")
+  verify_mode: VERIFY_DEFAULT,      // Anmeldebestätigung: none | code | email (Admin-Panel)
+  event_code: "",                  // Anmeldecode (Modus "code")
   champions: [],                   // aktuelle Pokal-Inhaber [{rank,name,klasse,tournament,date}]
   players: [],                     // {id,name,klasse,withdrawn,email,verified}
   pairings: [],                    // {id,round,board,white_id,black_id,result}
@@ -68,8 +71,38 @@ let state = {
 };
 let ui = { tab: "plan", viewRound: 0, beamerIdx: 0, regStep: "form", regDraft: {} };
 
+/* Aktiver Anmeldemodus (aus DB-State, sonst Default) */
+function VMODE(){ return state.verify_mode || VERIFY_DEFAULT; }
+const MODE_INFO = {
+  none:  { label:"Offen",  desc:"Schüler tippen nur Name + Klasse und sind sofort in der Liste. Keine Bestätigung, keine Kontaktdaten — am schnellsten." },
+  code:  { label:"Code",   desc:"Du legst unten einen Code fest, der am Beamer steht. Nur wer den Code eintippt, kann sich anmelden. Keine Kontaktdaten, DSGVO-freundlich." },
+  email: { label:"E-Mail", desc:"Schüler bekommen einen 6-stelligen Code an ihre Mail und bestätigen damit. Braucht Supabase + eigenen SMTP (siehe README)." }
+};
 const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : "id-"+Math.random().toString(36).slice(2)+Date.now());
 const $ = sel => document.querySelector(sel);
+
+/* ---- Inline-SVG-Icons (schlicht, einfarbig, erben Textfarbe) ---- */
+const ICONS = {
+  monitor:  '<rect x="2.5" y="3.5" width="19" height="13" rx="2"/><path d="M8.5 20.5h7M12 16.5v4"/>',
+  table:    '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9.5h18M3 15h18M9 4v16"/>',
+  lock:     '<rect x="4.5" y="10.5" width="15" height="9.5" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>',
+  teacher:  '<path d="M12 4 2.5 8.5 12 13l9.5-4.5L12 4Z"/><path d="M6 10.5V16c0 1.4 2.7 2.8 6 2.8s6-1.4 6-2.8v-5.5"/>',
+  flask:    '<path d="M9 3.5h6M10 3.5v5.2L5.4 17a2 2 0 0 0 1.8 3h9.6a2 2 0 0 0 1.8-3L14 8.7V3.5"/><path d="M8 14.5h8"/>',
+  import:   '<path d="M12 3.5v10M8 9.5l4 4 4-4"/><path d="M5 20.5h14"/>',
+  play:     '<path d="M7.5 5.5v13l11-6.5-11-6.5Z"/>',
+  shuffle:  '<path d="M16 3.5h4.5v4.5"/><path d="M4 20 20.5 3.5"/><path d="M16 20.5h4.5V16"/><path d="M14.5 14.5 20.5 20.5"/><path d="M4 4 9 9"/>',
+  arrow:    '<path d="M4 12h15M13 5.5 19.5 12 13 18.5"/>',
+  flag:     '<path d="M5.5 21V4M5.5 4.5h12l-2.2 4 2.2 4h-12"/>',
+  clipboard:'<rect x="5" y="4.5" width="14" height="16" rx="2"/><path d="M9 4.5V3.2h6v1.3"/><path d="M8.5 10h7M8.5 14h7M8.5 17.5h4.5"/>',
+  trophy:   '<path d="M6 4.5h12v4a6 6 0 0 1-12 0v-4Z"/><path d="M6 6.5H3.5V8a3 3 0 0 0 3 3M18 6.5h2.5V8a3 3 0 0 1-3 3"/><path d="M12 14.5v2.5M9.5 20.5 10 17h4l.5 3.5M8 20.5h8"/>',
+  mail:     '<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/>',
+  gear:     '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.6M12 18.9v2.6M21.5 12h-2.6M5.1 12H2.5M18.7 5.3l-1.9 1.9M7.2 16.8l-1.9 1.9M18.7 18.7l-1.9-1.9M7.2 7.2 5.3 5.3"/>',
+  pawn:     '<path d="M12 3a2.6 2.6 0 0 1 1.5 4.8C14.7 8.6 15 10 14.3 12l1.2 5.5h-7L9.7 12C9 10 9.3 8.6 10.5 7.8A2.6 2.6 0 0 1 12 3Z"/><path d="M6.5 20.5h11"/>',
+  check:    '<path d="M5 12.5 10 17.5 19.5 6.5"/>',
+  checkCircle:'<circle cx="12" cy="12" r="8.5"/><path d="M8 12.2 11 15.2 16.2 8.8"/>',
+  reset:    '<path d="M4 12a8 8 0 1 0 2.5-5.8M4 4.5V9h4.5"/>'
+};
+const ic = n => '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[n]||'')+'</svg>';
 
 /* ============================ DATEN-SCHICHT ============================ */
 async function loadAll(){
@@ -215,8 +248,8 @@ function exportExcel(){
 
 /* gemeinsame Buttons für jede Admin-Leiste */
 function adminCommonBtns(){
-  return `<button class="btn ghost sm" id="btnXlsx">📊 Excel</button>`
-       + ((SB_MODE || ADMIN_PASS) ? `<button class="btn ghost sm" id="btnLogout">🔒 Abmelden</button>` : "");
+  return `<button class="btn ghost sm" id="btnXlsx">${ic('table')} Excel</button>`
+       + ((SB_MODE || ADMIN_PASS) ? `<button class="btn ghost sm" id="btnLogout">${ic('lock')} Abmelden</button>` : "");
 }
 function wireAdminCommon(){
   const x=$("#btnXlsx"); if(x) x.onclick=exportExcel;
@@ -368,7 +401,7 @@ function renderAdminLogin(app){
   const c=document.createElement("div"); c.className="card lg";
   if(SB_MODE){
     c.innerHTML=`
-      <div class="eyebrow">🔒 Lehrer-Bereich</div>
+      <div class="eyebrow">${ic('lock')} Lehrer-Bereich</div>
       <h2>Anmeldung</h2>
       <p class="lead">Mit Lehrer-E-Mail und Passwort anmelden.</p>
       <div class="field"><label>E-Mail</label><input id="admEmail" type="email" autocomplete="username" placeholder="name@htl1-klu.at"></div>
@@ -391,7 +424,7 @@ function renderAdminLogin(app){
     setTimeout(()=>{ const i=$("#admEmail"); if(i) i.focus(); },50);
   } else {
     c.innerHTML=`
-      <div class="eyebrow">🔒 Lehrer-Bereich (Lokal-Modus)</div>
+      <div class="eyebrow">${ic('lock')} Lehrer-Bereich (Lokal-Modus)</div>
       <h2>Anmeldung</h2>
       <p class="lead">Bitte das Test-Passwort eingeben.</p>
       <div class="field"><label>Passwort</label><input id="admPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
@@ -416,7 +449,7 @@ function renderStatusChip(){
 function renderBanner(){
   const b=$("#banner"); b.innerHTML="";
   if(!SB_MODE){
-    b.innerHTML='<div class="banner">⚙️ <b>Lokal-Modus</b> (kein Supabase) — nur dieses Gerät, kein Live-Sync. Zum Testen perfekt; fürs Event Supabase im CONFIG-Block eintragen.</div>';
+    b.innerHTML='<div class="banner">'+ic('gear')+' <b>Lokal-Modus</b> (kein Supabase) — nur dieses Gerät, kein Live-Sync. Zum Testen perfekt; fürs Event Supabase im CONFIG-Block eintragen.</div>';
   }
 }
 
@@ -427,7 +460,7 @@ function renderRegistration(app){
   if(IS_ADMIN){
     const ab=document.createElement("div"); ab.className="adminbar";
     ab.innerHTML=`
-      <div class="ab-top">👨‍🏫 Lehrer-Steuerung <span class="lk">Auslosung startet Runde 1</span></div>
+      <div class="ab-top">${ic('teacher')}Lehrer-Steuerung <span class="lk">Auslosung startet Runde 1</span></div>
       <div class="row" style="margin-bottom:10px">
         <div class="field" style="margin:0"><label>Turniername</label><input id="cfgName" value="${esc(state.tournament_name)}"></div>
         <div class="field" style="margin:0;max-width:120px"><label>Runden</label>
@@ -435,28 +468,40 @@ function renderRegistration(app){
         <div class="field" style="margin:0;max-width:140px"><label>Bedenkzeit</label>
           <select id="cfgTime">${["3+2","5+0","5+3","10+0","10+5","15+0"].map(t=>`<option ${t==state.time_control?"selected":""}>${t}</option>`).join("")}</select></div>
       </div>
-      ${VERIFY==="code"?`<div class="codebox">
+      <div class="modepick">
+        <div class="mp-head"><span class="mp-label">Anmeldung</span>
+          <div class="mp-opts">${["none","code","email"].map(m=>`<button class="mp${VMODE()===m?" on":""}" data-m="${m}" title="${esc(MODE_INFO[m].desc)}">${esc(MODE_INFO[m].label)}</button>`).join("")}</div>
+        </div>
+        <div class="mp-desc">${esc(MODE_INFO[VMODE()].desc)}</div>
+      </div>
+      ${VMODE()==="code"?`<div class="codebox">
         <div class="field" style="margin:0;max-width:160px"><label>Anmeldecode</label>
           <input id="cfgCode" value="${esc(state.event_code||"")}" placeholder="leer = gesperrt" maxlength="12" autocomplete="off"></div>
-        <button class="btn ghost sm" id="btnGenCode">🎲 Code</button>
+        <button class="btn ghost sm" id="btnGenCode">${ic('shuffle')} Code</button>
         <span class="code-hint">Code am Beamer zeigen — nur damit kann man sich anmelden. Leer = Anmeldung gesperrt.</span>
       </div>`:""}
       <div class="ab-actions">
-        <button class="btn" id="btnStart" ${active.length<2?"disabled":""}>🎲 Anmeldung schließen & auslosen</button>
-        <a class="btn ghost sm" href="${esc(location.origin+location.pathname+"?beamer")}" target="_blank" rel="noopener">📺 Beamer</a>
+        <button class="btn" id="btnStart" ${active.length<2?"disabled":""}>${ic('shuffle')} Anmeldung schließen & auslosen</button>
+        <a class="btn ghost sm" href="${esc(location.origin+location.pathname+"?beamer")}" target="_blank" rel="noopener">${ic('monitor')} Beamer</a>
         ${adminCommonBtns()}
       </div>
       <div class="ab-actions" style="margin-top:8px;border-top:1px dashed rgba(255,255,255,.12);padding-top:10px">
-        <span class="code-hint" style="width:100%">🧪 Zum Testen vor dem Event:</span>
-        <button class="btn ghost sm" id="btnDemo">+20 Testdaten</button>
-        <button class="btn ghost sm" id="btnImport">📥 Import Excel/CSV</button>
-        <button class="btn ghost sm" id="btnSim">▶️ Testlauf simulieren</button>
+        <span class="code-hint" style="width:100%">${ic('flask')} Zum Testen vor dem Event:</span>
+        <button class="btn ghost sm" id="btnDemo" title="20 Beispiel-Teilnehmer zum Ausprobieren hinzufügen.">+20 Testdaten</button>
+        <button class="btn ghost sm" id="btnImport" title="Teilnehmer aus Excel/CSV laden. Erste Zeile als Überschrift, Spalten 'Name' und 'Klasse'. Duplikate werden übersprungen.">${ic('import')} Import Excel/CSV</button>
+        <button class="btn ghost sm" id="btnSim" title="Spielt ein komplettes Turnier mit Zufallsergebnissen durch — testet Auslosung, Tabelle und Pokale.">${ic('play')} Testlauf simulieren</button>
         <input type="file" id="impFile" accept=".xlsx,.xls,.csv" style="display:none">
       </div>`;
     app.appendChild(ab);
     $("#cfgName").onchange=e=>patchState({tournament_name:e.target.value||"Schachturnier"}).then(render);
     $("#cfgRounds").onchange=e=>patchState({num_rounds:+e.target.value});
     $("#cfgTime").onchange=e=>patchState({time_control:e.target.value});
+    ab.querySelectorAll(".mp").forEach(b=>b.onclick=()=>{
+      const m=b.dataset.m;
+      if(m===VMODE()) return;
+      if(m==="email" && !SB_MODE){ toast("E-Mail-Modus braucht Supabase"); return; }
+      patchState({verify_mode:m}).then(render);
+    });
     $("#btnStart").onclick=startTournament;
     const demo=$("#btnDemo"); if(demo) demo.onclick=addDemo;
     const imp=$("#btnImport"); if(imp) imp.onclick=()=>{ const f=$("#impFile"); if(f) f.click(); };
@@ -469,22 +514,22 @@ function renderRegistration(app){
 
   // Anmeldeformular (alle) — abhängig vom Bestätigungsmodus
   const f=document.createElement("div"); f.className="card lg";
-  const codeGate = (VERIFY==="code" && !(state.event_code||"").trim());
+  const codeGate = (VMODE()==="code" && !(state.event_code||"").trim());
 
-  if(VERIFY==="email" && !SB_MODE){
+  if(VMODE()==="email" && !SB_MODE){
     f.innerHTML=`<div class="eyebrow">Anmeldung</div><h2>E-Mail-Bestätigung nicht verfügbar</h2>
-      <p class="lead">Der E-Mail-Modus braucht Supabase. Zum Testen im Lokal-Modus bitte <code>VERIFY</code> auf <code>"none"</code> oder <code>"code"</code> stellen.</p>`;
+      <p class="lead">Der E-Mail-Modus braucht Supabase. Im Lokal-Modus bitte im Admin-Panel auf <b>Offen</b> oder <b>Code</b> stellen.</p>`;
     app.appendChild(f);
   } else if(codeGate){
     f.innerHTML=`<div class="eyebrow">Anmeldung</div><h2>Noch nicht freigeschaltet</h2>
       <p class="lead">Die Anmeldung wird gleich von der Lehrkraft freigeschaltet — der Code erscheint dann am Beamer.</p>`;
     app.appendChild(f);
-  } else if(VERIFY==="email" && ui.regStep==="code"){
+  } else if(VMODE()==="email" && ui.regStep==="code"){
     const d=ui.regDraft||{};
     f.innerHTML=`<div class="eyebrow">Bestätigung</div><h2>Code eingeben</h2>
       <p class="lead">6-stelliger Code wurde an <b>${esc(d.email||"")}</b> geschickt. Bitte hier eintragen.</p>
       <div class="field"><label>Bestätigungscode</label><input id="regOtp" inputmode="numeric" maxlength="8" placeholder="z.B. 123456" autocomplete="one-time-code"></div>
-      <button class="btn block" id="btnVerify">✓ Bestätigen & anmelden</button>
+      <button class="btn block" id="btnVerify">${ic('check')} Bestätigen & anmelden</button>
       <button class="btn ghost block sm" id="btnBack" style="margin-top:8px">← Zurück / andere E-Mail</button>`;
     app.appendChild(f);
     const verify=async()=>{
@@ -499,7 +544,7 @@ function renderRegistration(app){
     $("#regOtp").onkeydown=e=>{ if(e.key==="Enter") verify(); };
     $("#btnBack").onclick=()=>{ ui.regStep="form"; render(); };
   } else {
-    const needEmail=(VERIFY==="email"), needCode=(VERIFY==="code");
+    const needEmail=(VMODE()==="email"), needCode=(VMODE()==="code");
     f.innerHTML=`
       <div class="eyebrow">Jetzt mitmachen</div>
       <h2>Zum Turnier anmelden</h2>
@@ -510,7 +555,7 @@ function renderRegistration(app){
       </div>
       ${needEmail?`<div class="field"><label>E-Mail</label><input id="regEmail" type="email" placeholder="name@schule.at" autocomplete="email"></div>`:""}
       ${needCode?`<div class="field"><label>Anmeldecode (vom Beamer)</label><input id="regCode" inputmode="numeric" maxlength="12" placeholder="Code" autocomplete="off"></div>`:""}
-      <button class="btn block" id="btnReg">${needEmail?"📧 Code anfordern":"✓ Anmelden"}</button>`;
+      <button class="btn block" id="btnReg">${needEmail?ic('mail')+" Code anfordern":ic('check')+" Anmelden"}</button>`;
     app.appendChild(f);
     const submit=async()=>{
       const name=$("#regName").value, klasse=$("#regKlasse").value;
@@ -522,7 +567,7 @@ function renderRegistration(app){
       if(needEmail){
         const email=($("#regEmail").value||"").trim();
         if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ toast("Gültige E-Mail eingeben"); return; }
-        if(await doRequestCode(email)){ ui.regDraft={name:name.trim(),klasse:(klasse||"").trim(),email}; ui.regStep="code"; render(); toast("Code gesendet 📧"); }
+        if(await doRequestCode(email)){ ui.regDraft={name:name.trim(),klasse:(klasse||"").trim(),email}; ui.regStep="code"; render(); toast("Code gesendet ✓"); }
         return;
       }
       if(await doRegister(name, klasse)){ $("#regName").value="";$("#regKlasse").value=""; if($("#regCode"))$("#regCode").value=""; $("#regName").focus(); }
@@ -538,7 +583,7 @@ function renderRegistration(app){
   l.innerHTML=`
     <div class="count-badge"><b>${active.length}</b><span>angemeldet${state.players.length!==active.length?` · ${state.players.length-active.length} abgemeldet`:""}</span></div>
     <div class="players" id="plist"></div>
-    ${list.length===0?'<div class="empty"><div class="ico">♟️</div>Noch niemand angemeldet — sei die/der Erste!</div>':""}`;
+    ${list.length===0?'<div class="empty"><div class="ico">'+ic('pawn')+'</div>Noch niemand angemeldet — sei die/der Erste!</div>':""}`;
   app.appendChild(l);
   const pl=$("#plist");
   list.forEach(p=>{
@@ -560,9 +605,9 @@ function renderRunning(app){
 
   const tabs=document.createElement("div"); tabs.className="tabs";
   tabs.innerHTML=`
-    <button class="${ui.tab==="plan"?"on":""}" data-t="plan">📋 Spielplan</button>
-    <button class="${ui.tab==="table"?"on":""}" data-t="table">📊 Tabelle</button>
-    <button class="${ui.tab==="hall"?"on":""}" data-t="hall">🏆 Pokale</button>`;
+    <button class="${ui.tab==="plan"?"on":""}" data-t="plan">${ic('clipboard')} Spielplan</button>
+    <button class="${ui.tab==="table"?"on":""}" data-t="table">${ic('table')} Tabelle</button>
+    <button class="${ui.tab==="hall"?"on":""}" data-t="hall">${ic('trophy')} Pokale</button>`;
   app.appendChild(tabs);
   tabs.querySelectorAll("button").forEach(b=>b.onclick=()=>{ ui.tab=b.dataset.t; render(); });
 
@@ -578,13 +623,13 @@ function renderAdminBarRunning(app){
   const last=cur>=state.num_rounds;
   const ab=document.createElement("div"); ab.className="adminbar";
   ab.innerHTML=`
-    <div class="ab-top">👨‍🏫 Lehrer-Steuerung <span class="lk">Runde ${cur}/${state.num_rounds} · ${esc(state.time_control)}</span></div>
+    <div class="ab-top">${ic('teacher')}Lehrer-Steuerung <span class="lk">Runde ${cur}/${state.num_rounds} · ${esc(state.time_control)}</span></div>
     <div class="ab-actions">
       ${last
-        ? `<button class="btn" id="btnFin" ${allDone?"":"disabled"}>🏁 Turnier beenden${allDone?"":" (Ergebnisse fehlen)"}</button>`
-        : `<button class="btn" id="btnNext" ${allDone?"":"disabled"}>➡️ Runde ${cur+1} auslosen${allDone?"":" (Ergebnisse fehlen)"}</button>`}
-      ${noResultsYet?`<button class="btn ghost sm" id="btnRe">🎲 Runde ${cur} neu auslosen</button>`:""}
-      <a class="btn ghost sm" href="${esc(location.origin+location.pathname+"?beamer")}" target="_blank" rel="noopener">📺 Beamer</a>
+        ? `<button class="btn" id="btnFin" ${allDone?"":"disabled"}>${ic('flag')} Turnier beenden${allDone?"":" (Ergebnisse fehlen)"}</button>`
+        : `<button class="btn" id="btnNext" ${allDone?"":"disabled"}>${ic('arrow')} Runde ${cur+1} auslosen${allDone?"":" (Ergebnisse fehlen)"}</button>`}
+      ${noResultsYet?`<button class="btn ghost sm" id="btnRe">${ic('shuffle')} Runde ${cur} neu auslosen</button>`:""}
+      <a class="btn ghost sm" href="${esc(location.origin+location.pathname+"?beamer")}" target="_blank" rel="noopener">${ic('monitor')} Beamer</a>
       ${adminCommonBtns()}
     </div>`;
   app.appendChild(ab);
@@ -660,11 +705,11 @@ function renderFinished(app){
   const beamer=location.origin+location.pathname+"?beamer";
   if(IS_ADMIN){
     const ab=document.createElement("div"); ab.className="adminbar";
-    ab.innerHTML=`<div class="ab-top">👨‍🏫 Turnier beendet <span class="lk">${esc(state.time_control)} · ${state.num_rounds} Runden</span></div>
+    ab.innerHTML=`<div class="ab-top">${ic('teacher')}Turnier beendet <span class="lk">${esc(state.time_control)} · ${state.num_rounds} Runden</span></div>
       <div class="ab-actions">
-        ${state.awarded?`<span class="ab-note">✅ Pokale graviert</span>`:`<button class="btn" id="btnAward">🏆 Pokale gravieren (Top 3)</button>`}
-        <a class="btn ghost sm" href="${esc(beamer)}" target="_blank" rel="noopener">📺 Beamer</a>
-        <button class="btn danger sm" id="btnReset">↺ Neues Turnier</button>
+        ${state.awarded?`<span class="ab-note">${ic('checkCircle')} Pokale graviert</span>`:`<button class="btn" id="btnAward">${ic('trophy')} Pokale gravieren (Top 3)</button>`}
+        <a class="btn ghost sm" href="${esc(beamer)}" target="_blank" rel="noopener">${ic('monitor')} Beamer</a>
+        <button class="btn danger sm" id="btnReset">${ic('reset')} Neues Turnier</button>
         ${adminCommonBtns()}
       </div>
       ${state.awarded?"":'<div class="ab-hint">Bisherige Pokal-Inhaber wandern dabei in die Wall of Fame, die neuen Top 3 kommen auf die Pokale.</div>'}`;
@@ -676,7 +721,7 @@ function renderFinished(app){
   const st=computeStandings();
   if(st.length>=3){
     const card=document.createElement("div"); card.className="card lg";
-    card.innerHTML=`<div class="eyebrow" style="text-align:center">🏆 Siegerehrung</div><h2 style="text-align:center;margin-bottom:6px">${esc(state.tournament_name)}</h2><div class="podium" id="pod"></div>`;
+    card.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('trophy')} Siegerehrung</div><h2 style="text-align:center;margin-bottom:6px">${esc(state.tournament_name)}</h2><div class="podium" id="pod"></div>`;
     app.appendChild(card);
     const pod=$("#pod");
     const order=[{p:st[1],pos:2,c:"p2",crown:"🥈"},{p:st[0],pos:1,c:"p1",crown:"👑"},{p:st[2],pos:3,c:"p3",crown:"🥉"}];
@@ -777,7 +822,7 @@ function renderWall(container){
 function renderHall(container){
   const card=document.createElement("div"); card.className="card lg";
   const hasCh=(state.champions||[]).length>0;
-  card.innerHTML=`<div class="eyebrow" style="text-align:center">🏆 Ruhmeshalle</div>
+  card.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('trophy')} Ruhmeshalle</div>
     <h2 style="text-align:center;margin-bottom:4px">${hasCh?"Amtierende Titelverteidiger":"Pokale warten auf ihre Sieger"}</h2>
     ${hasCh?`<p class="lead" style="text-align:center">${esc(state.champions[0].tournament||"")} · ${esc(fmtDate(state.champions[0].date))}</p>`:`<p class="lead" style="text-align:center">Die Top 3 dieses Turniers werden hier eingraviert.</p>`}`;
   container.appendChild(card);
@@ -812,7 +857,7 @@ function renderBeamer(){
     const viewer=location.origin+location.pathname;
     const active=state.players.filter(p=>!p.withdrawn);
     const latest=[...state.players].slice(-18).reverse();
-    const showCode = (VERIFY==="code" && (state.event_code||"").trim());
+    const showCode = (VMODE()==="code" && (state.event_code||"").trim());
     body=`<div class="bm-join">
       <div class="bm-qr"><div id="bmqr"></div><div class="bm-qrcap">Handy-Kamera drauf halten<br>& anmelden</div></div>
       <div class="bm-joininfo">
@@ -822,7 +867,7 @@ function renderBeamer(){
       </div></div>`;
   }
   else if(panel==="champions"){
-    body=`<div class="bm-section-title">🏆 Titelverteidiger</div><div id="bmtrophies"></div>`;
+    body=`<div class="bm-section-title">${ic('trophy')} Titelverteidiger</div><div id="bmtrophies"></div>`;
   }
   else if(panel==="pairings"){
     const prs=state.pairings.filter(p=>p.round===state.current_round).sort((a,b)=>a.board-b.board);
@@ -841,7 +886,7 @@ function renderBeamer(){
   else if(panel==="podium"){
     const st=computeStandings();
     const o=[{p:st[1],pos:2,c:"p2",m:"🥈"},{p:st[0],pos:1,c:"p1",m:"🥇"},{p:st[2],pos:3,c:"p3",m:"🥉"}].filter(x=>x.p);
-    body=`<div class="bm-section-title">🏆 ${esc(state.tournament_name)}</div>
+    body=`<div class="bm-section-title">${ic('trophy')} ${esc(state.tournament_name)}</div>
       <div class="podium beamer-podium">${o.map(x=>`<div class="pod ${x.c}"><div class="crown">${x.m}</div><div class="pname">${esc(x.p.name)}</div><div class="pkl">${esc(x.p.klasse||"")}</div><div class="ppts">${fmt(x.p.points)} Pkt</div><div class="stand">${x.pos}</div></div>`).join("")}</div>`;
   }
 

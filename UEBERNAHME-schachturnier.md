@@ -265,12 +265,12 @@ Die App verifiziert mit `verifyOtp({ email, token, type: "email" })` — das pas
 
 ---
 
-## 7. Bestätigungs-Modi (`VERIFY`)
+## 7. Bestätigungs-Modi (`verify_mode`)
 
-Ganz oben in `app.js`:
+> **Update:** Der Modus wird inzwischen **live im Admin-Panel** umgeschaltet und in `chess_state.verify_mode` gespeichert (via Realtime auf alle Geräte). Kein Code-Edit mehr nötig. Die Konstante `VERIFY_DEFAULT` ganz oben in `app.js` ist nur noch der Startwert, solange in der DB nichts gesetzt ist:
 
 ```js
-const VERIFY = "code";   // "none" | "code" | "email"
+const VERIFY_DEFAULT = "code";   // "none" | "code" | "email"
 ```
 
 | Modus    | Was passiert | Infrastruktur | DSGVO |

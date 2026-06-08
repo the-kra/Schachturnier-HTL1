@@ -1,27 +1,105 @@
 # HTL1 Schachturnier
 
-Single-Page-Tool für Schulturniere im **Schweizer System** mit Live-Beameransicht.
-Vanilla JS + Supabase (Realtime) + statisches Hosting. **Kein Build-Schritt.**
+Ein schlankes Web-Tool, um an der Schule ein **Schachturnier im Schweizer System** zu veranstalten — mit Online-Anmeldung per QR-Code, automatischer Auslosung, Live-Tabelle und einer **Beameransicht**, die sich von selbst durchblättert. Reines Vanilla JS + Supabase, **kein Build-Schritt**, läuft als statische Seite (GitHub Pages oder easyname).
 
-## Schnellstart
+---
 
-1. **Supabase-Projekt** anlegen (Region EU/Frankfurt). SQL-Editor → `sql/schema.sql` ausführen.
-2. In **`js/app.js`** ganz oben eintragen:
-   ```js
-   const CONFIG = { url: "https://DEINPROJEKT.supabase.co", key: "ANON_PUBLIC_KEY" };
-   const VERIFY = "email"; // "none" | "code" | "email"
-   ```
-3. Lokal testen: in VS Code mit **Live Server** öffnen (nicht per `file://`).
-   - Schüler/QR: `index.html`
-   - Lehrer: `index.html?admin`
-   - Beamer: `index.html?beamer`
+## Was kann das Tool?
 
-## Struktur
+- **Anmeldung per Handy** — Schüler scannen den QR-Code am Beamer und tragen sich selbst ein. Live sichtbar auf allen Geräten.
+- **Drei Anmeldemodi**, live im Admin-Panel umschaltbar (kein Code-Edit nötig):
+  - **Offen** – nur Name + Klasse
+  - **Code** – Event-Code vom Beamer (keine Kontaktdaten, DSGVO-freundlich) · *Standard*
+  - **E-Mail** – 6-stelliger Bestätigungscode an die Schul-Mail
+- **Schweizer System** — automatische Auslosung mit Farbausgleich, Vermeidung von Revanchen und Freilos-Handling bei ungerader Teilnehmerzahl.
+- **Live-Tabelle** mit Buchholz-Wertung, **Beameransicht** (Spielplan ↔ Zwischenstand, Vollbild, Auto-Rotation).
+- **Teilnehmer-Import** aus Excel/CSV und **Export** als `.xlsx` (Tabelle, Teilnehmer, Paarungen, Ruhmeshalle).
+- **Pokale & Wall of Fame** — Top 3 werden auf 3 Pokale „graviert", alte Sieger wandern ins Jahres-Archiv.
+- **Lehrer-Login** über Supabase Auth; Steuerung serverseitig per RLS geschützt.
+- **Testlauf-Simulation** — spielt ein ganzes Turnier mit Zufallsergebnissen durch (zum Üben vor dem Event).
+
+## Rollen (über URL-Parameter)
+
+| URL | Ansicht |
+|-----|---------|
+| `index.html` | Schüler / Zuschauer (Anmeldung, Spielplan, Tabelle) |
+| `index.html?admin` | Lehrer-Steuerung |
+| `index.html?beamer` | Vollbild-Beamer (rotiert automatisch) |
+
+---
+
+## Schnellstart (zum Ausprobieren, ohne Setup)
+
+1. Repo öffnen, in VS Code mit der Extension **Live Server** starten (nicht per `file://`, sonst zicken QR & Realtime).
+2. `http://127.0.0.1:5500/index.html?admin` aufrufen → **Lokal-Modus** (im Speicher, kein Sync).
+3. Im Admin: **+20 Testdaten** → **Testlauf simulieren** → durchspielen. Modus oben umschalten und ausprobieren.
+
+> Im Lokal-Modus ist man ohne Passwort Admin (zum Testen). Für ein echtes Event Supabase einrichten (unten).
+
+---
+
+## Supabase einrichten (für das echte Event)
+
+Der Browser spricht direkt mit Supabase über den öffentlichen Key — **kein eigener Server nötig**. Supabase liefert Datenbank, Realtime-Sync und (für den E-Mail-Modus) den Mailversand.
+
+### 1. Projekt anlegen
+[supabase.com](https://supabase.com) → neues Projekt, Region **Central EU (Frankfurt)** (näher an AT, DSGVO-freundlich).
+
+### 2. Datenbank-Schema einspielen
+SQL-Editor öffnen und **in dieser Reihenfolge** ausführen:
+1. `sql/schema.sql` — legt Tabellen, Realtime und Spalten an.
+2. `sql/auth.sql` — ersetzt die offenen Policies durch echte Rechte (Lesen für alle, **Steuern nur für Lehrer**).
+
+> Ohne `auth.sql` ist die DB für jeden mit dem Key beschreibbar. Für ein echtes Event **immer beide** ausführen.
+
+### 3. Keys eintragen
+Project Settings → **API** → `Project URL` und den **publishable / anon** Key kopieren und oben in `js/app.js` eintragen:
+
+```js
+const CONFIG = {
+  url: "https://DEINPROJEKT.supabase.co",
+  key: "DEIN_PUBLISHABLE_ODER_ANON_KEY"
+};
+```
+
+> Dieser Key gehört bewusst ins Frontend — geschützt werden die Daten über **RLS**, nicht über den Key. Den `service_role`-Key **niemals** einbauen.
+
+### 4. Lehrer-Konten anlegen
+- Supabase → **Authentication → Users** → je Lehrer einen Nutzer mit E-Mail + Passwort.
+- Dieselben Adressen müssen in `js/app.js` (`ADMIN_EMAILS`) **und** in `sql/auth.sql` (Tabelle `chess_admins`) stehen. Nur diese dürfen steuern.
+
+### 5. (Nur E-Mail-Modus) SMTP einrichten
+Für den E-Mail-Bestätigungscode braucht es eigenen SMTP (Supabases eingebauter Versand ist gedrosselt). In **Authentication → SMTP Settings** die easyname-Zugangsdaten hinterlegen und im „Magic Link"-Template `{{ .Token }}` verwenden, damit ein **Code** statt eines Links kommt. Details: **[UEBERNAHME-schachturnier.md](UEBERNAHME-schachturnier.md) §6**.
+
+Danach den Modus einfach im Admin-Panel auf **E-Mail** stellen.
+
+---
+
+## Teilnehmer aus Excel/CSV importieren
+
+Im Admin (Anmeldephase): **Import Excel/CSV**. Erwartet eine Tabelle mit Kopfzeile und den Spalten **Name** und **Klasse** (`.xlsx`, `.xls` oder `.csv`). Reihenfolge egal, Spalten werden automatisch erkannt, Duplikate übersprungen.
+
+| Name | Klasse |
+|------|--------|
+| Lena Maier | 2AHET |
+| Paul Koch | 1BHET |
+
+---
+
+## Deployment
+
+**GitHub Pages:** Repo pushen → Settings → Pages → Source `main` / root. Nach ~1 Min live unter `https://DEINUSER.github.io/REPO/`. (Relative Pfade sind bereits gesetzt.)
+
+**easyname / Apache:** Ordnerinhalt per SFTP hochladen; `.htaccess` erzwingt dort HTTPS, Caching und Gzip und sperrt interne Dateien (`sql/`, `tools/`, `.md`).
+
+---
+
+## Projektstruktur
 
 ```
-index.html        Markup
-css/app.css        Styles (dunkles Design)
-js/app.js          gesamte Logik (CONFIG + VERIFY oben)
+index.html         Markup (lädt CDN-Libs + css/js)
+css/app.css        Styles (dunkles Design, Inline-SVG-Icons)
+js/app.js          gesamte Logik — CONFIG + VERIFY_DEFAULT + ADMIN_EMAILS ganz oben
 assets/            Logo, Legends-Wall, 3 Pokale
 sql/schema.sql     DB-Einrichtung (zuerst)
 sql/auth.sql       Lehrer-Login + RLS (danach)
@@ -29,22 +107,16 @@ tools/normalize.py Pokalbilder einheitlich aufbereiten
 .htaccess          nur für easyname/Apache (GitHub Pages ignoriert es)
 ```
 
-## Bestätigungsmodi (`VERIFY`)
+---
 
-- `none` – offene Anmeldung
-- `code` – Event-Code vom Beamer (keine Kontaktdaten, DSGVO-sauber) **[Standard]**
-- `email` – 6-stelliger Code per Mail (aktiv; braucht easyname-SMTP, siehe §6) **[aktuell]**
+## Vor dem Event prüfen
 
-## E-Mail-Versand (easyname-SMTP)
+- [ ] Supabase-Projekt + `CONFIG` gesetzt, `schema.sql` **und** `auth.sql` ausgeführt
+- [ ] Test: als Nicht-Lehrer ein Ergebnis eintragen wollen → muss von der DB abgelehnt werden (RLS aktiv)
+- [ ] Lehrer-Konten angelegt, Login funktioniert
+- [ ] (E-Mail-Modus) SMTP getestet — Testanmeldung kommt an, Rate-Limit hochgesetzt
+- [ ] Beamer-URL am Projektor getestet (QR scannbar, ggf. Code sichtbar)
+- [ ] Turniername, Runden, Bedenkzeit, Anmeldemodus eingestellt
+- [ ] Probe-Auslosung mit Testdaten gemacht
 
-Supabase → Authentication → SMTP Settings:
-`smtp.easyname.com` · Port `465` (SSL) · Benutzer = easyname-Postfach-Benutzer · Absender = Adresse auf deiner Domain.
-Im „Magic Link"-Template `{{ .Token }}` verwenden, damit ein **Code** statt eines Links kommt.
-Details: **UEBERNAHME-schachturnier.md**.
-
-## Deployment
-
-- **GitHub Pages:** Repo pushen → Settings → Pages → `main`/root. Relative Pfade nötig (passt bereits).
-- **easyname:** Ordnerinhalt per SFTP hochladen; `.htaccess` greift dort (HTTPS, Caching, Gzip).
-
-> Der **anon key** gehört ins Frontend — geschützt wird über RLS. Den `service_role`-Key niemals einbauen.
+> Ausführliche Hintergründe (SMTP, DSGVO, Bild-Auslagerung, RLS-Details): **[UEBERNAHME-schachturnier.md](UEBERNAHME-schachturnier.md)**.

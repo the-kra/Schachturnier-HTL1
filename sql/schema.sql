@@ -39,6 +39,9 @@ alter table chess_state add column if not exists champions jsonb default '[]'::j
 alter table chess_state add column if not exists awarded boolean default false;
 alter table chess_state add column if not exists event_code text default '';
 
+-- Anmeldemodus, live im Admin-Panel umschaltbar: 'none' | 'code' | 'email'
+alter table chess_state add column if not exists verify_mode text default 'code';
+
 -- optionale Anmeldebestätigung:
 alter table chess_players add column if not exists email text;
 alter table chess_players add column if not exists verified boolean default false;
