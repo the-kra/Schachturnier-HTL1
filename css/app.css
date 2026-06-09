@@ -23,9 +23,20 @@
 html,body{background:var(--bg);color:var(--ink);font-family:"Hanken Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
 body{
   min-height:100dvh;
+  background-color:var(--bg);
   background-image:
-    radial-gradient(circle at 16% -8%, #262a31 0%, transparent 46%),
-    radial-gradient(circle at 100% 0%, rgba(232,150,56,.10) 0%, transparent 40%);
+    /* feine Sterne */
+    radial-gradient(1.5px 1.5px at 36px 28px, rgba(255,255,255,.5), transparent 100%),
+    radial-gradient(1.2px 1.2px at 170px 120px, rgba(176,206,255,.42), transparent 100%),
+    radial-gradient(1px 1px at 90px 200px, rgba(255,255,255,.3), transparent 100%),
+    /* dezentes Schachbrett */
+    conic-gradient(rgba(255,255,255,.03) 0 25%, transparent 0 50%, rgba(255,255,255,.03) 0 75%, transparent 0),
+    /* kosmische Glows */
+    radial-gradient(circle at 100% -5%, rgba(232,150,56,.13) 0%, transparent 38%),
+    radial-gradient(circle at -8% 16%, rgba(0,131,170,.14) 0%, transparent 42%),
+    radial-gradient(circle at 92% 96%, rgba(150,132,222,.12) 0%, transparent 46%),
+    radial-gradient(circle at 16% -8%, #23272f 0%, transparent 46%);
+  background-size:230px 230px, 310px 310px, 270px 270px, 148px 148px, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
   background-attachment:fixed;
 }
 .wrap{max-width:920px;margin:0 auto;padding:18px 16px 80px}
@@ -244,7 +255,16 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 
 /* ===================== BEAMER ===================== */
 .beamer-body{overflow:hidden}
-.beamer{position:fixed;inset:0;background:var(--bg);background-image:radial-gradient(circle at 100% 0%,var(--accent-soft) 0%,transparent 40%);display:flex;flex-direction:column;padding:2.2vw 2.6vw;z-index:100}
+.beamer{position:fixed;inset:0;background-color:var(--bg);display:flex;flex-direction:column;padding:2.2vw 2.6vw;z-index:100;
+  background-image:
+    radial-gradient(1.8px 1.8px at 40px 30px, rgba(255,255,255,.5), transparent 100%),
+    radial-gradient(1.4px 1.4px at 200px 140px, rgba(176,206,255,.42), transparent 100%),
+    radial-gradient(1.2px 1.2px at 110px 240px, rgba(255,255,255,.3), transparent 100%),
+    conic-gradient(rgba(255,255,255,.03) 0 25%, transparent 0 50%, rgba(255,255,255,.03) 0 75%, transparent 0),
+    radial-gradient(circle at 100% -5%, rgba(232,150,56,.13) 0%, transparent 38%),
+    radial-gradient(circle at -8% 16%, rgba(0,131,170,.14) 0%, transparent 42%),
+    radial-gradient(circle at 92% 96%, rgba(150,132,222,.12) 0%, transparent 46%);
+  background-size:280px 280px, 360px 360px, 320px 320px, 4.6vw 4.6vw, 100% 100%, 100% 100%, 100% 100%}
 .bm-top{display:flex;align-items:center;gap:1.2vw;padding-bottom:1.4vw;border-bottom:2px solid var(--line);margin-bottom:1.6vw}
 .bm-logo{width:4.6vw;height:4.6vw;flex:none;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(232,150,56,.3))}
 .bm-title{font-family:"Cinzel",serif;font-weight:700;font-size:2.4vw;letter-spacing:.01em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
