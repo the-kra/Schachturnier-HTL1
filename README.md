@@ -2,6 +2,16 @@
 
 Ein schlankes Web-Tool, um an der Schule ein **Schachturnier im Schweizer System** zu veranstalten — mit Online-Anmeldung per QR-Code, automatischer Auslosung, Live-Tabelle und einer **Beameransicht**, die sich von selbst durchblättert. Reines Vanilla JS + Supabase, **kein Build-Schritt**, läuft als statische Seite (GitHub Pages oder easyname).
 
+## 🔗 Live-Ansichten
+
+| Ansicht | Wofür | Link |
+|---------|-------|------|
+| **Schüler** | Anmeldung per QR, Spielplan & Tabelle live mitverfolgen | https://the-kra.github.io/Schachturnier-HTL1/ |
+| **Lehrer** | Auslosung, Ergebnisse, Pokale — nur am eigenen Gerät | https://the-kra.github.io/Schachturnier-HTL1/?admin |
+| **Beamer** | Vollbild für den Projektor (Uhr, QR, Spielplan, Podest) | https://the-kra.github.io/Schachturnier-HTL1/?beamer |
+
+> Am Beamer erscheint der QR-Code → Schüler scannen ihn und landen direkt in der Schüler-Ansicht. Die Lehrer-URL (`?admin`) nur auf dem eigenen Gerät öffnen. Siehe auch [LINKS.md](LINKS.md).
+
 ---
 
 ## Was kann das Tool?
@@ -12,7 +22,7 @@ Ein schlankes Web-Tool, um an der Schule ein **Schachturnier im Schweizer System
   - **Code** – Event-Code vom Beamer (keine Kontaktdaten, DSGVO-freundlich) · *Standard*
   - **E-Mail** – 6-stelliger Bestätigungscode an die Schul-Mail
 - **Schweizer System** — automatische Auslosung mit Farbausgleich, Vermeidung von Revanchen und Freilos-Handling bei ungerader Teilnehmerzahl.
-- **Live-Tabelle** mit Buchholz-Wertung, **Beameransicht** (Spielplan ↔ Zwischenstand, Vollbild, Auto-Rotation).
+- **Live-Tabelle** mit Buchholz-Wertung, **Beameransicht** (Spielplan ↔ Gesamtreihung, 7-Segment-Uhr, Vollbild, Auto-Rotation, animierte Konstellationen).
 - **Teilnehmer-Import** aus Excel/CSV und **Export** als `.xlsx` (Tabelle, Teilnehmer, Paarungen, Ruhmeshalle).
 - **Pokale & Wall of Fame** — Top 3 werden auf 3 Pokale „graviert", alte Sieger wandern ins Jahres-Archiv.
 - **Lehrer-Login** über Supabase Auth; Steuerung serverseitig per RLS geschützt.

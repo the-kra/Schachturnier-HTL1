@@ -739,7 +739,8 @@ function renderPlan(app){
   if(!ui.viewRound || ui.viewRound>state.current_round) ui.viewRound=state.current_round;
   const card=document.createElement("div"); card.className="card";
   let html=`<div class="roundpick"><span class="eyebrow" style="margin:0">Runde anzeigen</span>
-    <select id="rsel">${Array.from({length:state.current_round},(_,i)=>i+1).map(r=>`<option value="${r}" ${r===ui.viewRound?"selected":""}>Runde ${r}</option>`).join("")}</select></div>`;
+    <select id="rsel">${Array.from({length:state.current_round},(_,i)=>i+1).map(r=>`<option value="${r}" ${r===ui.viewRound?"selected":""}>Runde ${r}</option>`).join("")}</select>
+    <span class="brett-hint">Nr. = Brett</span></div>`;
   card.innerHTML=html;
   app.appendChild(card);
   $("#rsel").onchange=e=>{ ui.viewRound=+e.target.value; render(); };
@@ -943,7 +944,7 @@ function renderBeamer(){
   if(state.status==="registration"){
     panels=["joinhall"];               // QR + Pokale zusammen auf einer Seite
   }else if(state.status==="running"){
-    panels=["pairings"];               // nur Spielplan — kein Umschalten in die Liste
+    panels=["pairings","standings"];   // Spielplan + Gesamtreihung im Wechsel
   }else{
     panels=["podium","standings"];
   }
@@ -970,7 +971,7 @@ function renderBeamer(){
   }
   else if(panel==="pairings"){
     const prs=state.pairings.filter(p=>p.round===state.current_round).sort((a,b)=>a.board-b.board);
-    body=`<div class="bm-section-title">Spielplan · Runde ${state.current_round}</div>
+    body=`<div class="bm-section-title">${ic('clipboard')} Spielplan · Runde ${state.current_round} <span class="bm-legend">Nr. = Brett</span></div>
       <div class="bm-pairgrid">${prs.map(p=>{
         if(p.black_id==null) return `<div class="bm-pair bye"><span class="bm-bd">–</span><span class="bm-pn">${esc(nm(p.white_id))}</span><span class="bm-bye">Freilos</span></div>`;
         const res=p.result==="1-0"?"1 : 0":p.result==="0-1"?"0 : 1":p.result==="draw"?"½ : ½":"–";
@@ -979,7 +980,7 @@ function renderBeamer(){
   }
   else if(panel==="standings"){
     const st=computeStandings().slice(0,12);
-    body=`<div class="bm-section-title">${state.status==="finished"?"Endstand":"Zwischenstand"}</div>
+    body=`<div class="bm-section-title">${ic('table')} ${state.status==="finished"?"Endstand":"Gesamtreihung"}</div>
       <table class="bm-tbl"><tbody>${st.map((s,i)=>`<tr class="${i<3?"top"+(i+1):""}"><td class="r">${i+1}</td><td class="n">${esc(s.name)}</td><td class="k">${esc(s.klasse||"")}</td><td class="p">${fmt(s.points)}</td><td class="b">${fmt(s.buch)}</td></tr>`).join("")}</tbody></table>`;
   }
   else if(panel==="podium"){

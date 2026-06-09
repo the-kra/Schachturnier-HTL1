@@ -140,7 +140,9 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .roundpick{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .roundpick select{width:auto;padding:9px 12px}
 .pair{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:13px;margin-bottom:9px;background:var(--bg-soft);animation:rise .3s both}
-.pair .bno{width:30px;height:30px;border-radius:8px;background:#2b2f37;border:1px solid var(--line);display:grid;place-items:center;font-weight:800;font-size:.85rem;color:var(--ink-soft);flex:none}
+.pair .bno{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center;font-weight:800;font-size:.85rem;color:var(--ink);flex:none;
+  background:linear-gradient(45deg,rgba(255,255,255,.08) 25%,transparent 25% 75%,rgba(255,255,255,.08) 75%) 0 0/10px 10px,#2b2f37}
+.brett-hint{margin-left:auto;font-size:.74rem;color:var(--ink-soft);font-weight:600}
 .pair .side{flex:1;min-width:0}
 .pair .side .nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pair .side .kl{font-size:.74rem;color:var(--ink-soft)}
@@ -348,7 +350,10 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-pairgrid:has(.bm-pair:nth-child(13)){grid-template-columns:1fr 1fr 1fr}
 .bm-pair{display:flex;align-items:center;gap:1vw;background:#23262d;border:1px solid var(--line);border-radius:.8vw;padding:.7vw 1vw}
 .bm-pair.done{background:var(--accent-soft);border-color:rgba(232,150,56,.4)}
-.bm-bd{font-family:"Bricolage Grotesque";font-weight:800;color:var(--ink-soft);font-size:1.3vw;width:2vw;flex:none}
+.bm-bd{font-family:"Bricolage Grotesque";font-weight:800;color:var(--ink);font-size:1.3vw;width:2.4vw;height:2.4vw;flex:none;
+  display:grid;place-items:center;border-radius:.4vw;border:1px solid var(--line);
+  background:linear-gradient(45deg,rgba(255,255,255,.09) 25%,transparent 25% 75%,rgba(255,255,255,.09) 75%) 0 0/.8vw .8vw,#23262d}
+.bm-legend{font-family:"Hanken Grotesk";font-size:.95vw;font-weight:600;color:var(--ink-soft);letter-spacing:0;margin-left:.6vw}
 .bm-pn{flex:1;font-weight:700;font-size:1.5vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bm-pn.r{text-align:right}
 .bm-res{font-family:"Bricolage Grotesque";font-weight:800;font-size:1.5vw;min-width:4vw;text-align:center;color:var(--accent-d)}
@@ -364,6 +369,19 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-tbl .p{font-family:"Bricolage Grotesque";font-weight:800;color:var(--accent-d);text-align:right}
 .bm-tbl .b{text-align:right;color:var(--ink-soft);font-size:1.9vw}
 .bm-tbl tr.top1 .r{color:var(--gold)}.bm-tbl tr.top2 .r{color:var(--silver)}.bm-tbl tr.top3 .r{color:var(--bronze)}
+/* Beamer am Handy: scrollbar + groessere Liste */
+@media(max-width:768px){
+  .beamer-body{overflow:auto}
+  .beamer{position:static;min-height:100dvh;height:auto;overflow:visible;padding:4vw 4vw 8vw}
+  .bm-stage{overflow:visible}
+  .bm-pairgrid{grid-template-columns:1fr !important;gap:1.8vw}
+  .bm-pairgrid:has(.bm-pair:nth-child(13)){grid-template-columns:1fr !important}
+  .bm-pair{padding:2vw 2.4vw;gap:2vw}
+  .bm-pn{font-size:4vw}.bm-res{font-size:4vw}.bm-bye{font-size:3.6vw}
+  .bm-bd{font-size:3.6vw;width:7vw;height:7vw;border-radius:1.6vw;background-size:2.4vw 2.4vw}
+  .bm-section-title{font-size:4.8vw}.bm-legend{font-size:3vw}
+  .bm-tbl{font-size:4.4vw}.bm-tbl td{padding:1.4vw 1.6vw}.bm-tbl .k,.bm-tbl .b{font-size:3.4vw}.bm-tbl .r{width:8vw}
+}
 .beamer .trophies{max-width:62vw;margin:0 auto;gap:2vw}
 .beamer .plaque .pl-name{font-size:1.5vw}.beamer .plaque .pl-kl{font-size:1vw}
 .beamer .plaque-engrave .pl-name{font-size:1.35vw}
