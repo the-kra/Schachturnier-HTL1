@@ -97,7 +97,6 @@ const ICONS = {
   trophy:   '<path d="M6 4.5h12v4a6 6 0 0 1-12 0v-4Z"/><path d="M6 6.5H3.5V8a3 3 0 0 0 3 3M18 6.5h2.5V8a3 3 0 0 1-3 3"/><path d="M12 14.5v2.5M9.5 20.5 10 17h4l.5 3.5M8 20.5h8"/>',
   mail:     '<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/>',
   gear:     '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.6M12 18.9v2.6M21.5 12h-2.6M5.1 12H2.5M18.7 5.3l-1.9 1.9M7.2 16.8l-1.9 1.9M18.7 18.7l-1.9-1.9M7.2 7.2 5.3 5.3"/>',
-  pawn:     '<path d="M12 3a2.6 2.6 0 0 1 1.5 4.8C14.7 8.6 15 10 14.3 12l1.2 5.5h-7L9.7 12C9 10 9.3 8.6 10.5 7.8A2.6 2.6 0 0 1 12 3Z"/><path d="M6.5 20.5h11"/>',
   check:    '<path d="M5 12.5 10 17.5 19.5 6.5"/>',
   checkCircle:'<circle cx="12" cy="12" r="8.5"/><path d="M8 12.2 11 15.2 16.2 8.8"/>',
   reset:    '<path d="M4 12a8 8 0 1 0 2.5-5.8M4 4.5V9h4.5"/>',
@@ -105,6 +104,8 @@ const ICONS = {
   clock:    '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.3V12l3.2 2"/>'
 };
 const ic = n => '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[n]||'')+'</svg>';
+/* Schach-Springer (gemeinfreies cburnett-Set), als schöner Umriss für leere Zustände */
+const KNIGHT_SVG='<svg class="knight-ico" viewBox="0 0 45 45" fill="currentColor" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M 22,10 C 32.5,11 38.5,18 38,39 L 15,39 C 15,30 25,32.5 23,18"/><path d="M 24,18 C 24.38,20.91 18.45,25.37 16,27 C 13,29 13.18,31.34 11,31 C 9.96,30.06 12.41,27.96 11,28 C 10,28 11.19,29.23 10,30 C 9,30 6,31 6,26 C 6,24 12,14 12,14 C 12,14 13.89,12.1 14,10.5 C 13.27,9.51 13.5,8.5 13.5,7.5 C 14.5,6.5 16.5,10 16.5,10 L 18.5,10 C 18.5,10 19.28,8.01 21,7 C 22,7 22,10 22,10"/><path d="M 9.5,25.5 A 0.5,0.5 0 1,1 8.5,25.5 A 0.5,0.5 0 1,1 9.5,25.5 z" fill="var(--card)" stroke="none"/><path d="M 15,15.5 A 0.5,1.5 0 1,1 14,15.5 A 0.5,1.5 0 1,1 15,15.5 z" transform="matrix(0.866,0.5,-0.5,0.866,9.693,-5.173)" fill="var(--card)" stroke="none"/></svg>';
 
 /* ============================ DATEN-SCHICHT ============================ */
 async function loadAll(){
@@ -635,7 +636,7 @@ function renderRegistration(app){
   l.innerHTML=`
     <div class="count-badge"><b>${active.length}</b><span>angemeldet${state.players.length!==active.length?` · ${state.players.length-active.length} abgemeldet`:""}</span></div>
     <div class="players" id="plist"></div>
-    ${list.length===0?'<div class="empty"><div class="ico">'+ic('pawn')+'</div>Noch niemand angemeldet — sei die/der Erste!</div>':""}`;
+    ${list.length===0?'<div class="empty"><div class="ico">'+KNIGHT_SVG+'</div>Noch niemand angemeldet — sei die/der Erste!</div>':""}`;
   app.appendChild(l);
   const pl=$("#plist");
   list.forEach((p,i)=>{
