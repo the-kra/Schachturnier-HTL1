@@ -588,11 +588,17 @@ function renderRegistration(app){
     wireAdminCommon();
   }
 
-  // Schülerseite: Pokale + Ruhmeshalle zuerst, danach die Anmelde-Info
-  if(!IS_ADMIN) renderHall(app);
+  // Schülerseite: oben ein Sprung-Button zur Anmeldung, dann Pokale, dann Anmelde-Info
+  if(!IS_ADMIN){
+    const cta=document.createElement("a"); cta.className="btn block reg-cta"; cta.href="#reg-anmeldung";
+    cta.innerHTML=ic('arrow')+" Zur Anmeldung";
+    cta.onclick=e=>{ e.preventDefault(); const t=$("#reg-anmeldung"); if(t) t.scrollIntoView({behavior:"smooth",block:"start"}); };
+    app.appendChild(cta);
+    renderHall(app);
+  }
 
   // Anmeldeformular (alle) — abhängig vom Bestätigungsmodus
-  const f=document.createElement("div"); f.className="card lg";
+  const f=document.createElement("div"); f.className="card lg"; f.id="reg-anmeldung";
   const codeGate = (VMODE()==="code" && !(state.event_code||"").trim());
 
   if(VMODE()==="email" && !SB_MODE){

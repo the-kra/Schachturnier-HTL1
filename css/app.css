@@ -99,6 +99,8 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .btn.danger:hover{background:rgba(180,64,47,.16)}
 .btn.sm{padding:8px 13px;font-size:.85rem;border-radius:9px}
 .btn.block{width:100%}
+.reg-cta{margin-bottom:16px}
+#reg-anmeldung{scroll-margin-top:14px}
 
 /* Forms */
 .field{margin-bottom:12px}
