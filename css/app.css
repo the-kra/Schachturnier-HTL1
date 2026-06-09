@@ -59,8 +59,8 @@ a{color:var(--accent-d)}
 .htl-mark svg{height:112px;width:auto;display:block}
 @media(max-width:560px){.htl-mark{display:none}}
 .logo-txt{display:flex;flex-direction:column;min-width:0}
-.logo h1{font-family:"Cinzel",serif;font-size:1.72rem;font-weight:700;letter-spacing:.012em;line-height:1.04}
-.logo .sub{font-family:"Cinzel",serif;font-size:.8rem;color:var(--accent-d);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+.logo h1{font-family:"Space Grotesk",sans-serif;font-size:1.74rem;font-weight:700;letter-spacing:-.01em;line-height:1.02}
+.logo .sub{font-family:"Space Grotesk",sans-serif;font-size:.78rem;color:var(--accent-d);font-weight:600;letter-spacing:.14em;text-transform:uppercase;margin-top:2px}
 .statuschip{font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:6px 11px;border-radius:999px;white-space:nowrap}
 .chip-reg{background:rgba(232,150,56,.16);color:#f2ab57}
 .chip-run{background:var(--accent-soft);color:var(--accent-d)}
@@ -267,7 +267,7 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
   background-size:280px 280px, 360px 360px, 320px 320px, 4.6vw 4.6vw, 100% 100%, 100% 100%, 100% 100%}
 .bm-top{display:flex;align-items:center;gap:1.2vw;padding-bottom:1.4vw;border-bottom:2px solid var(--line);margin-bottom:1.6vw}
 .bm-logo{width:4.6vw;height:4.6vw;flex:none;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(232,150,56,.3))}
-.bm-title{font-family:"Cinzel",serif;font-weight:700;font-size:2.4vw;letter-spacing:.01em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bm-title{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:2.5vw;letter-spacing:-.01em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bm-status{font-weight:700;font-size:1.5vw;color:var(--accent-d);background:var(--accent-soft);padding:.6vw 1.2vw;border-radius:999px;white-space:nowrap}
 .bm-htl{flex:none;display:flex;align-items:center}
 .bm-htl svg{height:12vw;width:auto;display:block}
