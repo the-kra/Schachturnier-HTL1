@@ -54,8 +54,8 @@ a{color:var(--accent-d)}
 .brand-logo{width:60px;height:60px;flex:none;object-fit:contain;filter:drop-shadow(0 2px 7px rgba(232,150,56,.3))}
 /* Seitenkopf: Uhr (Mitte) + kranzlab + HTL-Logo (rechts) */
 .hdr-clock{flex:none;font-family:"DSEG7 Classic",ui-monospace,monospace;font-weight:bold;font-size:1.5rem;line-height:1;letter-spacing:2px;position:relative}
-.hdr-clock .lit{color:#ff2d2d;position:relative;z-index:2;text-shadow:0 0 5px rgba(255,45,45,.85),0 0 13px rgba(255,45,45,.45)}
-.hdr-clock .off{color:#ff2d2d;opacity:.1;position:absolute;left:0;top:0;z-index:1}
+.hdr-clock .lit{color:#22b4e2;position:relative;z-index:2;text-shadow:0 0 5px rgba(28,170,220,.85),0 0 13px rgba(28,170,220,.45)}
+.hdr-clock .off{color:#22b4e2;opacity:.1;position:absolute;left:0;top:0;z-index:1}
 .hdr-right{flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:12px}
 .hdr-kranzlab{flex:none;width:96px}
 .hdr-kranzlab:empty{display:none}
@@ -220,13 +220,14 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 
 /* Pokale */
 .trophies{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:16px;align-items:end;
-  background:#000;border:1px solid #2a2c33;border-radius:16px;padding:20px 14px 14px;
-  box-shadow:inset 0 1px 0 rgba(232,150,56,.12),inset 0 -30px 60px rgba(0,0,0,.6),0 1px 2px rgba(0,0,0,.4)}
+  background:rgba(10,14,20,.4);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:18px 14px 12px;
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 10px 28px rgba(0,0,0,.3)}
 .trophy{margin:0;text-align:center}
 .trophy.t1{order:2}.trophy.t2{order:1}.trophy.t3{order:3}
 .trophy.t2,.trophy.t3{transform:scale(.9);transform-origin:bottom center}
 .trophy-img{position:relative;width:100%;aspect-ratio:2/3;display:flex;align-items:flex-end;justify-content:center;background:transparent}
-.trophy-img img{max-width:100%;max-height:100%;object-fit:contain;display:block;mix-blend-mode:lighten}
+.trophy-img img{max-width:100%;max-height:100%;object-fit:contain;display:block}
 .trophy-svg{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center}
 .trophy-svg svg{width:100%;height:100%}
 .plaque{position:absolute;left:var(--plate-left,50%);top:var(--plate-top,60%);transform:translate(-50%,-50%) rotate(var(--plate-rot,0deg));width:var(--plate-w,70%);text-align:center;line-height:1.12}
@@ -278,8 +279,8 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-htl svg{height:9vw;width:auto;display:block}
 /* 7-Segment-Uhr + kranzlab */
 .bm-clock{position:relative;font-family:"DSEG7 Classic",ui-monospace,monospace;font-weight:bold;font-size:2.9vw;line-height:1;letter-spacing:.18vw}
-.bm-clock .lit{color:#ff2d2d;position:relative;z-index:2;text-shadow:0 0 .4vw rgba(255,45,45,.9),0 0 1vw rgba(255,45,45,.5)}
-.bm-clock .off{color:#ff2d2d;opacity:.1;position:absolute;left:0;top:0;z-index:1}
+.bm-clock .lit{color:#22b4e2;position:relative;z-index:2;text-shadow:0 0 .4vw rgba(28,170,220,.9),0 0 1vw rgba(28,170,220,.5)}
+.bm-clock .off{color:#22b4e2;opacity:.1;position:absolute;left:0;top:0;z-index:1}
 .bm-kranzlab{flex:none;width:9.5vw}
 .bm-kranzlab svg{display:block;width:100%;height:auto}
 /* kranzlab Reveal-Animationen (global, fuer alle Instanzen: Beamer/Header/Footer) */
@@ -305,6 +306,10 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-dots{display:flex;gap:.7vw;justify-content:center;padding-top:1.2vw}
 .bm-dots span{width:.8vw;height:.8vw;border-radius:50%;background:var(--line)}
 .bm-dots span.on{background:var(--accent);width:2.4vw;border-radius:999px}
+/* Beamer-Footer: kleines, dezentes kranzlab */
+.bm-foot{display:flex;justify-content:center;padding-top:.7vw;opacity:.5}
+.bm-foot-kl{width:8.5vw}
+.bm-foot-kl svg{display:block;width:100%;height:auto}
 
 /* Beamer: Anmeldung */
 .bm-join{display:flex;gap:3vw;align-items:center;height:100%}
@@ -371,7 +376,7 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .foot .foot-info{opacity:.7}
 .foot .kranzlab{display:inline-flex;opacity:.6;transition:opacity .2s}
 .foot .kranzlab:hover{opacity:.95}
-.foot .kranzlab svg{height:26px;width:auto;display:block}
+.foot .kranzlab svg{height:34px;width:auto;display:block}
 .banner{background:rgba(232,150,56,.12);border:1px solid rgba(232,150,56,.3);color:#f2c389;border-radius:12px;padding:10px 14px;font-size:.82rem;margin-bottom:14px;font-weight:500}
 @media(max-width:560px){
   .res button{width:34px}

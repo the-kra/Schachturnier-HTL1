@@ -29,11 +29,11 @@ const ADMIN_PASS   = "";   // nur Lokal-Modus (ohne Supabase) als simpler Test-S
    plateTopPct = vertikale Position der Gravur je Pokal (% von oben) zum Justieren.
    plateStyle  = "engrave" (Goldgravur auf dunklem Sockel) | "brass" (Messingschild). */
 const TROPHY_CONFIG = {
-  images:        ["assets/pokal-gold.jpg", "assets/pokal-silber.jpg", "assets/pokal-bronze.jpg"],
-  plateTopPct:   [89, 90, 90],
+  images:        ["assets/pokal-gold.png", "assets/pokal-silber.png", "assets/pokal-bronze.png"],
+  plateTopPct:   [89, 89.3, 90],
   plateWidthPct: [45, 45, 45],
   plateLeftPct:  [56, 56, 56],     // horizontale Mitte der Plakette (%)
-  plateRotateDeg:[-2.75, -2.45, -1.25],// Neigung passend zur gebackenen Schrift (Grad, negativ = gegen Uhrzeigersinn)
+  plateRotateDeg:[-2.75, -2.45, -2.3],// Neigung passend zur gebackenen Schrift (Grad, negativ = gegen Uhrzeigersinn)
   plateStyle:    ["engrave", "engrave", "engrave"]
 };
 /* HTL1-LEGENDS-Wall (Banner ueber der Jahres-Doku) */
@@ -865,7 +865,6 @@ function trophyFigure(rank, champ){
   const wRaw=Array.isArray(TROPHY_CONFIG.plateWidthPct)?TROPHY_CONFIG.plateWidthPct[i]:TROPHY_CONFIG.plateWidthPct;
   const wpc=(wRaw!=null?wRaw:70)+"%";
   const style=(TROPHY_CONFIG.plateStyle&&TROPHY_CONFIG.plateStyle[i])||"brass";
-  const medal=rank===1?"🥇":rank===2?"🥈":"🥉";
   return `<figure class="trophy t${rank}">
     <div class="trophy-img" style="--plate-top:${top};--plate-left:${left};--plate-rot:${rot};--plate-w:${wpc}">
       <img src="${esc(img)}" alt="Pokal ${rank}. Platz" onerror="this.style.display='none';this.closest('.trophy-img').classList.add('fallback');this.parentNode.querySelector('.trophy-svg').style.display='block';">
@@ -875,7 +874,6 @@ function trophyFigure(rank, champ){
         ${champ&&champ.klasse?`<span class="pl-kl">${esc(champ.klasse)}</span>`:""}
       </div>
     </div>
-    <figcaption><span class="medal">${medal}</span> ${rank}. Platz</figcaption>
   </figure>`;
 }
 function renderTrophies(container, champs){
@@ -1003,13 +1001,13 @@ function renderBeamer(){
       </div>
       <div class="bm-center"><span id="bmClockSlot"></span></div>
       <div class="bm-right">
-        <span class="bm-kranzlab" id="bmKranzlabSlot"></span>
         <span class="bm-htl" id="bmHtlSlot"></span>
       </div>
     </div>
     <div class="bm-stage${(panel==="pairings"||panel==="standings")?"":" center"}">${body}</div>
-    ${panels.length>1?`<div class="bm-dots">${panels.map((_,i)=>`<span class="${i===ui.beamerIdx%panels.length?"on":""}"></span>`).join("")}</div>`:""}`;
-  mountBeamerClock(); mountBeamerKranzlab(); mountBeamerLogo();
+    ${panels.length>1?`<div class="bm-dots">${panels.map((_,i)=>`<span class="${i===ui.beamerIdx%panels.length?"on":""}"></span>`).join("")}</div>`:""}
+    <div class="bm-foot"><span id="bmFootSlot"></span></div>`;
+  mountBeamerClock(); mountBeamerLogo(); mountBeamerFoot();
 
   if(panel==="joinhall"){
     try{ new QRCode($("#bmqr"),{text:bmQrTarget,width:260,height:260,colorDark:"#20211d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
@@ -1317,9 +1315,15 @@ const KRANZLAB_BASE=`<svg viewBox="8 0 394 180" role="img" aria-label="kranzlab"
 <path class="kl-wave" fill="none" stroke="#f2ab57" stroke-width="3" stroke-linecap="round" d="M131 132 q 19.62 -20 39.25 0 q 19.62 20 39.25 0 q 19.62 -20 39.25 0 q 19.62 20 39.25 0"/>
 <g class="kl-dots" fill="#f2ab57"><circle cx="301" cy="123.4" r="3.6"/><circle cx="321" cy="127.5" r="3.0"/><circle cx="342" cy="141.2" r="2.4"/><circle cx="362" cy="135.4" r="1.6"/><circle cx="383" cy="122.4" r="1.1"/></g>
 </svg>`;
-/* kranzlab-Logo mit eindeutigen IDs (Mehrfach-Einsatz) + einstellbarer Wellen-/Punktfarbe */
-function kranzlabSVG(sfx, waveCol){
-  return KRANZLAB_BASE
+/* kranzlab-Logo mit eindeutigen IDs (Mehrfach-Einsatz), einstellbarer Wellenfarbe,
+   optional ohne Mond (nur Wortmarke + Welle). */
+function kranzlabSVG(sfx, waveCol, noMoon){
+  var s=KRANZLAB_BASE;
+  if(noMoon){
+    s=s.replace(/<\/defs>[\s\S]*?<g clip-path="url\(#klReveal\)">/, '</defs><g clip-path="url(#klReveal)">')
+       .replace('viewBox="8 0 394 180"','viewBox="122 50 292 100"');
+  }
+  return s
     .replace(/id="(kl\w+)"/g, (m,id)=>'id="'+id+sfx+'"')
     .replace(/url\(#(kl\w+)\)/g, (m,id)=>'url(#'+id+sfx+')')
     .replace(/#f2ab57/g, waveCol);
@@ -1333,6 +1337,8 @@ function tickClocks(){
 function initHeaderFx(){
   // animiertes kranzlab nur in der Admin-Ansicht
   var hk=document.getElementById('hdrKranzlab'); if(hk && IS_ADMIN && !hk.firstChild) hk.innerHTML=kranzlabSVG('-h','#f2ab57');
+  // dezentes kranzlab im Footer: ohne Mond, silberne Wellenlinie
+  var fk=document.getElementById('footKranzlab'); if(fk && !fk.firstChild) fk.innerHTML=kranzlabSVG('-f','#c2c7cf',true);
   tickClocks();
 }
 let _bmClock=null;
@@ -1344,14 +1350,14 @@ function mountBeamerClock(){
     slot.replaceWith(_bmClock); tickClocks();
   } else { slot.replaceWith(_bmClock); }
 }
-let _bmKranzlab=null;
-function mountBeamerKranzlab(){
-  var slot=document.getElementById('bmKranzlabSlot'); if(!slot) return;
-  if(!_bmKranzlab){
-    _bmKranzlab=document.createElement('span'); _bmKranzlab.className='bm-kranzlab';
-    _bmKranzlab.innerHTML=kranzlabSVG('-b','#f2ab57');
-    slot.replaceWith(_bmKranzlab);
-  } else { slot.replaceWith(_bmKranzlab); }   // persistent — Animation läuft weiter
+let _bmFoot=null;
+function mountBeamerFoot(){
+  var slot=document.getElementById('bmFootSlot'); if(!slot) return;
+  if(!_bmFoot){
+    _bmFoot=document.createElement('span'); _bmFoot.className='bm-foot-kl';
+    _bmFoot.innerHTML=kranzlabSVG('-bf','#c2c7cf',true);
+    slot.replaceWith(_bmFoot);
+  } else { slot.replaceWith(_bmFoot); }   // persistent — Animation läuft weiter
 }
 
 /* Animierte Sternkonstellationen im Hintergrund (alle Ansichten) */

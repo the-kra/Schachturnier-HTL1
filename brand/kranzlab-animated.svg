@@ -17,8 +17,8 @@
 <circle cx="94.5" cy="74" r="37" fill="#05070b" opacity="0.78"/><circle cx="70" cy="90" r="42" fill="url(#klSphereShade)"/></g></g>
 <circle cx="103" cy="62" r="5.2" fill="#f6f8fb"/></g>
 <g clip-path="url(#klReveal)"><text x="131" y="108" font-family="'Poppins',sans-serif" font-size="56" font-weight="600" letter-spacing="-1"><tspan fill="#f1ede6">kranz</tspan><tspan fill="#aeb8c6">lab</tspan></text></g>
-<path class="kl-wave" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-linecap="round" d="M131 132 q 19.62 -20 39.25 0 q 19.62 20 39.25 0 q 19.62 -20 39.25 0 q 19.62 20 39.25 0"/>
-<g class="kl-dots" fill="#2dd4bf"><circle cx="301" cy="123.4" r="3.6"/><circle cx="321" cy="127.5" r="3.0"/><circle cx="342" cy="141.2" r="2.4"/><circle cx="362" cy="135.4" r="1.6"/><circle cx="383" cy="122.4" r="1.1"/></g>
+<path class="kl-wave" fill="none" stroke="#c2c7cf" stroke-width="3" stroke-linecap="round" d="M131 132 q 19.62 -20 39.25 0 q 19.62 20 39.25 0 q 19.62 -20 39.25 0 q 19.62 20 39.25 0"/>
+<g class="kl-dots" fill="#c2c7cf"><circle cx="301" cy="123.4" r="3.6"/><circle cx="321" cy="127.5" r="3.0"/><circle cx="342" cy="141.2" r="2.4"/><circle cx="362" cy="135.4" r="1.6"/><circle cx="383" cy="122.4" r="1.1"/></g>
 <style>
 .kl-mask{width:0;animation:klReveal 1s cubic-bezier(.4,0,.2,1) .2s forwards}
 @keyframes klReveal{to{width:300px}}
