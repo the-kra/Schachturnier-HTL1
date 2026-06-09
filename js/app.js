@@ -501,6 +501,11 @@ function renderStatusChip(){
   if(state.status==="registration"){ c.className="statuschip chip-reg"; c.textContent="Anmeldung offen"; }
   else if(state.status==="running"){ c.className="statuschip chip-run chip-live"; c.textContent="Runde "+state.current_round+" / "+state.num_rounds; }
   else{ c.className="statuschip chip-fin"; c.textContent="Beendet"; }
+  // In der Anmeldephase: Klick auf den Chip scrollt zur Anmelde-Karte
+  if(state.status==="registration"){
+    c.classList.add("clickable");
+    c.onclick=()=>{ const t=$("#reg-anmeldung"); if(t) t.scrollIntoView({behavior:"smooth",block:"start"}); };
+  } else { c.classList.remove("clickable"); c.onclick=null; }
 }
 function renderBanner(){
   const b=$("#banner"); b.innerHTML="";
