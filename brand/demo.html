@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animierte Logos — Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;min-height:100vh;background:#16181c;color:#e8e8ea;
+    font-family:system-ui,sans-serif;display:flex;flex-wrap:wrap;gap:40px;
+    align-items:center;justify-content:center;padding:50px}
+  .box{background:#21242b;border:1px solid #32353d;border-radius:16px;
+    padding:30px 36px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .box h2{margin:0 0 18px;font-size:14px;font-weight:600;color:#9ea2ab;letter-spacing:.04em}
+  .htl{width:260px}
+  .kl{height:64px}
+  .klf{height:30px;opacity:.7}
+</style>
+</head>
+<body>
+  <div class="box">
+    <h2>htl1-logo-animated.svg (&lt;object&gt;)</h2>
+    <object class="htl" type="image/svg+xml" data="htl1-logo-animated.svg"></object>
+  </div>
+  <div class="box">
+    <h2>kranzlab-animated.svg (&lt;img&gt;)</h2>
+    <img class="kl" src="kranzlab-animated.svg" alt="kranzlab">
+  </div>
+  <div class="box">
+    <h2>kranzlab-footer.svg (&lt;img&gt;)</h2>
+    <img class="klf" src="kranzlab-footer.svg" alt="kranzlab">
+  </div>
+</body>
+</html>

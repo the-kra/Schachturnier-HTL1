@@ -30,7 +30,7 @@ const ADMIN_PASS   = "";   // nur Lokal-Modus (ohne Supabase) als simpler Test-S
    plateStyle  = "engrave" (Goldgravur auf dunklem Sockel) | "brass" (Messingschild). */
 const TROPHY_CONFIG = {
   images:        ["assets/pokal-gold.jpg", "assets/pokal-silber.jpg", "assets/pokal-bronze.jpg"],
-  plateTopPct:   [89, 91.5, 91.5],
+  plateTopPct:   [89, 90, 90],
   plateWidthPct: [45, 45, 45],
   plateLeftPct:  [56, 56, 56],     // horizontale Mitte der Plakette (%)
   plateRotateDeg:[-2.75, -2.45, -1.25],// Neigung passend zur gebackenen Schrift (Grad, negativ = gegen Uhrzeigersinn)
@@ -1296,7 +1296,7 @@ function mountBeamerLogo(){
 }
 
 /* kranzlab-Logo (Mond + Welle + Punkte, animiertes Reveal) für die Beamer-Uhr */
-const KRANZLAB_CLOCK_SVG=`<svg viewBox="8 0 394 180" role="img" aria-label="kranzlab" xmlns="http://www.w3.org/2000/svg">
+const KRANZLAB_BASE=`<svg viewBox="8 0 394 180" role="img" aria-label="kranzlab" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <radialGradient id="klMoonGrad" cx="36%" cy="34%"><stop offset="0%" stop-color="#f6f8fb"/><stop offset="55%" stop-color="#c2ccd9"/><stop offset="100%" stop-color="#8a98ab"/></radialGradient>
 <linearGradient id="klRingGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#d6dde6"/><stop offset="100%" stop-color="#7a8696"/></linearGradient>
@@ -1317,19 +1317,31 @@ const KRANZLAB_CLOCK_SVG=`<svg viewBox="8 0 394 180" role="img" aria-label="kran
 <path class="kl-wave" fill="none" stroke="#f2ab57" stroke-width="3" stroke-linecap="round" d="M131 132 q 19.62 -20 39.25 0 q 19.62 20 39.25 0 q 19.62 -20 39.25 0 q 19.62 20 39.25 0"/>
 <g class="kl-dots" fill="#f2ab57"><circle cx="301" cy="123.4" r="3.6"/><circle cx="321" cy="127.5" r="3.0"/><circle cx="342" cy="141.2" r="2.4"/><circle cx="362" cy="135.4" r="1.6"/><circle cx="383" cy="122.4" r="1.1"/></g>
 </svg>`;
-function tickBmClock(){
-  var el=document.getElementById('bmClock'); if(!el) return;
-  var d=new Date(), p=n=>(n<10?'0':'')+n;
-  el.textContent=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+/* kranzlab-Logo mit eindeutigen IDs (Mehrfach-Einsatz) + einstellbarer Wellen-/Punktfarbe */
+function kranzlabSVG(sfx, waveCol){
+  return KRANZLAB_BASE
+    .replace(/id="(kl\w+)"/g, (m,id)=>'id="'+id+sfx+'"')
+    .replace(/url\(#(kl\w+)\)/g, (m,id)=>'url(#'+id+sfx+')')
+    .replace(/#f2ab57/g, waveCol);
 }
-let _bmClock=null, _bmClockIv=null;
+/* 7-Segment-Uhren (Beamer + Seitenkopf) gemeinsam ticken */
+function tickClocks(){
+  var d=new Date(), p=n=>(n<10?'0':'')+n, t=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+  document.querySelectorAll('.bm-clock .lit, .hdr-clock .lit').forEach(function(el){ el.textContent=t; });
+}
+/* Seitenkopf: Uhr ticken + kranzlab + Footer-kranzlab einsetzen (einmalig) */
+function initHeaderFx(){
+  // animiertes kranzlab nur in der Admin-Ansicht
+  var hk=document.getElementById('hdrKranzlab'); if(hk && IS_ADMIN && !hk.firstChild) hk.innerHTML=kranzlabSVG('-h','#f2ab57');
+  tickClocks();
+}
+let _bmClock=null;
 function mountBeamerClock(){
   var slot=document.getElementById('bmClockSlot'); if(!slot) return;
   if(!_bmClock){
     _bmClock=document.createElement('div'); _bmClock.className='bm-clock';
     _bmClock.innerHTML='<span class="off">88:88:88</span><span class="lit" id="bmClock">00:00:00</span>';
-    slot.replaceWith(_bmClock);
-    tickBmClock(); if(!_bmClockIv) _bmClockIv=setInterval(tickBmClock,1000);
+    slot.replaceWith(_bmClock); tickClocks();
   } else { slot.replaceWith(_bmClock); }
 }
 let _bmKranzlab=null;
@@ -1337,7 +1349,7 @@ function mountBeamerKranzlab(){
   var slot=document.getElementById('bmKranzlabSlot'); if(!slot) return;
   if(!_bmKranzlab){
     _bmKranzlab=document.createElement('span'); _bmKranzlab.className='bm-kranzlab';
-    _bmKranzlab.innerHTML=KRANZLAB_CLOCK_SVG;
+    _bmKranzlab.innerHTML=kranzlabSVG('-b','#f2ab57');
     slot.replaceWith(_bmKranzlab);
   } else { slot.replaceWith(_bmKranzlab); }   // persistent — Animation läuft weiter
 }
@@ -1379,4 +1391,5 @@ function initBgFX(){
   var _rt; window.addEventListener('resize', function(){ clearTimeout(_rt); _rt=setTimeout(resize,200); });
   resize(); requestAnimationFrame(draw);
 }
-window.addEventListener('load', function(){ try{startGlobe();}catch(e){} try{runOrbitReveal();}catch(e){} try{initBgFX();}catch(e){} });
+window.addEventListener('load', function(){ try{startGlobe();}catch(e){} try{runOrbitReveal();}catch(e){} try{initBgFX();}catch(e){} try{initHeaderFx();}catch(e){} });
+setInterval(function(){ try{tickClocks();}catch(e){} }, 1000);

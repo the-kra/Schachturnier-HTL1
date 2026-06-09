@@ -1,36 +1,5 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Schachturnier · HTL1 Lastenstraße</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23e89638'/%3E%3Ctext x='16' y='25' font-size='23' text-anchor='middle' fill='%231a1306'%3E%E2%99%9E%3C/text%3E%3C/svg%3E">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=Orbitron:wght@600;700;800&family=Poppins:wght@600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css">
-</head>
-<body>
-<canvas id="bgFX" aria-hidden="true"></canvas>
-
-<div class="wrap">
-
-  <div class="topbar">
-    <div class="logo">
-      <img id="brandLogo" class="brand-logo" alt="Schachturnier HTL1">
-      <div class="logo-txt">
-        <h1 id="tName">Schachturnier</h1>
-        <div class="sub">HTL1-Lastenstraße</div>
-        <div id="statuschip" class="statuschip chip-reg">Anmeldung</div>
-      </div>
-    </div>
-    <div class="hdr-clock"><span class="off">88:88:88</span><span class="lit" id="hdrClock">00:00:00</span></div>
-    <div class="hdr-right">
-      <span class="hdr-kranzlab" id="hdrKranzlab"></span>
-      <a class="htl-mark" href="https://htl1-klagenfurt.at" target="_blank" rel="noopener" title="HTL1 Lastenstraße Klagenfurt" aria-label="HTL1 Lastenstraße"><svg id="htl-logo-svg" data-name="Ebene 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 432.46 202.88">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="htl-logo-svg" data-name="Ebene 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 432.46 202.88">
   <defs>
     <style>
       .htllogo-1 {
@@ -94,19 +63,62 @@
       </g>
     </g>
   </g>
-</svg></a>
-    </div>
-  </div>
-
-  <div id="banner"></div>
-  <div id="app"></div>
-
-  <div class="foot">
-    <span class="foot-info">♟ Schweizer System · Live-Spielplan, aktualisiert sich jede Runde automatisch</span>
-    <span class="kranzlab" title="kranzlab · DI Theodor Kranz"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 140" role="img" aria-label="kranzlab"><defs><radialGradient id="moonGrad" cx="36%" cy="34%"><stop offset="0%" stop-color="#f6f8fb"/><stop offset="55%" stop-color="#c2ccd9"/><stop offset="100%" stop-color="#8a98ab"/></radialGradient><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#d6dde6"/><stop offset="100%" stop-color="#7a8696"/></linearGradient><filter id="moonGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.0" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><clipPath id="moonClip"><circle cx="70" cy="70" r="42"/></clipPath><radialGradient id="sphereShade" cx="36%" cy="34%" r="72%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="55%" stop-color="#ffffff" stop-opacity="0"/><stop offset="100%" stop-color="#05070b" stop-opacity="0.55"/></radialGradient></defs><g><circle cx="70" cy="70" r="61" fill="none" stroke="url(#ringGrad)" stroke-width="4" opacity="0.85"/><g filter="url(#moonGlow)"><circle cx="70" cy="70" r="42" fill="url(#moonGrad)"/><g clip-path="url(#moonClip)"><g transform="rotate(-10 70 70)"><g><animateTransform attributeName="transform" type="translate" from="0 0" to="-84 0" dur="7s" repeatCount="indefinite"/><circle cx="49" cy="63" r="7" fill="#8a98ab" opacity="0.5"/><circle cx="70" cy="84" r="4.9" fill="#8a98ab" opacity="0.45"/><circle cx="88" cy="56" r="6" fill="#8a98ab" opacity="0.5"/><circle cx="105" cy="77" r="3.9" fill="#8a98ab" opacity="0.4"/></g><g transform="translate(84 0)"><animateTransform attributeName="transform" type="translate" from="84 0" to="0 0" dur="7s" repeatCount="indefinite"/><circle cx="49" cy="63" r="7" fill="#8a98ab" opacity="0.5"/><circle cx="70" cy="84" r="4.9" fill="#8a98ab" opacity="0.45"/><circle cx="88" cy="56" r="6" fill="#8a98ab" opacity="0.5"/><circle cx="105" cy="77" r="3.9" fill="#8a98ab" opacity="0.4"/></g></g><circle cx="94.5" cy="54" r="37" fill="#05070b" opacity="0.78"/><circle cx="70" cy="70" r="42" fill="url(#sphereShade)"/></g></g><circle cx="103" cy="42" r="5.2" fill="#f6f8fb"/></g><text x="158" y="86" font-size="70" font-weight="500" letter-spacing="-1.6" font-family="'Hanken Grotesk',sans-serif" transform="translate(23.7 0) scale(0.85 1)"><tspan fill="#ffffff">kranz</tspan><tspan fill="#aeb8c6">lab</tspan></text></svg></span>
-  </div>
-</div>
-<div id="toast" class="toast"></div>
-<script src="js/app.js"></script>
-</body>
-</html>
+<script type="application/ecmascript"><![CDATA[
+function runOrbitReveal(sfx){
+  sfx=sfx||'';
+  var wedge=document.getElementById('orbitWedge'+sfx);
+  var stand=document.getElementById('standStroke'+sfx);
+  if(!wedge)return;
+  function easeIO(k){return k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2;}
+  function pieFn(cx,cy,r,a0,a1){var p="M"+cx+","+cy+" ";var steps=72;for(var s=0;s<=steps;s++){var a=(a0+(a1-a0)*s/steps)*Math.PI/180;p+="L"+(cx+r*Math.cos(a)).toFixed(1)+","+(cy+r*Math.sin(a)).toFixed(1)+" ";}return p+"Z";}
+  var P1={cx:150,cy:95,R:300,a0:-35,sweep:375,dur:2800};
+  var GAP=250, P2dur=1500;
+  var sg=document.getElementById('standGroup'+sfx);
+  wedge.setAttribute("d",pieFn(P1.cx,P1.cy,P1.R,P1.a0,P1.a0+0.1));
+  if(stand)stand.setAttribute("stroke-dasharray","0 2000");
+  if(sg)sg.style.opacity="0";
+  var t0=performance.now();
+  function frame(t){
+    var el=t-t0;
+    var k1=Math.min(1,el/P1.dur);
+    wedge.setAttribute("d",pieFn(P1.cx,P1.cy,P1.R,P1.a0,P1.a0+P1.sweep*easeIO(k1)));
+    var el2=el-(P1.dur+GAP);
+    if(el2>0 && stand){if(sg)sg.style.opacity="1";var k2=Math.min(1,el2/P2dur);stand.setAttribute("stroke-dasharray",(1000*easeIO(k2)).toFixed(1)+" 2000");}
+    if(el < P1.dur+GAP+P2dur) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+function startGlobe(sfx){
+  sfx=sfx||'';
+  var grid=document.getElementById('globeGrid'+sfx);
+  if(!grid)return;
+  var cx=373.8,cy=79.24,r=49.0;
+  var TILT=26*Math.PI/180, ANG=-22*Math.PI/180;
+  var N_LON=12,N_LAT=8,SEG=44,DUR=20000;
+  function proj(lat,lon){
+    var la=lat*Math.PI/180, lo=lon*Math.PI/180;
+    var x=Math.cos(la)*Math.sin(lo), y=Math.sin(la), z=Math.cos(la)*Math.cos(lo);
+    var y2=y*Math.cos(TILT)-z*Math.sin(TILT), z2=y*Math.sin(TILT)+z*Math.cos(TILT), x2=x;
+    var x3=x2*Math.cos(ANG)-y2*Math.sin(ANG), y3=x2*Math.sin(ANG)+y2*Math.cos(ANG);
+    return [cx+r*x3, cy-r*y3, z2];
+  }
+  function build(rot){
+    var lines=[],i,j,s;
+    for(i=0;i<N_LON;i++){var lon0=i*360/N_LON+rot,p=[];for(s=0;s<=SEG;s++)p.push(proj(-90+180*s/SEG,lon0));lines.push([1.0,p]);}
+    for(j=1;j<=N_LAT;j++){var lat0=-90+180*j/(N_LAT+1),q=[];for(s=0;s<=SEG;s++)q.push(proj(lat0,360*s/SEG+rot));lines.push([0.95,q]);}
+    var d="";
+    for(var k=0;k<lines.length;k++){
+      var sw=lines[k][0],pts=lines[k][1],seg=[];
+      var flush=function(){if(seg.length>1){d+='<path d="M'+seg.map(function(p){return p[0].toFixed(1)+","+p[1].toFixed(1);}).join(" L")+'" style="fill:none;stroke:#0083aa;stroke-width:'+sw+';stroke-linecap:round"/>';}seg=[];};
+      for(var n=0;n<pts.length;n++){if(pts[n][2]>=-0.03)seg.push(pts[n]);else flush();}
+      flush();
+    }
+    return d;
+  }
+  var t0=performance.now();
+  function frame(t){var rot=((t-t0)/DUR)*360%360;grid.innerHTML=build(rot);requestAnimationFrame(frame);}
+  requestAnimationFrame(frame);
+}
+(function(){var go=function(){try{startGlobe("")}catch(e){}try{runOrbitReveal("")}catch(e){}};if(document.readyState!=="loading")go();else document.addEventListener("DOMContentLoaded",go);})();
+]]></script>
+</svg>

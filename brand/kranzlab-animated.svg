@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="8 0 394 180" role="img" aria-label="kranzlab" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<radialGradient id="klMoonGrad" cx="36%" cy="34%"><stop offset="0%" stop-color="#f6f8fb"/><stop offset="55%" stop-color="#c2ccd9"/><stop offset="100%" stop-color="#8a98ab"/></radialGradient>
+<linearGradient id="klRingGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#d6dde6"/><stop offset="100%" stop-color="#7a8696"/></linearGradient>
+<filter id="klMoonGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.0" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<clipPath id="klMoonClip"><circle cx="70" cy="90" r="42"/></clipPath>
+<radialGradient id="klSphereShade" cx="36%" cy="34%" r="72%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="55%" stop-color="#ffffff" stop-opacity="0"/><stop offset="100%" stop-color="#05070b" stop-opacity="0.55"/></radialGradient>
+<clipPath id="klReveal"><rect class="kl-mask" x="131" y="0" width="300" height="180"/></clipPath>
+</defs>
+<g transform="translate(21 27) scale(0.7)">
+<circle cx="70" cy="90" r="61" fill="none" stroke="url(#klRingGrad)" stroke-width="4" opacity="0.85"/>
+<g filter="url(#klMoonGlow)"><circle cx="70" cy="90" r="42" fill="url(#klMoonGrad)"/>
+<g clip-path="url(#klMoonClip)"><g transform="rotate(-10 70 90)">
+<g><animateTransform attributeName="transform" type="translate" from="0 0" to="-84 0" dur="7s" repeatCount="indefinite"/><circle cx="49" cy="83" r="7" fill="#8a98ab" opacity="0.5"/><circle cx="70" cy="104" r="4.9" fill="#8a98ab" opacity="0.45"/><circle cx="88" cy="76" r="6" fill="#8a98ab" opacity="0.5"/><circle cx="105" cy="97" r="3.9" fill="#8a98ab" opacity="0.4"/></g>
+<g transform="translate(84 0)"><animateTransform attributeName="transform" type="translate" from="84 0" to="0 0" dur="7s" repeatCount="indefinite"/><circle cx="49" cy="83" r="7" fill="#8a98ab" opacity="0.5"/><circle cx="70" cy="104" r="4.9" fill="#8a98ab" opacity="0.45"/><circle cx="88" cy="76" r="6" fill="#8a98ab" opacity="0.5"/><circle cx="105" cy="97" r="3.9" fill="#8a98ab" opacity="0.4"/></g></g>
+<circle cx="94.5" cy="74" r="37" fill="#05070b" opacity="0.78"/><circle cx="70" cy="90" r="42" fill="url(#klSphereShade)"/></g></g>
+<circle cx="103" cy="62" r="5.2" fill="#f6f8fb"/></g>
+<g clip-path="url(#klReveal)"><text x="131" y="108" font-family="'Poppins',sans-serif" font-size="56" font-weight="600" letter-spacing="-1"><tspan fill="#f1ede6">kranz</tspan><tspan fill="#aeb8c6">lab</tspan></text></g>
+<path class="kl-wave" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-linecap="round" d="M131 132 q 19.62 -20 39.25 0 q 19.62 20 39.25 0 q 19.62 -20 39.25 0 q 19.62 20 39.25 0"/>
+<g class="kl-dots" fill="#2dd4bf"><circle cx="301" cy="123.4" r="3.6"/><circle cx="321" cy="127.5" r="3.0"/><circle cx="342" cy="141.2" r="2.4"/><circle cx="362" cy="135.4" r="1.6"/><circle cx="383" cy="122.4" r="1.1"/></g>
+<style>
+.kl-mask{width:0;animation:klReveal 1s cubic-bezier(.4,0,.2,1) .2s forwards}
+@keyframes klReveal{to{width:300px}}
+.kl-wave{stroke-dasharray:200;stroke-dashoffset:200;animation:klDraw .95s ease 1.1s forwards}
+@keyframes klDraw{to{stroke-dashoffset:0}}
+.kl-dots circle{opacity:0;transform-box:fill-box;transform-origin:center;animation:klPop .35s ease forwards}
+.kl-dots circle:nth-child(1){animation-delay:2.05s}.kl-dots circle:nth-child(2){animation-delay:2.17s}
+.kl-dots circle:nth-child(3){animation-delay:2.29s}.kl-dots circle:nth-child(4){animation-delay:2.41s}
+.kl-dots circle:nth-child(5){animation-delay:2.53s}
+@keyframes klPop{0%{opacity:0;transform:scale(0)}60%{opacity:1;transform:scale(1.5)}100%{opacity:1;transform:scale(1)}}
+</style>
+</svg>
