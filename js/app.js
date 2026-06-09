@@ -30,7 +30,7 @@ const ADMIN_PASS   = "";   // nur Lokal-Modus (ohne Supabase) als simpler Test-S
    plateStyle  = "engrave" (Goldgravur auf dunklem Sockel) | "brass" (Messingschild). */
 const TROPHY_CONFIG = {
   images:        ["assets/pokal-gold.jpg", "assets/pokal-silber.jpg", "assets/pokal-bronze.jpg"],
-  plateTopPct:   [89, 89, 89],
+  plateTopPct:   [89, 91.5, 91.5],
   plateWidthPct: [45, 45, 45],
   plateLeftPct:  [56, 56, 56],     // horizontale Mitte der Plakette (%)
   plateRotateDeg:[-2.75, -2.45, -1.25],// Neigung passend zur gebackenen Schrift (Grad, negativ = gegen Uhrzeigersinn)
@@ -64,6 +64,8 @@ let state = {
   awarded: false,
   verify_mode: VERIFY_DEFAULT,      // Anmeldebestätigung: none | code | email (Admin-Panel)
   event_code: "",                  // Anmeldecode (Modus "code")
+  reg_text: "",                    // Alternativ-Anmeldung: Hinweistext (wenn Code leer)
+  reg_link: "",                    // Alternativ-Anmeldung: externer Link (QR zeigt darauf)
   champions: [],                   // aktuelle Pokal-Inhaber [{rank,name,klasse,tournament,date}]
   players: [],                     // {id,name,klasse,withdrawn,email,verified}
   pairings: [],                    // {id,round,board,white_id,black_id,result}
@@ -533,9 +535,16 @@ function renderRegistration(app){
       </div>
       ${VMODE()==="code"?`<div class="codebox">
         <div class="field" style="margin:0;max-width:160px"><label>Anmeldecode</label>
-          <input id="cfgCode" value="${esc(state.event_code||"")}" placeholder="leer = gesperrt" maxlength="12" autocomplete="off"></div>
+          <input id="cfgCode" value="${esc(state.event_code||"")}" placeholder="leer = Alternativ-Link" maxlength="12" autocomplete="off"></div>
         <button class="btn ghost sm" id="btnGenCode">${ic('shuffle')} Code</button>
-        <span class="code-hint">Code am Beamer zeigen — nur damit kann man sich anmelden. Leer = Anmeldung gesperrt.</span>
+        <span class="code-hint">Code am Beamer zeigen — nur damit kann man sich anmelden. Leer = stattdessen Alternativ-Anmeldung unten.</span>
+      </div>
+      <div class="codebox">
+        <div class="field" style="margin:0;flex:1;min-width:180px"><label>Alternativ-Anmeldung — Hinweistext (wenn Code leer)</label>
+          <input id="cfgRegText" value="${esc(state.reg_text||"")}" placeholder="z.B. Anmeldung über Projekttage" maxlength="80"></div>
+        <div class="field" style="margin:0;flex:1;min-width:180px"><label>Link (QR zeigt darauf)</label>
+          <input id="cfgRegLink" value="${esc(state.reg_link||"")}" placeholder="https://…"></div>
+        <span class="code-hint">Bei leerem Code zeigen Beamer & Schülerseite diesen Text + einen QR-Code zum Link (statt der Sperre).</span>
       </div>`:""}
       <div class="ab-actions">
         <button class="btn" id="btnStart" ${active.length<2?"disabled":""}>${ic('shuffle')} Anmeldung schließen & auslosen</button>
@@ -573,6 +582,8 @@ function renderRegistration(app){
     const clr=$("#btnClearCup"); if(clr) clr.onclick=()=>clearTrophies().then(()=>render());
     const clw=$("#btnClearWall"); if(clw) clw.onclick=()=>clearHallOfFame().then(()=>render());
     const cc=$("#cfgCode"); if(cc) cc.onchange=e=>patchState({event_code:e.target.value.trim()}).then(render);
+    const rt=$("#cfgRegText"); if(rt) rt.onchange=e=>patchState({reg_text:e.target.value.trim()}).then(render);
+    const rl=$("#cfgRegLink"); if(rl) rl.onchange=e=>patchState({reg_link:e.target.value.trim()}).then(render);
     const gc=$("#btnGenCode"); if(gc) gc.onclick=()=>{ patchState({event_code:String(Math.floor(1000+Math.random()*9000))}).then(render); };
     wireAdminCommon();
   }
@@ -589,9 +600,19 @@ function renderRegistration(app){
       <p class="lead">Der E-Mail-Modus braucht Supabase. Im Lokal-Modus bitte im Admin-Panel auf <b>Offen</b> oder <b>Code</b> stellen.</p>`;
     app.appendChild(f);
   } else if(codeGate){
-    f.innerHTML=`<div class="eyebrow">Anmeldung</div><h2>Noch nicht freigeschaltet</h2>
-      <p class="lead">Die Anmeldung wird gleich von der Lehrkraft freigeschaltet — der Code erscheint dann am Beamer.</p>`;
-    app.appendChild(f);
+    const altLink=(state.reg_link||"").trim();
+    if(altLink){
+      f.innerHTML=`<div class="eyebrow">Anmeldung</div><h2>${esc(state.reg_text||"Anmeldung")}</h2>
+        <p class="lead">Scanne den Code oder öffne den Link zur Anmeldung.</p>
+        <div class="qrbox"><div id="altqr"></div>
+          <div class="linkfield"><div class="linkrow"><input id="altlink" readonly value="${esc(altLink)}"><a class="btn sm" href="${esc(altLink)}" target="_blank" rel="noopener">Öffnen</a></div></div></div>`;
+      app.appendChild(f);
+      try{ new QRCode($("#altqr"), {text:altLink, width:150, height:150, colorDark:"#20211d", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
+    } else {
+      f.innerHTML=`<div class="eyebrow">Anmeldung</div><h2>Noch nicht freigeschaltet</h2>
+        <p class="lead">Die Anmeldung wird gleich von der Lehrkraft freigeschaltet — der Code erscheint dann am Beamer.</p>`;
+      app.appendChild(f);
+    }
   } else if(VMODE()==="email" && ui.regStep==="code"){
     const d=ui.regDraft||{};
     f.innerHTML=`<div class="eyebrow">Bestätigung</div><h2>Code eingeben</h2>
@@ -930,14 +951,18 @@ function renderBeamer(){
   }
   const panel = panels[ui.beamerIdx % panels.length];
   let body="";
+  let bmQrTarget=location.origin+location.pathname;
 
   if(panel==="joinhall"){
     const active=state.players.filter(p=>!p.withdrawn);
-    const showCode = (VMODE()==="code" && (state.event_code||"").trim());
+    const codeSet = (VMODE()==="code" && (state.event_code||"").trim());
+    const altLink = (VMODE()==="code" && !(state.event_code||"").trim() && (state.reg_link||"").trim()) || "";
+    if(altLink) bmQrTarget=altLink;
+    const cap = altLink ? esc(state.reg_text||"Zur Anmeldung") : "Handy-Kamera drauf halten<br>& anmelden";
     body=`<div class="bm-joinhall">
       <div class="bm-jh-left">
-        <div class="bm-qr"><div id="bmqr"></div><div class="bm-qrcap">Handy-Kamera drauf halten<br>& anmelden</div></div>
-        ${showCode?`<div class="bm-code">Anmeldecode <b>${esc(state.event_code)}</b></div>`:""}
+        <div class="bm-qr"><div id="bmqr"></div><div class="bm-qrcap">${cap}</div></div>
+        ${codeSet?`<div class="bm-code">Anmeldecode <b>${esc(state.event_code)}</b></div>`:""}
         <div class="bm-count"><b>${active.length}</b> angemeldet</div>
       </div>
       <div class="bm-jh-right">
@@ -973,21 +998,21 @@ function renderBeamer(){
         <div class="bm-titlestack">
           <div class="bm-title">${esc(state.tournament_name)}</div>
           <div class="bm-sub">HTL1-Lastenstraße</div>
+          <div class="bm-status">${statusTxt}</div>
         </div>
       </div>
-      <span id="bmCenterSlot"></span>
+      <div class="bm-center"><span id="bmClockSlot"></span></div>
       <div class="bm-right">
-        <div class="bm-status">${statusTxt}</div>
+        <span class="bm-kranzlab" id="bmKranzlabSlot"></span>
         <span class="bm-htl" id="bmHtlSlot"></span>
       </div>
     </div>
     <div class="bm-stage${(panel==="pairings"||panel==="standings")?"":" center"}">${body}</div>
     ${panels.length>1?`<div class="bm-dots">${panels.map((_,i)=>`<span class="${i===ui.beamerIdx%panels.length?"on":""}"></span>`).join("")}</div>`:""}`;
-  mountBeamerCenter();
-  mountBeamerLogo();
+  mountBeamerClock(); mountBeamerKranzlab(); mountBeamerLogo();
 
   if(panel==="joinhall"){
-    try{ new QRCode($("#bmqr"),{text:location.origin+location.pathname,width:260,height:260,colorDark:"#20211d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
+    try{ new QRCode($("#bmqr"),{text:bmQrTarget,width:260,height:260,colorDark:"#20211d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
     renderTrophies($("#bmtrophies"), state.champions);
   }
 }
@@ -1288,26 +1313,33 @@ const KRANZLAB_CLOCK_SVG=`<svg viewBox="8 0 394 180" role="img" aria-label="kran
 <g transform="translate(84 0)"><animateTransform attributeName="transform" type="translate" from="84 0" to="0 0" dur="7s" repeatCount="indefinite"/><circle cx="49" cy="83" r="7" fill="#8a98ab" opacity="0.5"/><circle cx="70" cy="104" r="4.9" fill="#8a98ab" opacity="0.45"/><circle cx="88" cy="76" r="6" fill="#8a98ab" opacity="0.5"/><circle cx="105" cy="97" r="3.9" fill="#8a98ab" opacity="0.4"/></g></g>
 <circle cx="94.5" cy="74" r="37" fill="#05070b" opacity="0.78"/><circle cx="70" cy="90" r="42" fill="url(#klSphereShade)"/></g></g>
 <circle cx="103" cy="62" r="5.2" fill="#f6f8fb"/></g>
-<g clip-path="url(#klReveal)"><text x="131" y="108" font-family="'Poppins',sans-serif" font-size="56" font-weight="600" letter-spacing="-1"><tspan fill="#e8f1f0">kranz</tspan><tspan fill="#6f8f8e">lab</tspan></text></g>
-<path class="kl-wave" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-linecap="round" d="M131 132 q 19.62 -20 39.25 0 q 19.62 20 39.25 0 q 19.62 -20 39.25 0 q 19.62 20 39.25 0"/>
-<g class="kl-dots" fill="#2dd4bf"><circle cx="301" cy="123.4" r="3.6"/><circle cx="321" cy="127.5" r="3.0"/><circle cx="342" cy="141.2" r="2.4"/><circle cx="362" cy="135.4" r="1.6"/><circle cx="383" cy="122.4" r="1.1"/></g>
+<g clip-path="url(#klReveal)"><text x="131" y="108" font-family="'Poppins',sans-serif" font-size="56" font-weight="600" letter-spacing="-1"><tspan fill="#f1ede6">kranz</tspan><tspan fill="#aeb8c6">lab</tspan></text></g>
+<path class="kl-wave" fill="none" stroke="#f2ab57" stroke-width="3" stroke-linecap="round" d="M131 132 q 19.62 -20 39.25 0 q 19.62 20 39.25 0 q 19.62 -20 39.25 0 q 19.62 20 39.25 0"/>
+<g class="kl-dots" fill="#f2ab57"><circle cx="301" cy="123.4" r="3.6"/><circle cx="321" cy="127.5" r="3.0"/><circle cx="342" cy="141.2" r="2.4"/><circle cx="362" cy="135.4" r="1.6"/><circle cx="383" cy="122.4" r="1.1"/></g>
 </svg>`;
 function tickBmClock(){
   var el=document.getElementById('bmClock'); if(!el) return;
   var d=new Date(), p=n=>(n<10?'0':'')+n;
   el.textContent=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
 }
-let _bmCenter=null, _bmClockIv=null;
-function mountBeamerCenter(){
-  var slot=document.getElementById('bmCenterSlot'); if(!slot) return;
-  if(!_bmCenter){
-    _bmCenter=document.createElement('div'); _bmCenter.className='bm-center';
-    _bmCenter.innerHTML=`<div class="bm-clock"><span class="off">88:88:88</span><span class="lit" id="bmClock">00:00:00</span></div><div class="bm-kranzlab">${KRANZLAB_CLOCK_SVG}</div>`;
-    slot.replaceWith(_bmCenter);
+let _bmClock=null, _bmClockIv=null;
+function mountBeamerClock(){
+  var slot=document.getElementById('bmClockSlot'); if(!slot) return;
+  if(!_bmClock){
+    _bmClock=document.createElement('div'); _bmClock.className='bm-clock';
+    _bmClock.innerHTML='<span class="off">88:88:88</span><span class="lit" id="bmClock">00:00:00</span>';
+    slot.replaceWith(_bmClock);
     tickBmClock(); if(!_bmClockIv) _bmClockIv=setInterval(tickBmClock,1000);
-  } else {
-    slot.replaceWith(_bmCenter);   // persistenter Knoten — Animationen laufen weiter
-  }
+  } else { slot.replaceWith(_bmClock); }
+}
+let _bmKranzlab=null;
+function mountBeamerKranzlab(){
+  var slot=document.getElementById('bmKranzlabSlot'); if(!slot) return;
+  if(!_bmKranzlab){
+    _bmKranzlab=document.createElement('span'); _bmKranzlab.className='bm-kranzlab';
+    _bmKranzlab.innerHTML=KRANZLAB_CLOCK_SVG;
+    slot.replaceWith(_bmKranzlab);
+  } else { slot.replaceWith(_bmKranzlab); }   // persistent — Animation läuft weiter
 }
 
 /* Animierte Sternkonstellationen im Hintergrund (alle Ansichten) */

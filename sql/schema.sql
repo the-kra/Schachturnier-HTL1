@@ -42,6 +42,10 @@ alter table chess_state add column if not exists event_code text default '';
 -- Anmeldemodus, live im Admin-Panel umschaltbar: 'none' | 'code' | 'email'
 alter table chess_state add column if not exists verify_mode text default 'code';
 
+-- Alternativ-Anmeldung (wenn Code leer): Hinweistext + externer Link (QR)
+alter table chess_state add column if not exists reg_text text default '';
+alter table chess_state add column if not exists reg_link text default '';
+
 -- optionale Anmeldebestätigung:
 alter table chess_players add column if not exists email text;
 alter table chess_players add column if not exists verified boolean default false;

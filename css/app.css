@@ -259,19 +259,19 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-top{display:flex;align-items:center;gap:1.4vw;padding-bottom:1.2vw;border-bottom:2px solid var(--line);margin-bottom:1.4vw}
 .bm-left{flex:1;min-width:0;display:flex;align-items:center;gap:1.2vw}
 .bm-right{flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:1.4vw}
-.bm-center{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:.3vw}
+.bm-center{flex:0 0 auto;display:flex;align-items:center;justify-content:center}
 .bm-logo{width:5vw;height:5vw;flex:none;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(232,150,56,.3))}
-.bm-titlestack{min-width:0}
-.bm-title{font-family:"Orbitron",sans-serif;font-weight:800;font-size:2.1vw;letter-spacing:.01em;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bm-sub{font-family:"Orbitron",sans-serif;font-size:.95vw;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent-d);margin-top:.2vw}
-.bm-status{font-weight:700;font-size:1.4vw;color:var(--accent-d);background:var(--accent-soft);padding:.6vw 1.2vw;border-radius:999px;white-space:nowrap}
+.bm-titlestack{min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+.bm-title{font-family:"Orbitron",sans-serif;font-weight:800;font-size:2.9vw;letter-spacing:.02em;line-height:1.04;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 1.4vw rgba(232,150,56,.25)}
+.bm-sub{font-family:"Orbitron",sans-serif;font-size:1.05vw;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--accent-d);margin-top:.25vw}
+.bm-status{display:inline-block;align-self:flex-start;font-weight:700;font-size:1.05vw;color:var(--accent-d);background:var(--accent-soft);padding:.4vw 1vw;border-radius:999px;white-space:nowrap;margin-top:.6vw}
 .bm-htl{flex:none;display:flex;align-items:center}
-.bm-htl svg{height:9.5vw;width:auto;display:block}
+.bm-htl svg{height:9vw;width:auto;display:block}
 /* 7-Segment-Uhr + kranzlab */
-.bm-clock{position:relative;font-family:"DSEG7 Classic",ui-monospace,monospace;font-weight:bold;font-size:2.7vw;line-height:1;letter-spacing:.18vw}
+.bm-clock{position:relative;font-family:"DSEG7 Classic",ui-monospace,monospace;font-weight:bold;font-size:2.9vw;line-height:1;letter-spacing:.18vw}
 .bm-clock .lit{color:#ff2d2d;position:relative;z-index:2;text-shadow:0 0 .4vw rgba(255,45,45,.9),0 0 1vw rgba(255,45,45,.5)}
 .bm-clock .off{color:#ff2d2d;opacity:.1;position:absolute;left:0;top:0;z-index:1}
-.bm-kranzlab{width:11vw;max-width:240px}
+.bm-kranzlab{flex:none;width:9.5vw}
 .bm-kranzlab svg{display:block;width:100%;height:auto}
 .bm-kranzlab .kl-mask{width:0;animation:klReveal 1s cubic-bezier(.4,0,.2,1) .2s forwards}
 @keyframes klReveal{to{width:300px}}
@@ -299,15 +299,15 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 /* Beamer: Anmeldung */
 .bm-join{display:flex;gap:3vw;align-items:center;height:100%}
 /* Beamer: QR + Pokale gemeinsam */
-.bm-joinhall{display:flex;gap:3vw;align-items:center;height:100%}
-.bm-jh-left{flex:none;display:flex;flex-direction:column;align-items:center;gap:1.4vw}
-.bm-jh-right{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
-.bm-jh-right .bm-section-title{text-align:center;margin-bottom:.8vw}
+.bm-joinhall{display:flex;gap:2.6vw;align-items:center;justify-content:center;height:100%;overflow:hidden}
+.bm-jh-left{flex:none;display:flex;flex-direction:column;align-items:center;gap:1.1vw}
+.bm-jh-right{flex:0 1 auto;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.bm-jh-right .bm-section-title{text-align:center;margin-bottom:.6vw}
 .bm-jh-left .bm-count{margin-bottom:0}
-.bm-joinhall .trophies{max-width:none;margin:0;gap:1.6vw}
+.bm-joinhall .trophies{max-width:46vw;margin:0;gap:1.4vw}
 .bm-qr{text-align:center;flex:none}
 .bm-qr #bmqr{background:#fff;padding:1vw;border-radius:1.2vw;box-shadow:var(--shadow-lg);display:inline-block}
-.bm-qr #bmqr img,.bm-qr #bmqr canvas{display:block;width:18vw !important;height:18vw !important}
+.bm-qr #bmqr img,.bm-qr #bmqr canvas{display:block;width:13vw !important;height:13vw !important}
 .bm-qrcap{margin-top:1vw;font-weight:700;font-size:1.4vw;color:var(--ink-soft)}
 .bm-joininfo{flex:1;min-width:0}
 .bm-code{font-family:"Bricolage Grotesque";font-size:1.8vw;color:var(--ink-soft);margin-bottom:.8vw}
