@@ -42,10 +42,10 @@ a{color:var(--accent-d)}
   -webkit-mask:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent)}
 .logo{display:flex;align-items:center;gap:11px;flex:1;min-width:0}
 .brand-logo{width:62px;height:62px;flex:none;object-fit:contain;filter:drop-shadow(0 2px 7px rgba(232,150,56,.3))}
-/* Offizielles HTL1-Logo auf hellem Plättchen (rechts im Header) */
-.htl-mark{flex:none;display:flex;align-items:center;background:#fff;border-radius:10px;padding:7px 11px;box-shadow:0 2px 9px rgba(0,0,0,.3);transition:transform .15s}
+/* Animiertes HTL1-Logo (Globus dreht sich, Orbit schwenkt ein) rechts im Header */
+.htl-mark{flex:none;display:flex;align-items:center;transition:transform .15s}
 .htl-mark:hover{transform:translateY(-1px)}
-.htl-mark img{height:30px;width:auto;display:block}
+.htl-mark svg{height:42px;width:auto;display:block}
 @media(max-width:560px){.htl-mark{display:none}}
 .logo h1{font-size:1.6rem;font-weight:800}
 .logo .sub{font-size:.74rem;color:var(--ink-soft);font-weight:500;letter-spacing:.01em;margin-top:1px}

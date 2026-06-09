@@ -1067,3 +1067,59 @@ async function boot(){
   render();
 }
 boot(); 
+
+/* ===== Animiertes HTL1-Logo (Globus + Orbit), portiert aus Aufnahmetest/libi/logo.php ===== */
+function runOrbitReveal(){
+  var wedge=document.getElementById('orbitWedge');
+  var stand=document.getElementById('standStroke');
+  if(!wedge)return;
+  function easeIO(k){return k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2;}
+  function pieFn(cx,cy,r,a0,a1){var p="M"+cx+","+cy+" ";var steps=72;for(var s=0;s<=steps;s++){var a=(a0+(a1-a0)*s/steps)*Math.PI/180;p+="L"+(cx+r*Math.cos(a)).toFixed(1)+","+(cy+r*Math.sin(a)).toFixed(1)+" ";}return p+"Z";}
+  var P1={cx:150,cy:95,R:300,a0:-35,sweep:375,dur:2800};
+  var GAP=250, P2dur=1500;
+  var sg=document.getElementById('standGroup');
+  wedge.setAttribute("d",pieFn(P1.cx,P1.cy,P1.R,P1.a0,P1.a0+0.1));
+  if(stand)stand.setAttribute("stroke-dasharray","0 2000");
+  if(sg)sg.style.opacity="0";
+  var t0=performance.now();
+  function frame(t){
+    var el=t-t0;
+    var k1=Math.min(1,el/P1.dur);
+    wedge.setAttribute("d",pieFn(P1.cx,P1.cy,P1.R,P1.a0,P1.a0+P1.sweep*easeIO(k1)));
+    var el2=el-(P1.dur+GAP);
+    if(el2>0 && stand){if(sg)sg.style.opacity="1";var k2=Math.min(1,el2/P2dur);stand.setAttribute("stroke-dasharray",(1000*easeIO(k2)).toFixed(1)+" 2000");}
+    if(el < P1.dur+GAP+P2dur) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+function startGlobe(){
+  var grid=document.getElementById('globeGrid');
+  if(!grid)return;
+  var cx=373.8,cy=79.24,r=49.0;
+  var TILT=26*Math.PI/180, ANG=-22*Math.PI/180;
+  var N_LON=12,N_LAT=8,SEG=44,DUR=20000;
+  function proj(lat,lon){
+    var la=lat*Math.PI/180, lo=lon*Math.PI/180;
+    var x=Math.cos(la)*Math.sin(lo), y=Math.sin(la), z=Math.cos(la)*Math.cos(lo);
+    var y2=y*Math.cos(TILT)-z*Math.sin(TILT), z2=y*Math.sin(TILT)+z*Math.cos(TILT), x2=x;
+    var x3=x2*Math.cos(ANG)-y2*Math.sin(ANG), y3=x2*Math.sin(ANG)+y2*Math.cos(ANG);
+    return [cx+r*x3, cy-r*y3, z2];
+  }
+  function build(rot){
+    var lines=[],i,j,s;
+    for(i=0;i<N_LON;i++){var lon0=i*360/N_LON+rot,p=[];for(s=0;s<=SEG;s++)p.push(proj(-90+180*s/SEG,lon0));lines.push([1.0,p]);}
+    for(j=1;j<=N_LAT;j++){var lat0=-90+180*j/(N_LAT+1),q=[];for(s=0;s<=SEG;s++)q.push(proj(lat0,360*s/SEG+rot));lines.push([0.95,q]);}
+    var d="";
+    for(var k=0;k<lines.length;k++){
+      var sw=lines[k][0],pts=lines[k][1],seg=[];
+      var flush=function(){if(seg.length>1){d+='<path d="M'+seg.map(function(p){return p[0].toFixed(1)+","+p[1].toFixed(1);}).join(" L")+'" style="fill:none;stroke:#0083aa;stroke-width:'+sw+';stroke-linecap:round"/>';}seg=[];};
+      for(var n=0;n<pts.length;n++){if(pts[n][2]>=-0.03)seg.push(pts[n]);else flush();}
+      flush();
+    }
+    return d;
+  }
+  var t0=performance.now();
+  function frame(t){var rot=((t-t0)/DUR)*360%360;grid.innerHTML=build(rot);requestAnimationFrame(frame);}
+  requestAnimationFrame(frame);
+}
+window.addEventListener('load', function(){ try{startGlobe();}catch(e){} try{runOrbitReveal();}catch(e){} });
