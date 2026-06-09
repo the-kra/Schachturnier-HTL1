@@ -6,6 +6,7 @@ tools/roh/
 # Editor / OS-Kram
 .vscode/
 .idea/
+.claude/
 Thumbs.db
 
 # Lokale/geheime Overrides (Service-Role-Key, SMTP etc. NIE committen)
