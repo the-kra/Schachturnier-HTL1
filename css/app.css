@@ -320,6 +320,15 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-jh-right .bm-section-title{text-align:center;margin-bottom:.6vw}
 .bm-jh-left .bm-count{margin-bottom:0}
 .bm-joinhall .trophies{max-width:46vw;margin:0;gap:1.4vw}
+/* Handy: Joinhall stapeln — Pokale oben, QR darunter (größer) */
+@media(max-width:680px){
+  .bm-joinhall{flex-direction:column;align-items:center;justify-content:flex-start;gap:5vw;padding-top:3vw;overflow:auto}
+  .bm-jh-right{order:1;width:100%}
+  .bm-jh-left{order:2;gap:3vw}
+  .bm-joinhall .trophies{max-width:94vw}
+  .bm-qr #bmqr img,.bm-qr #bmqr canvas{width:48vw !important;height:48vw !important}
+  .bm-code b{font-size:7vw}.bm-count{font-size:5vw}.bm-count b{font-size:9vw}
+}
 .bm-qr{text-align:center;flex:none}
 .bm-qr #bmqr{background:#fff;padding:1vw;border-radius:1.2vw;box-shadow:var(--shadow-lg);display:inline-block}
 .bm-qr #bmqr img,.bm-qr #bmqr canvas{display:block;width:13vw !important;height:13vw !important}

@@ -961,7 +961,7 @@ function renderBeamer(){
       <div class="bm-jh-left">
         <div class="bm-qr"><div id="bmqr"></div><div class="bm-qrcap">${cap}</div></div>
         ${codeSet?`<div class="bm-code">Anmeldecode <b>${esc(state.event_code)}</b></div>`:""}
-        <div class="bm-count"><b>${active.length}</b> angemeldet</div>
+        ${altLink?"":`<div class="bm-count"><b>${active.length}</b> angemeldet</div>`}
       </div>
       <div class="bm-jh-right">
         <div class="bm-section-title">${ic('trophy')} Titelverteidiger</div>
