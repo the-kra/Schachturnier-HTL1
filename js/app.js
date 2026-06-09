@@ -420,17 +420,18 @@ function fmtDur(min){
   const h=Math.floor(min/60), m=min%60;
   return h ? (m? `${h} h ${m} min` : `${h} h`) : `${m} min`;
 }
-/* Grobe Dauer-Schätzung (reine Spielzeit): Partien laufen parallel, also zählt
-   Runden × Rundenlänge. In der Praxis dauert eine Runde etwa eine Grundbedenkzeit
-   pro Spieler — die meisten Partien sind vor Ablauf der vollen Uhr entschieden. */
+/* Grobe Dauer-Schätzung: Runden × Rundenlänge (Partien laufen parallel).
+   Pro Runde: ~Grundbedenkzeit/Spieler + Inkrement + Overhead (Wechsel, Ergebnis
+   eintragen, nächste Auslosung). Hängt nur an Runden/Bedenkzeit, nicht an der
+   Spielerzahl — wird daher immer angezeigt. */
 function forecast(){
   const n=state.players.filter(p=>!p.withdrawn).length;
   const rounds=state.num_rounds||0;
   const { base, inc }=parseTC(state.time_control);
   const games=Math.floor(n/2);
-  const perSide = base + inc*40/60;     // effektive Bedenkzeit/Spieler über ~40 Züge (Min)
-  const lo = rounds * perSide * 0.7;    // viele Partien enden früh
-  const hi = rounds * perSide;          // Runde ~ volle Grundbedenkzeit (z.B. 6×15 = 1:30)
+  const perRound = base + inc*40/60 + 3;   // Min: Grundzeit + Inkrement(~40 Züge) + 3 Overhead
+  const lo = rounds * perRound * 0.83;     // zügig (viele Partien enden früher)
+  const hi = rounds * perRound * 1.12;     // mit Reserve (lange Partien + Verzögerungen)
   const recRounds=Math.max(3, Math.ceil(Math.log2(Math.max(2,n))));
   return { n, rounds, games, lo, hi, recRounds };
 }
@@ -522,7 +523,7 @@ function renderRegistration(app){
         <div class="field" style="margin:0;max-width:140px"><label>Bedenkzeit</label>
           <select id="cfgTime">${["3+2","5+0","5+3","10+0","10+5","15+0"].map(t=>`<option ${t==state.time_control?"selected":""}>${t}</option>`).join("")}</select></div>
       </div>
-      <div class="forecast">${ic('clock')}<span>Geschätzte Dauer: <b>${fc.n<2?"—":`ca. ${fmtDur(fc.lo)} – ${fmtDur(fc.hi)}`}</b></span>
+      <div class="forecast">${ic('clock')}<span>Geschätzte Dauer: <b>ca. ${fmtDur(fc.lo)} – ${fmtDur(fc.hi)}</b></span>
         <span class="fc-sub">${fc.rounds} Runden · ${fc.games} Bretter · ${fc.n} Spieler${fc.n>=2&&fc.rounds<fc.recRounds?` · Tipp: ${fc.recRounds} Runden für ${fc.n} Spieler`:""}</span></div>
       <div class="modepick">
         <div class="mp-head"><span class="mp-label">Anmeldung</span>
@@ -954,7 +955,7 @@ function renderBeamer(){
       }).join("")}</div>`;
   }
   else if(panel==="standings"){
-    const st=computeStandings().slice(0,16);
+    const st=computeStandings().slice(0,12);
     body=`<div class="bm-section-title">${state.status==="finished"?"Endstand":"Zwischenstand"}</div>
       <table class="bm-tbl"><tbody>${st.map((s,i)=>`<tr class="${i<3?"top"+(i+1):""}"><td class="r">${i+1}</td><td class="n">${esc(s.name)}</td><td class="k">${esc(s.klasse||"")}</td><td class="p">${fmt(s.points)}</td><td class="b">${fmt(s.buch)}</td></tr>`).join("")}</tbody></table>`;
   }
@@ -967,13 +968,22 @@ function renderBeamer(){
 
   r.innerHTML=`
     <div class="bm-top">
-      <img class="bm-logo" src="${HTL1_LOGO}" alt="HTL1">
-      <div class="bm-title">${esc(state.tournament_name)}</div>
-      <div class="bm-status">${statusTxt}</div>
-      <span class="bm-htl" id="bmHtlSlot"></span>
+      <div class="bm-left">
+        <img class="bm-logo" src="${HTL1_LOGO}" alt="HTL1">
+        <div class="bm-titlestack">
+          <div class="bm-title">${esc(state.tournament_name)}</div>
+          <div class="bm-sub">HTL1-Lastenstraße</div>
+        </div>
+      </div>
+      <span id="bmCenterSlot"></span>
+      <div class="bm-right">
+        <div class="bm-status">${statusTxt}</div>
+        <span class="bm-htl" id="bmHtlSlot"></span>
+      </div>
     </div>
     <div class="bm-stage${(panel==="pairings"||panel==="standings")?"":" center"}">${body}</div>
     ${panels.length>1?`<div class="bm-dots">${panels.map((_,i)=>`<span class="${i===ui.beamerIdx%panels.length?"on":""}"></span>`).join("")}</div>`:""}`;
+  mountBeamerCenter();
   mountBeamerLogo();
 
   if(panel==="joinhall"){
@@ -1259,4 +1269,82 @@ function mountBeamerLogo(){
     slot.appendChild(_bmLogo);   // bestehenden, weiterlaufenden Knoten umhängen
   }
 }
-window.addEventListener('load', function(){ try{startGlobe();}catch(e){} try{runOrbitReveal();}catch(e){} });
+
+/* kranzlab-Logo (Mond + Welle + Punkte, animiertes Reveal) für die Beamer-Uhr */
+const KRANZLAB_CLOCK_SVG=`<svg viewBox="8 0 394 180" role="img" aria-label="kranzlab" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<radialGradient id="klMoonGrad" cx="36%" cy="34%"><stop offset="0%" stop-color="#f6f8fb"/><stop offset="55%" stop-color="#c2ccd9"/><stop offset="100%" stop-color="#8a98ab"/></radialGradient>
+<linearGradient id="klRingGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#d6dde6"/><stop offset="100%" stop-color="#7a8696"/></linearGradient>
+<filter id="klMoonGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.0" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<clipPath id="klMoonClip"><circle cx="70" cy="90" r="42"/></clipPath>
+<radialGradient id="klSphereShade" cx="36%" cy="34%" r="72%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="55%" stop-color="#ffffff" stop-opacity="0"/><stop offset="100%" stop-color="#05070b" stop-opacity="0.55"/></radialGradient>
+<clipPath id="klReveal"><rect class="kl-mask" x="131" y="0" width="300" height="180"/></clipPath>
+</defs>
+<g transform="translate(21 27) scale(0.7)">
+<circle cx="70" cy="90" r="61" fill="none" stroke="url(#klRingGrad)" stroke-width="4" opacity="0.85"/>
+<g filter="url(#klMoonGlow)"><circle cx="70" cy="90" r="42" fill="url(#klMoonGrad)"/>
+<g clip-path="url(#klMoonClip)"><g transform="rotate(-10 70 90)">
+<g><animateTransform attributeName="transform" type="translate" from="0 0" to="-84 0" dur="7s" repeatCount="indefinite"/><circle cx="49" cy="83" r="7" fill="#8a98ab" opacity="0.5"/><circle cx="70" cy="104" r="4.9" fill="#8a98ab" opacity="0.45"/><circle cx="88" cy="76" r="6" fill="#8a98ab" opacity="0.5"/><circle cx="105" cy="97" r="3.9" fill="#8a98ab" opacity="0.4"/></g>
+<g transform="translate(84 0)"><animateTransform attributeName="transform" type="translate" from="84 0" to="0 0" dur="7s" repeatCount="indefinite"/><circle cx="49" cy="83" r="7" fill="#8a98ab" opacity="0.5"/><circle cx="70" cy="104" r="4.9" fill="#8a98ab" opacity="0.45"/><circle cx="88" cy="76" r="6" fill="#8a98ab" opacity="0.5"/><circle cx="105" cy="97" r="3.9" fill="#8a98ab" opacity="0.4"/></g></g>
+<circle cx="94.5" cy="74" r="37" fill="#05070b" opacity="0.78"/><circle cx="70" cy="90" r="42" fill="url(#klSphereShade)"/></g></g>
+<circle cx="103" cy="62" r="5.2" fill="#f6f8fb"/></g>
+<g clip-path="url(#klReveal)"><text x="131" y="108" font-family="'Poppins',sans-serif" font-size="56" font-weight="600" letter-spacing="-1"><tspan fill="#e8f1f0">kranz</tspan><tspan fill="#6f8f8e">lab</tspan></text></g>
+<path class="kl-wave" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-linecap="round" d="M131 132 q 19.62 -20 39.25 0 q 19.62 20 39.25 0 q 19.62 -20 39.25 0 q 19.62 20 39.25 0"/>
+<g class="kl-dots" fill="#2dd4bf"><circle cx="301" cy="123.4" r="3.6"/><circle cx="321" cy="127.5" r="3.0"/><circle cx="342" cy="141.2" r="2.4"/><circle cx="362" cy="135.4" r="1.6"/><circle cx="383" cy="122.4" r="1.1"/></g>
+</svg>`;
+function tickBmClock(){
+  var el=document.getElementById('bmClock'); if(!el) return;
+  var d=new Date(), p=n=>(n<10?'0':'')+n;
+  el.textContent=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+}
+let _bmCenter=null, _bmClockIv=null;
+function mountBeamerCenter(){
+  var slot=document.getElementById('bmCenterSlot'); if(!slot) return;
+  if(!_bmCenter){
+    _bmCenter=document.createElement('div'); _bmCenter.className='bm-center';
+    _bmCenter.innerHTML=`<div class="bm-clock"><span class="off">88:88:88</span><span class="lit" id="bmClock">00:00:00</span></div><div class="bm-kranzlab">${KRANZLAB_CLOCK_SVG}</div>`;
+    slot.replaceWith(_bmCenter);
+    tickBmClock(); if(!_bmClockIv) _bmClockIv=setInterval(tickBmClock,1000);
+  } else {
+    slot.replaceWith(_bmCenter);   // persistenter Knoten — Animationen laufen weiter
+  }
+}
+
+/* Animierte Sternkonstellationen im Hintergrund (alle Ansichten) */
+function initBgFX(){
+  var c=document.getElementById('bgFX'); if(!c) return;
+  var ctx=c.getContext('2d'); if(!ctx) return;
+  var reduce=false; try{ reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+  var W,H,DPR,stars,D=140;
+  function resize(){
+    DPR=Math.min(2, window.devicePixelRatio||1);
+    W=c.clientWidth||window.innerWidth; H=c.clientHeight||window.innerHeight;
+    c.width=Math.round(W*DPR); c.height=Math.round(H*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
+    var target=Math.max(28, Math.min(120, Math.round((W*H)/15000)));
+    stars=[];
+    for(var i=0;i<target;i++) stars.push({
+      x:Math.random()*W, y:Math.random()*H,
+      vx:(Math.random()-.5)*0.10, vy:(Math.random()-.5)*0.10,
+      r:Math.random()*1.4+0.5, tw:Math.random()*6.28
+    });
+  }
+  function draw(t){
+    ctx.clearRect(0,0,W,H);
+    var i,j,a,b,dx,dy,d2;
+    if(!reduce){ for(i=0;i<stars.length;i++){ a=stars[i]; a.x+=a.vx; a.y+=a.vy;
+      if(a.x<-12)a.x=W+12; if(a.x>W+12)a.x=-12; if(a.y<-12)a.y=H+12; if(a.y>H+12)a.y=-12; } }
+    for(i=0;i<stars.length;i++){ for(j=i+1;j<stars.length;j++){ a=stars[i]; b=stars[j];
+      dx=a.x-b.x; dy=a.y-b.y; d2=dx*dx+dy*dy;
+      if(d2<D*D){ var al=(1-Math.sqrt(d2)/D)*0.13;
+        ctx.strokeStyle='rgba(120,185,215,'+al.toFixed(3)+')'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); } } }
+    for(i=0;i<stars.length;i++){ a=stars[i];
+      var tw=reduce?0.8:(0.55+0.45*Math.sin(t*0.001+a.tw));
+      ctx.fillStyle='rgba(212,226,246,'+(0.55*tw).toFixed(3)+')';
+      ctx.beginPath(); ctx.arc(a.x,a.y,a.r,0,6.2832); ctx.fill(); }
+    if(!reduce) requestAnimationFrame(draw);
+  }
+  var _rt; window.addEventListener('resize', function(){ clearTimeout(_rt); _rt=setTimeout(resize,200); });
+  resize(); requestAnimationFrame(draw);
+}
+window.addEventListener('load', function(){ try{startGlobe();}catch(e){} try{runOrbitReveal();}catch(e){} try{initBgFX();}catch(e){} });
