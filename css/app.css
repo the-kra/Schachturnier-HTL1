@@ -280,6 +280,13 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 
 /* Beamer: Anmeldung */
 .bm-join{display:flex;gap:3vw;align-items:center;height:100%}
+/* Beamer: QR + Pokale gemeinsam */
+.bm-joinhall{display:flex;gap:3vw;align-items:center;height:100%}
+.bm-jh-left{flex:none;display:flex;flex-direction:column;align-items:center;gap:1.4vw}
+.bm-jh-right{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.bm-jh-right .bm-section-title{text-align:center;margin-bottom:.8vw}
+.bm-jh-left .bm-count{margin-bottom:0}
+.bm-joinhall .trophies{max-width:none;margin:0;gap:1.6vw}
 .bm-qr{text-align:center;flex:none}
 .bm-qr #bmqr{background:#fff;padding:1vw;border-radius:1.2vw;box-shadow:var(--shadow-lg);display:inline-block}
 .bm-qr #bmqr img,.bm-qr #bmqr canvas{display:block;width:18vw !important;height:18vw !important}
@@ -341,4 +348,20 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 @media(max-width:560px){
   .res button{width:34px}
   .qrbox #qr{width:128px;height:128px}
+  .wrap{padding:14px 12px 70px}
+  .topbar{gap:10px;padding:4px 0 14px}
+  .logo{gap:9px}
+  .brand-logo{width:44px;height:44px}
+  .logo h1{font-size:1.2rem;line-height:1}
+  .logo .sub{font-size:.6rem;letter-spacing:.09em}
+  .statuschip{font-size:.64rem;padding:6px 10px}
+  .card{padding:16px 15px}
+  h2{font-size:1.22rem}
+  .lead{font-size:.9rem}
+  .ab-actions .btn,.ab-actions .btn.sm{flex:1 1 auto}
+}
+@media(max-width:380px){
+  .logo h1{font-size:1.05rem}
+  .brand-logo{width:40px;height:40px}
+  .statuschip{font-size:.6rem;padding:5px 9px}
 }

@@ -258,6 +258,13 @@ function exportExcel(){
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(hf), "Ruhmeshalle");
   }
 
+  // Aktuelle Pokal-Gravur (Titelverteidiger) — fuer spaeteren Re-Import
+  if(state.champions && state.champions.length){
+    const cp=[["Platz","Name","Klasse","Turnier","Datum"]];
+    [...state.champions].sort((a,b)=>a.rank-b.rank).forEach(c=>cp.push([c.rank,c.name,c.klasse||"",c.tournament||"",c.date||""]));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cp), "Pokale");
+  }
+
   const safe=(state.tournament_name||"Schachturnier").replace(/[^\w\-]+/g,"_");
   const date=new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, `${safe}_${date}.xlsx`);
@@ -541,7 +548,9 @@ function renderRegistration(app){
         <button class="btn ghost sm" id="btnSim" title="Spielt ein komplettes Turnier mit Zufallsergebnissen durch — testet Auslosung, Tabelle und Pokale.">${ic('play')} Testlauf simulieren</button>
         ${(state.champions||[]).length?`<button class="btn ghost sm" id="btnClearCup" title="Test-Gravur von den Pokalen entfernen (Wall of Fame bleibt).">${ic('trash')} Gravur löschen</button>`:""}
         ${(state.halloffame||[]).length?`<button class="btn ghost sm" id="btnClearWall" title="Gesamte Wall of Fame löschen — nur zum Aufräumen von Testdaten.">${ic('trash')} Wall of Fame leeren</button>`:""}
+        <button class="btn ghost sm" id="btnImpHall" title="Wall of Fame + Pokale aus einer Excel-Export-Datei wiederherstellen (Blätter 'Ruhmeshalle' und 'Pokale').">${ic('trophy')} Pokale/Hall importieren</button>
         <input type="file" id="impFile" accept=".xlsx,.xls,.csv" style="display:none">
+        <input type="file" id="impHallFile" accept=".xlsx,.xls" style="display:none">
       </div>`;
     app.appendChild(ab);
     $("#cfgName").onchange=e=>patchState({tournament_name:e.target.value||"Schachturnier"}).then(render);
@@ -557,6 +566,8 @@ function renderRegistration(app){
     const demo=$("#btnDemo"); if(demo) demo.onclick=addDemo;
     const imp=$("#btnImport"); if(imp) imp.onclick=()=>{ const f=$("#impFile"); if(f) f.click(); };
     const impF=$("#impFile"); if(impF) impF.onchange=e=>handleImportFile(e.target.files[0]);
+    const ih=$("#btnImpHall"); if(ih) ih.onclick=()=>{ const f=$("#impHallFile"); if(f) f.click(); };
+    const ihf=$("#impHallFile"); if(ihf) ihf.onchange=e=>importHallCups(e.target.files[0]);
     const sim=$("#btnSim"); if(sim) sim.onclick=simulateTournament;
     const clr=$("#btnClearCup"); if(clr) clr.onclick=()=>clearTrophies().then(()=>render());
     const clw=$("#btnClearWall"); if(clw) clw.onclick=()=>clearHallOfFame().then(()=>render());
@@ -564,6 +575,9 @@ function renderRegistration(app){
     const gc=$("#btnGenCode"); if(gc) gc.onclick=()=>{ patchState({event_code:String(Math.floor(1000+Math.random()*9000))}).then(render); };
     wireAdminCommon();
   }
+
+  // Schülerseite: Pokale + Ruhmeshalle zuerst, danach die Anmelde-Info
+  if(!IS_ADMIN) renderHall(app);
 
   // Anmeldeformular (alle) — abhängig vom Bestätigungsmodus
   const f=document.createElement("div"); f.className="card lg";
@@ -648,8 +662,8 @@ function renderRegistration(app){
 
   if(IS_ADMIN && SB_MODE) renderQR(app);
 
-  // Pokale + Wall of Fame (zwischen den Events die "Homepage")
-  renderHall(app);
+  // Beim Admin bleibt die Halle unten (Schüler haben sie oben)
+  if(IS_ADMIN) renderHall(app);
 }
 
 /* Sicherheits-Reset: Rückfrage, dann alles löschen (Pokale + Wall of Fame bleiben). */
@@ -907,7 +921,7 @@ function renderBeamer(){
   let panels=[];
 
   if(state.status==="registration"){
-    panels=["join","champions"];
+    panels=["joinhall"];               // QR + Pokale zusammen auf einer Seite
   }else if(state.status==="running"){
     panels=["pairings"];               // nur Spielplan — kein Umschalten in die Liste
   }else{
@@ -916,21 +930,19 @@ function renderBeamer(){
   const panel = panels[ui.beamerIdx % panels.length];
   let body="";
 
-  if(panel==="join"){
-    const viewer=location.origin+location.pathname;
+  if(panel==="joinhall"){
     const active=state.players.filter(p=>!p.withdrawn);
-    const latest=[...state.players].slice(-18).reverse();
     const showCode = (VMODE()==="code" && (state.event_code||"").trim());
-    body=`<div class="bm-join">
-      <div class="bm-qr"><div id="bmqr"></div><div class="bm-qrcap">Handy-Kamera drauf halten<br>& anmelden</div></div>
-      <div class="bm-joininfo">
+    body=`<div class="bm-joinhall">
+      <div class="bm-jh-left">
+        <div class="bm-qr"><div id="bmqr"></div><div class="bm-qrcap">Handy-Kamera drauf halten<br>& anmelden</div></div>
         ${showCode?`<div class="bm-code">Anmeldecode <b>${esc(state.event_code)}</b></div>`:""}
         <div class="bm-count"><b>${active.length}</b> angemeldet</div>
-        <div class="bm-names">${latest.map(p=>`<span class="bm-chip">${esc(p.name)}${p.klasse?` <i>${esc(p.klasse)}</i>`:""}</span>`).join("")||"<span class='bm-dim'>Noch niemand — sei die/der Erste!</span>"}</div>
+      </div>
+      <div class="bm-jh-right">
+        <div class="bm-section-title">${ic('trophy')} Titelverteidiger</div>
+        <div id="bmtrophies"></div>
       </div></div>`;
-  }
-  else if(panel==="champions"){
-    body=`<div class="bm-section-title">${ic('trophy')} Titelverteidiger</div><div id="bmtrophies"></div>`;
   }
   else if(panel==="pairings"){
     const prs=state.pairings.filter(p=>p.round===state.current_round).sort((a,b)=>a.board-b.board);
@@ -964,8 +976,10 @@ function renderBeamer(){
     ${panels.length>1?`<div class="bm-dots">${panels.map((_,i)=>`<span class="${i===ui.beamerIdx%panels.length?"on":""}"></span>`).join("")}</div>`:""}`;
   mountBeamerLogo();
 
-  if(panel==="join"){ try{ new QRCode($("#bmqr"),{text:location.origin+location.pathname,width:260,height:260,colorDark:"#20211d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }catch(e){} }
-  if(panel==="champions"){ renderTrophies($("#bmtrophies"), state.champions); }
+  if(panel==="joinhall"){
+    try{ new QRCode($("#bmqr"),{text:location.origin+location.pathname,width:260,height:260,colorDark:"#20211d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
+    renderTrophies($("#bmtrophies"), state.champions);
+  }
 }
 
 /* ---------- QR (nur Admin + Supabase) ---------- */
@@ -1043,6 +1057,44 @@ async function handleImportFile(file){
     }
     render(); toast(n+" Teilnehmer importiert ✓");
   }catch(e){ console.error(e); toast("Import fehlgeschlagen — Spalten 'Name'/'Klasse' prüfen"); }
+}
+
+/* Wall of Fame + Pokale aus einer Export-Datei wiederherstellen
+   (Blätter "Ruhmeshalle" und "Pokale" aus dem Excel-Export). */
+async function importHallCups(file){
+  if(!file) return;
+  if(typeof XLSX==="undefined"){ toast("Bitte kurz warten (Bibliothek lädt)"); return; }
+  const S=v=>String(v==null?"":v).trim();
+  try{
+    const wb=XLSX.read(await file.arrayBuffer(),{type:"array"});
+    let nHall=0, nCup=0;
+    const wsH=wb.Sheets["Ruhmeshalle"];
+    if(wsH){
+      const rows=XLSX.utils.sheet_to_json(wsH,{header:1,blankrows:false}), recs=[];
+      for(let i=1;i<rows.length;i++){ const r=rows[i]||[];
+        const rank=parseInt(r[2],10), name=S(r[3]);
+        if(name.length<2 || !(rank>=1)) continue;
+        recs.push({tournament_name:S(r[1]), event_date:S(r[0])||null, rank, name, klasse:S(r[4])});
+      }
+      if(recs.length){
+        state.halloffame=[...recs, ...(state.halloffame||[])];
+        if(SB_MODE) await sb.from("chess_halloffame").insert(recs);
+        nHall=recs.length;
+      }
+    }
+    const wsC=wb.Sheets["Pokale"];
+    if(wsC){
+      const rows=XLSX.utils.sheet_to_json(wsC,{header:1,blankrows:false}), champs=[];
+      for(let i=1;i<rows.length;i++){ const r=rows[i]||[];
+        const rank=parseInt(r[0],10), name=S(r[1]);
+        if(name.length<2 || !(rank>=1&&rank<=3)) continue;
+        champs.push({rank, name, klasse:S(r[2]), tournament:S(r[3]), date:S(r[4])});
+      }
+      if(champs.length){ champs.sort((a,b)=>a.rank-b.rank); await patchState({champions:champs, awarded:true}); nCup=champs.length; }
+    }
+    if(!nHall && !nCup){ toast("Keine Blätter 'Ruhmeshalle'/'Pokale' gefunden"); return; }
+    render(); toast(`Wiederhergestellt: ${nCup} Pokale, ${nHall} Hall-Einträge ✓`);
+  }catch(e){ console.error(e); toast("Import fehlgeschlagen — Datei/Blätter prüfen"); }
 }
 
 /* ============================ START ============================ */
