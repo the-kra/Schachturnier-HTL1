@@ -45,10 +45,11 @@ a{color:var(--accent-d)}
 /* Animiertes HTL1-Logo (Globus dreht sich, Orbit schwenkt ein) rechts im Header */
 .htl-mark{flex:none;display:flex;align-items:center;transition:transform .15s}
 .htl-mark:hover{transform:translateY(-1px)}
-.htl-mark svg{height:56px;width:auto;display:block}
+.htl-mark svg{height:112px;width:auto;display:block}
 @media(max-width:560px){.htl-mark{display:none}}
-.logo h1{font-size:1.6rem;font-weight:800}
-.logo .sub{font-size:.74rem;color:var(--ink-soft);font-weight:500;letter-spacing:.01em;margin-top:1px}
+.logo-txt{display:flex;flex-direction:column;min-width:0}
+.logo h1{font-family:"Cinzel",serif;font-size:1.72rem;font-weight:700;letter-spacing:.012em;line-height:1.04}
+.logo .sub{font-family:"Cinzel",serif;font-size:.8rem;color:var(--accent-d);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
 .statuschip{font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:6px 11px;border-radius:999px;white-space:nowrap}
 .chip-reg{background:rgba(232,150,56,.16);color:#f2ab57}
 .chip-run{background:var(--accent-soft);color:var(--accent-d)}
@@ -94,7 +95,7 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .count-badge{display:inline-flex;align-items:baseline;gap:7px;margin-bottom:14px}
 .count-badge b{font-family:"Bricolage Grotesque";font-size:2.1rem;font-weight:800;line-height:1;color:var(--accent-d)}
 .count-badge span{color:var(--ink-soft);font-weight:600}
-.players{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}
+.players{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:6px}
 .pl{display:flex;align-items:center;gap:11px;padding:10px 13px;background:var(--bg-soft);border:1px solid var(--line);border-radius:10px;font-size:.96rem;animation:rise .35s both}
 .pl .idx{min-width:1.7em;text-align:right;color:var(--ink-soft);font-weight:700;font-size:.82rem;flex:none;font-variant-numeric:tabular-nums}
 .pl .nm{font-weight:600;flex:1;min-width:0;line-height:1.3}
@@ -246,10 +247,10 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .beamer{position:fixed;inset:0;background:var(--bg);background-image:radial-gradient(circle at 100% 0%,var(--accent-soft) 0%,transparent 40%);display:flex;flex-direction:column;padding:2.2vw 2.6vw;z-index:100}
 .bm-top{display:flex;align-items:center;gap:1.2vw;padding-bottom:1.4vw;border-bottom:2px solid var(--line);margin-bottom:1.6vw}
 .bm-logo{width:4.6vw;height:4.6vw;flex:none;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(232,150,56,.3))}
-.bm-title{font-family:"Bricolage Grotesque";font-weight:800;font-size:2.6vw;letter-spacing:-.02em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bm-title{font-family:"Cinzel",serif;font-weight:700;font-size:2.4vw;letter-spacing:.01em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bm-status{font-weight:700;font-size:1.5vw;color:var(--accent-d);background:var(--accent-soft);padding:.6vw 1.2vw;border-radius:999px;white-space:nowrap}
 .bm-htl{flex:none;display:flex;align-items:center}
-.bm-htl svg{height:6vw;width:auto;display:block}
+.bm-htl svg{height:12vw;width:auto;display:block}
 .bm-stage{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden}
 .bm-stage.center{justify-content:center}
 .bm-section-title{font-family:"Bricolage Grotesque";font-weight:700;font-size:1.9vw;color:var(--ink-soft);margin-bottom:1.4vw}

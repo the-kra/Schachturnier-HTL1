@@ -987,7 +987,7 @@ function fmt(n){ return Number.isInteger(n)?String(n):n.toFixed(1).replace(".","
 let toastT;
 function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1900); }
 async function addDemo(){
-  const namen=["Lena M.","Paul K.","Mia S.","Jonas W.","Emma H.","Felix B.","Anna R.","Noah T.","Sophie L.","David P.","Marie F.","Lukas G.","Hannah Z.","Tobias N.","Laura D.","Simon V.","Julia A.","Florian E.","Sarah O.","Daniel U."];
+  const namen=["Lena Maier","Paul Koch","Mia Schuster","Jonas Weber","Emma Hofer","Felix Berger","Anna Reiter","Noah Tkalcic","Sophie Lang","David Pichler","Marie Fuchs","Lukas Gruber","Hannah Zöhrer","Tobias Novak","Laura Diem","Simon Vogel","Julia Aigner","Florian Ebner","Sarah Ostermann","Daniel Url"];
   const klassen=["1AHET","1BHET","2AHET","2BHET","3AHET"];
   for(const n of namen){ await addPlayer(n, klassen[Math.floor(Math.random()*klassen.length)]); }
   render(); toast("20 Testdaten hinzugefügt");
