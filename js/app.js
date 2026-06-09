@@ -666,7 +666,9 @@ function renderRegistration(app){
     if(lastField) lastField.onkeydown=e=>{ if(e.key==="Enter") submit(); };
   }
 
-  // Teilnehmerliste
+  // Teilnehmerliste — bei externem Anmelde-Link in der Schüleransicht ausblenden
+  const altReg = (codeGate && (state.reg_link||"").trim());
+  if(!(altReg && !IS_ADMIN)){
   const l=document.createElement("div"); l.className="card";
   const list = [...state.players].sort((a,b)=>a.name.localeCompare(b.name,"de"));
   l.innerHTML=`
@@ -681,6 +683,7 @@ function renderRegistration(app){
     if(IS_ADMIN){ const x=document.createElement("button"); x.className="x"; x.textContent="×"; x.title="Entfernen"; x.onclick=()=>{ removePlayer(p.id).then(render); }; d.appendChild(x); }
     pl.appendChild(d);
   });
+  }
 
   if(IS_ADMIN && SB_MODE) renderQR(app);
 
