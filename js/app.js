@@ -67,6 +67,7 @@ let state = {
   reg_text: "",                    // Externer Link: Hinweistext
   reg_link: "",                    // Externer Link: URL
   qr_extern: false,                // QR/Anmeldung zeigt auf: false = Schüleransicht (App), true = externer Link
+  paused: false,                   // Spielpause (Beamer/Handy zeigen Pausen-Screen)
   board_labels: "Brett 1, Brett 2, Brett 3, Brett 4, Brett 5, Brett 6, Brett 7, Brett 8, Brett 9, Brett 10, Brett 11, Brett 12, Brett 13, Brett 14, Brett 15, Brett 16, Brett 17, Brett 18, Brett 19, Brett 20",  // Bretter (Liste); Anzahl = Kapazität, leer = unbegrenzt
   beamer_boards: true,             // Brettnummern am Beamer anzeigen (ein/aus)
   champions: [],                   // aktuelle Pokal-Inhaber [{rank,name,klasse,tournament,date}]
@@ -795,6 +796,12 @@ function confirmReset(extraWarn){
 function renderRunning(app){
   if(IS_ADMIN) renderAdminBarRunning(app);
 
+  if(state.paused){
+    const pb=document.createElement("div"); pb.className="pausebanner";
+    pb.innerHTML=`${ic('clock')} <b>Spielpause</b> — gleich geht's weiter`;
+    app.appendChild(pb);
+  }
+
   const tabs=document.createElement("div"); tabs.className="tabs";
   tabs.innerHTML=`
     <button class="${ui.tab==="plan"?"on":""}" data-t="plan">${ic('clipboard')} Spielplan</button>
@@ -821,6 +828,7 @@ function renderAdminBarRunning(app){
         ? `<button class="btn" id="btnFin" ${allDone?"":"disabled"}>${ic('flag')} Turnier beenden${allDone?"":" (Ergebnisse fehlen)"}</button>`
         : `<button class="btn" id="btnNext" ${allDone?"":"disabled"}>${ic('arrow')} Runde ${cur+1} auslosen${allDone?"":" (Ergebnisse fehlen)"}</button>`}
       ${noResultsYet?`<button class="btn ghost sm" id="btnRe">${ic('shuffle')} Runde ${cur} neu auslosen</button>`:""}
+      <button class="btn ghost sm" id="btnPause">${state.paused?ic('play')+" Weiter spielen":ic('clock')+" Spielpause"}</button>
       <a class="btn ghost sm" href="${esc(location.origin+location.pathname+"?beamer")}" target="_blank" rel="noopener">${ic('monitor')} Beamer</a>
       ${adminCommonBtns()}
       <button class="btn danger sm" id="btnReset" title="Laufendes Turnier abbrechen und von vorne beginnen.">${ic('reset')} Turnier neu starten</button>
@@ -829,6 +837,7 @@ function renderAdminBarRunning(app){
   if($("#btnNext")) $("#btnNext").onclick=nextRound;
   if($("#btnFin"))  $("#btnFin").onclick=finishTournament;
   if($("#btnRe"))   $("#btnRe").onclick=()=>regeneratePairings(cur);
+  if($("#btnPause"))$("#btnPause").onclick=()=>patchState({paused:!state.paused}).then(render);
   if($("#btnReset"))$("#btnReset").onclick=()=>confirmReset("Das laufende Turnier wird ABGEBROCHEN.");
   wireAdminCommon();
 }
@@ -1102,7 +1111,7 @@ function renderBeamer(){
   if(state.status==="registration"){
     panels=["joinhall"];               // QR + Pokale zusammen auf einer Seite
   }else if(state.status==="running"){
-    panels=["pairings","standings"];   // Pokale liegen dauerhaft abgeschwächt im Hintergrund
+    panels = state.paused ? ["pause"] : ["pairings","standings"];   // Pause-Screen oder Plan/Reihung
   }else{
     panels=["sieger"];   // Pokale bleiben stehen, Endstand blendet darüber ein/aus
   }
@@ -1110,7 +1119,14 @@ function renderBeamer(){
   let body="";
   let bmQrTarget=location.origin+location.pathname;
 
-  if(panel==="joinhall"){
+  if(panel==="pause"){
+    const done=state.current_round>=state.num_rounds;
+    body=`<div class="bm-pause">
+      <div class="bm-pause-big">${ic('clock')} Spielpause</div>
+      <div class="bm-pause-sub">${done?"Gleich folgt die Siegerehrung.":`Gleich geht's weiter — Runde ${state.current_round} von ${state.num_rounds}`}</div>
+    </div>`;
+  }
+  else if(panel==="joinhall"){
     const active=state.players.filter(p=>!p.withdrawn);
     const codeSet = (VMODE()==="code" && (state.event_code||"").trim() && !useExtern());
     const altLink = useExtern() ? regTarget() : "";

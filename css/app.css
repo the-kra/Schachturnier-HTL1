@@ -428,6 +428,13 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-bgcups .trophies{max-width:min(62vw,118vh);background:none;border:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0;margin:0}
 .bm-bgcups .plaque,.bm-bgcups .trophy-cap{display:none}
 .beamer>.bm-top,.beamer>.bm-stage,.beamer>.bm-dots,.beamer>.bm-foot{position:relative;z-index:1}
+/* Spielpause */
+.bm-pause{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4vw;text-align:center;width:100%}
+.bm-pause-big{font-family:"Bricolage Grotesque";font-weight:800;font-size:7vw;line-height:1;color:var(--accent-d);display:flex;align-items:center;gap:1.4vw}
+.bm-pause-big svg{width:6vw;height:6vw}
+.bm-pause-sub{font-size:2.6vw;color:var(--ink-soft);font-weight:600}
+.pausebanner{display:flex;align-items:center;justify-content:center;gap:9px;background:var(--accent-soft);border:1px solid rgba(232,150,56,.4);color:var(--accent-d);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-weight:600}
+.pausebanner svg{width:18px;height:18px}
 .beamer .podium{margin-top:1vw}
 .beamer-podium .pname{font-size:2vw}.beamer-podium .ppts{font-size:1.4vw}.beamer-podium .stand{font-size:3vw}
 .beamer-podium .pod.p1 .stand{height:14vh}.beamer-podium .pod.p2 .stand{height:10vh}.beamer-podium .pod.p3 .stand{height:8vh}
