@@ -1351,11 +1351,11 @@ function printCertificates(){
     </div></section>`;
   }).join('');
   const css=`*{margin:0;padding:0;box-sizing:border-box}@page{size:A4 portrait;margin:0}
-    html,body{margin:0;padding:0}
+    html,body{height:100%;margin:0;padding:0}
     body{font-family:"EB Garamond",Georgia,serif;color:#3a2e12;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .cert{height:296mm;display:flex;align-items:center;justify-content:center;overflow:hidden;page-break-after:always}
+    .cert{min-height:100%;display:flex;align-items:center;justify-content:center;page-break-after:always}
     .cert:last-child{page-break-after:auto}
-    .frame{width:194mm;min-height:250mm;border:1mm solid #b8893f;border-radius:3mm;
+    .frame{width:194mm;min-height:238mm;border:1mm solid #b8893f;border-radius:3mm;
       box-shadow:inset 0 0 0 .5mm #d8b974,inset 0 0 0 2mm #fffdf7,inset 0 0 0 2.4mm #e7cf95;
       background:radial-gradient(135% 78% at 50% 0,#fffdf7 0,#f7eed6 100%);
       display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;padding:13mm 18mm}
