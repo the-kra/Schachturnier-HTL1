@@ -81,7 +81,7 @@ do $$ begin alter publication supabase_realtime add table chess_halloffame; exce
 ---
 
 ## Spalten-Übersicht (zur Kontrolle)
-**chess_state** (eine Zeile, `id=1`): `tournament_name, status, num_rounds, current_round, time_control, champions(jsonb), awarded, event_code, verify_mode, reg_text, reg_link, qr_extern, paused, pause_text, board_labels, beamer_boards, updated_at`
+**chess_state** (eine Zeile, `id=1`): `tournament_name, status, num_rounds, current_round, time_control, champions(jsonb), awarded, event_code, verify_mode, reg_text, reg_link, qr_extern, live_only, paused, pause_text, board_labels, beamer_boards, updated_at`
 **chess_players**: `id, name, klasse, withdrawn, email, verified, created_at`
 **chess_pairings**: `id, round, board, white_id, black_id, result, active, board_label, created_at`
 **chess_halloffame**: `id, tournament_name, event_date, rank, name, klasse, created_at`
