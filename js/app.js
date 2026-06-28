@@ -38,6 +38,8 @@ const TROPHY_CONFIG = {
 };
 /* HTL1-LEGENDS-Wall (Banner ueber der Jahres-Doku) */
 const LEGENDS_BOARD = "assets/legends.jpg";
+/* Platz-Symbole (passend zur Schach-Seite statt Standard-Medaillen): König / Dame / Springer */
+const RANK_PIECE = ["♚","♛","♞"];
 const HTL1_LOGO = "assets/logo.png";
 /* =============================================================== */
 
@@ -1148,6 +1150,8 @@ function renderFinished(app){
   if(IS_ADMIN){
     const ab=document.createElement("div"); ab.className="adminbar";
     ab.innerHTML=`<div class="ab-top">${ic('teacher')}Turnier beendet <span class="lk">${esc(state.time_control)} · ${state.num_rounds} Runden</span></div>
+      <div class="codebox" style="margin-bottom:10px"><div class="field" style="margin:0;flex:1;min-width:200px"><label>Turniername (für Urkunden & Pokale)</label>
+        <input id="cfgNameFin" value="${esc(state.tournament_name||'')}" placeholder="z.B. Schachturnier HTL1-Lastenstraße 2026"></div></div>
       <div class="ab-actions">
         ${state.awarded?`<span class="ab-note">${ic('checkCircle')} Pokale graviert</span>`:`<button class="btn" id="btnAward">${ic('trophy')} Pokale gravieren (Top 3)</button>`}
         ${(state.champions||[]).length?`<button class="btn ghost sm" id="btnCert" title="Urkunden für die Top 3 (Schullogo, Pokal, Name, Klasse, Datum) als druckbare PDF öffnen.">${ic('table')} Urkunden (PDF)</button>`:""}
@@ -1159,6 +1163,7 @@ function renderFinished(app){
       </div>
       ${state.awarded?"":'<div class="ab-hint">Bisherige Pokal-Inhaber wandern dabei in die Wall of Fame, die neuen Top 3 kommen auf die Pokale.</div>'}`;
     app.appendChild(ab);
+    if($("#cfgNameFin")) $("#cfgNameFin").onchange=e=>patchState({tournament_name:e.target.value||"Schachturnier"}).then(render);
     if($("#btnAward")) $("#btnAward").onclick=awardTrophies;
     if($("#btnCert")) $("#btnCert").onclick=printCertificates;
     if($("#btnClearCup")) $("#btnClearCup").onclick=()=>clearTrophies().then(()=>render());
@@ -1255,14 +1260,12 @@ function renderWall(container){
     keys.forEach(k=>{
       const [date,name]=k.split("|");
       const yr=(String(date).match(/^(\d{4})/)||[,"20XX"])[1];
-      const list=groups[k].sort((a,b)=>a.rank-b.rank);
-      const ch=list.find(e=>e.rank===1);
-      const second=list.find(e=>e.rank===2), third=list.find(e=>e.rank===3);
-      const minor=[second?`🥈 ${esc(second.name)}`:null, third?`🥉 ${esc(third.name)}`:null].filter(Boolean).join("  ");
+      const list=groups[k].sort((a,b)=>a.rank-b.rank).slice(0,3);
       html+=`<div class="legend-plate" title="${esc(name||"Turnier")}">
         <div class="lp-year">— ${esc(yr)} —</div>
-        <div class="lp-champ">🥇 ${ch?esc(ch.name):"—"}${ch&&ch.klasse?` <span class="lp-kl">${esc(ch.klasse)}</span>`:""}</div>
-        ${minor?`<div class="lp-minor">${minor}</div>`:""}
+        <ol class="lp-podium">${list.map(e=>`<li class="lp-p${e.rank}">
+          <span class="lp-pc">${RANK_PIECE[e.rank-1]||"•"}</span>
+          <span class="lp-txt"><span class="lp-nm">${esc(e.name)}</span>${e.klasse?`<span class="lp-kl">${esc(e.klasse)}</span>`:""}</span></li>`).join("")}</ol>
       </div>`;
     });
     html+=`</div>`;
@@ -1289,7 +1292,7 @@ function renderHall(container){
     const t=document.createElement("div"); t.className="card podium-card";
     t.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('trophy')} Siegertafel</div>
       <table class="podium-tbl"><tbody>${sorted.map(c=>`<tr class="pr${c.rank}">
-        <td class="pr-r">${c.rank}.</td><td class="pr-n">${esc(c.name)}</td><td class="pr-k">${esc(c.klasse||"")}</td></tr>`).join("")}</tbody></table>`;
+        <td class="pr-r"><span class="pr-pc">${RANK_PIECE[c.rank-1]||"•"}</span>${c.rank}.</td><td class="pr-n">${esc(c.name)}</td><td class="pr-k">${esc(c.klasse||"")}</td></tr>`).join("")}</tbody></table>`;
     container.appendChild(t);
   }
   renderWall(container);
@@ -1305,42 +1308,51 @@ function printCertificates(){
   const cards=champs.map(c=>{
     const trophy=base+(TROPHY_CONFIG.images[c.rank-1]||'');
     const datum=esc(fmtDate(c.date)||'');
-    return `<section class="cert"><div class="frame frame${c.rank}">
-      <header><img class="logo" src="${logo}" onerror="this.style.display='none'"><div class="org">${tname}</div></header>
+    const rw=place[c.rank-1]||(c.rank+'. Platz');
+    return `<section class="cert"><div class="frame">
+      <img class="logo" src="${logo}" onerror="this.style.display='none'">
+      <div class="org">${tname}</div>
+      <div class="rule">${RANK_PIECE[c.rank-1]||'♞'}</div>
       <div class="title">Urkunde</div>
-      <div class="rank rank${c.rank}">${place[c.rank-1]||(c.rank+'. Platz')}</div>
       <img class="cup" src="${trophy}" onerror="this.style.display='none'">
-      <div class="for">verliehen an</div>
+      <div class="rank rank${c.rank}">${rw}</div>
+      <div class="grats">Herzliche Gratulation!</div>
+      <div class="for">Diese Urkunde wird verliehen an</div>
       <div class="name">${esc(c.name)}</div>
-      ${c.klasse?`<div class="kl">${esc(c.klasse)}</div>`:''}
+      ${c.klasse?`<div class="kl">Klasse ${esc(c.klasse)}</div>`:''}
+      <p class="body">Danke für deine Teilnahme am <b>${tname}</b>. Mit Einsatz, Köpfchen und Spielfreude hast du den <b>${rw}</b> erreicht — herzliche Gratulation zu dieser starken Leistung!</p>
       <div class="foot"><div class="meta">${tname}${datum?' · '+datum:''}</div>
-        <div class="sig"><span>Turnierleitung</span><span>Datum</span></div></div>
+        <div class="sig"><span>Turnierleitung</span><span>Ort, Datum</span></div></div>
     </div></section>`;
   }).join('');
-  const css=`*{margin:0;padding:0;box-sizing:border-box}@page{size:A4 landscape;margin:0}
-    body{font-family:"Hanken Grotesk",system-ui,Arial,sans-serif;color:#2a2208;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .cert{width:297mm;height:210mm;padding:9mm;page-break-after:always;display:flex}
-    .frame{flex:1;border:1.4mm solid #b8893f;border-radius:5mm;box-shadow:inset 0 0 0 1mm #e7cf95;
-      background:radial-gradient(120% 90% at 50% 0,#fffdf6 0,#f6ecd2 100%);
-      display:flex;flex-direction:column;align-items:center;text-align:center;padding:11mm 18mm}
-    header{display:flex;align-items:center;gap:6mm;margin-bottom:3mm}
-    .logo{height:20mm;width:auto}
-    .org{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:6.5mm;letter-spacing:.06em;color:#7a5a22;text-transform:uppercase}
-    .title{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:21mm;letter-spacing:.14em;color:#9a6f29;text-transform:uppercase;line-height:1;margin:1mm 0 2mm}
-    .rank{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:8mm;letter-spacing:.05em;padding:1.6mm 9mm;border-radius:30mm;color:#fff}
+  const css=`*{margin:0;padding:0;box-sizing:border-box}@page{size:A4 portrait;margin:0}
+    body{font-family:"EB Garamond",Georgia,serif;color:#3a2e12;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .cert{width:210mm;height:297mm;padding:10mm;page-break-after:always;display:flex}
+    .frame{flex:1;border:1.2mm solid #b8893f;border-radius:3mm;
+      box-shadow:inset 0 0 0 .6mm #d8b974,inset 0 0 0 2.4mm #fffdf7,inset 0 0 0 2.9mm #e7cf95;
+      background:radial-gradient(135% 78% at 50% 0,#fffdf7 0,#f7eed6 100%);
+      display:flex;flex-direction:column;align-items:center;text-align:center;padding:15mm 20mm}
+    .logo{height:23mm;width:auto;margin-bottom:2.5mm}
+    .org{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:5.4mm;letter-spacing:.12em;color:#7a5a22;text-transform:uppercase}
+    .rule{display:flex;align-items:center;justify-content:center;gap:5mm;width:52%;margin:4mm 0 1mm;color:#bd9a52;font-size:6.5mm}
+    .rule::before,.rule::after{content:"";flex:1;height:.35mm;background:#cdab64}
+    .title{font-family:"Playfair Display",Georgia,serif;font-weight:800;font-size:23mm;letter-spacing:.05em;color:#9a6f29;line-height:1;margin:1mm 0 0}
+    .cup{height:50mm;width:auto;margin:4mm 0 3mm}
+    .rank{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:7mm;letter-spacing:.06em;padding:1.7mm 11mm;border-radius:30mm;color:#fff}
     .rank1{background:linear-gradient(90deg,#caa24a,#a87f2f)}.rank2{background:linear-gradient(90deg,#9aa0a8,#777d86)}.rank3{background:linear-gradient(90deg,#c08a52,#9c6a39)}
-    .cup{height:52mm;width:auto;margin:1mm 0}
-    .for{font-size:4.6mm;color:#8a7536;letter-spacing:.05em}
-    .name{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:16mm;color:#241905;line-height:1.04;margin:1mm 0}
-    .kl{font-size:6mm;color:#7a5a22;font-weight:700}
-    .foot{margin-top:auto;width:100%}
-    .meta{font-size:5mm;color:#6a5a2a;margin-bottom:7mm;font-weight:600}
-    .sig{display:flex;justify-content:space-around;gap:18mm}
-    .sig span{border-top:.4mm solid #b8893f;padding-top:2mm;width:62mm;font-size:4mm;color:#6a5a2a}`;
+    .grats{font-family:"Playfair Display",Georgia,serif;font-style:italic;font-size:9mm;color:#7a5414;margin:6mm 0 1mm}
+    .for{font-size:5mm;color:#8a7536;letter-spacing:.03em}
+    .name{font-family:"Playfair Display",Georgia,serif;font-weight:800;font-size:17mm;color:#241905;line-height:1.05;margin:2mm 0 1mm}
+    .kl{font-size:5.6mm;color:#7a5a22;font-weight:600;letter-spacing:.02em}
+    .body{font-size:4.8mm;line-height:1.65;color:#4a3c1c;max-width:135mm;margin:7mm auto 0}
+    .foot{margin-top:auto;width:100%;padding-top:8mm}
+    .meta{font-family:"Bricolage Grotesque",sans-serif;font-size:4.2mm;color:#6a5a2a;margin-bottom:10mm;letter-spacing:.04em}
+    .sig{display:flex;justify-content:space-around;gap:14mm}
+    .sig span{border-top:.4mm solid #b8893f;padding-top:2mm;width:64mm;font-size:3.8mm;color:#6a5a2a}`;
   const w=window.open('','_blank');
   if(!w){ toast("Bitte Pop-ups erlauben, um die Urkunden zu öffnen"); return; }
   w.document.write(`<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Urkunden – ${tname}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Hanken+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,600&family=EB+Garamond:wght@400;500&family=Bricolage+Grotesque:wght@600;800&display=swap" rel="stylesheet">
     <style>${css}</style></head><body>${cards}
     <scr`+`ipt>window.onload=function(){setTimeout(function(){window.print();},500);};</scr`+`ipt></body></html>`);
   w.document.close();
