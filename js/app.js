@@ -32,8 +32,8 @@ const TROPHY_CONFIG = {
   images:        ["assets/pokal-gold_neu.png", "assets/pokal-silber_neu.png", "assets/pokal-bronze_neu.png"],
   plateTopPct:   [85, 86, 85],         // [gold, silber, bronze] – Silber etwas tiefer
   plateWidthPct: [50, 50, 50],
-  plateLeftPct:  [54, 54, 54],         // horizontale Mitte der Plakette (%)
-  plateRotateDeg:[-2.6, -1.4, -2.6],   // Neigung (Grad, negativ = gegen Uhrzeigersinn); Gold/Bronze stärker
+  plateLeftPct:  [56, 54, 54],         // horizontale Mitte der Plakette (%); Gold etwas weiter rechts
+  plateRotateDeg:[-3.4, -2.0, -2.6],   // Neigung (Grad, negativ = gegen Uhrzeigersinn)
   plateStyle:    ["engrave", "engrave", "engrave"]
 };
 /* HTL1-LEGENDS-Wall (Banner ueber der Jahres-Doku) */
@@ -941,7 +941,7 @@ function renderFinished(app){
   const st=computeStandings();
   if(st.length>=1){
     const awarded = state.awarded && (state.champions||[]).length;
-    const champs = awarded ? state.champions : topAsChamps();
+    const champs = state.champions||[];   // nur echte Gravur (Gravur löschen leert die Pokale)
     const card=document.createElement("div"); card.className="card lg";
     card.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('trophy')} Siegerehrung</div>
       <h2 style="text-align:center;margin-bottom:6px">${esc(state.tournament_name)}${awarded?` · ${esc(fmtDate(state.champions[0].date))}`:""}</h2>`;
@@ -981,10 +981,10 @@ function trophyFigure(rank, champ){
   const wRaw=Array.isArray(TROPHY_CONFIG.plateWidthPct)?TROPHY_CONFIG.plateWidthPct[i]:TROPHY_CONFIG.plateWidthPct;
   const wpc=(wRaw!=null?wRaw:70)+"%";
   const style=(TROPHY_CONFIG.plateStyle&&TROPHY_CONFIG.plateStyle[i])||"brass";
-  // Auto-Anpassung: an der längsten Zeile (Vor- oder Nachname) ausrichten
+  // Auto-Anpassung: längste Zeile füllt die Plakettenbreite (große Gravur)
   const words=(champ&&champ.name?champ.name.trim().split(/\s+/):["frei"]);
   const longest=words.reduce((m,w)=>Math.max(m,w.length),0)||4;
-  const fit= longest<=7?1 : longest<=9?0.9 : longest<=12?0.78 : longest<=15?0.66 : longest<=19?0.56 : 0.48;
+  const fit= Math.min(1.15, 7.2/Math.max(5,longest));
   return `<figure class="trophy t${rank}">
     <div class="trophy-img" style="--plate-top:${top};--plate-left:${left};--plate-rot:${rot};--plate-w:${wpc}">
       <img src="${esc(img)}" alt="Pokal ${rank}. Platz" onerror="this.style.display='none';this.closest('.trophy-img').classList.add('fallback');this.parentNode.querySelector('.trophy-svg').style.display='block';">
@@ -1151,7 +1151,7 @@ function renderBeamer(){
     try{ new QRCode($("#bmqr"),{text:bmQrTarget,width:260,height:260,colorDark:"#20211d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
     renderTrophies($("#bmtrophies"), state.champions);
   }
-  if(panel==="sieger"){ const aw=state.awarded&&(state.champions||[]).length; renderTrophies($("#bmtrophies"), aw?state.champions:topAsChamps()); }
+  if(panel==="sieger"){ renderTrophies($("#bmtrophies"), state.champions||[]); }
   if(state.status==="running"){ const bc=$("#bmBgCups"); if(bc) renderTrophies(bc, []); }   // leere Pokale als Hintergrund
 }
 
