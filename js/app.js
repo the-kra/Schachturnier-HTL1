@@ -1056,7 +1056,6 @@ function renderFinished(app){
 /* Name 2-zeilig: Vorname (Zeile 1) / Nachname(n) (Zeile 2) */
 function plName(s){ const p=esc((s||"").trim()).split(/\s+/); return p.length<2 ? (p[0]||"") : p[0]+"<br>"+p.slice(1).join(" "); }
 /* Aktuelle Top 3 als Pokal-Belegung (live, während/nach dem Turnier) */
-function topAsChamps(){ return standingsView().slice(0,3).map((p,i)=>({rank:i+1, name:p.name, klasse:p.klasse})); }
 function cupSVG(rank){
   const c = rank===1?{a:"#edc75f",b:"#cf9a2e"}:rank===2?{a:"#d4d8df",b:"#9aa0a8"}:{a:"#dca97d",b:"#b06f3f"};
   return `<svg viewBox="0 0 200 220" width="100%" height="100%" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
@@ -1138,14 +1137,15 @@ function renderWall(container){
   card.innerHTML=html; container.appendChild(card);
 }
 function renderHall(container){
-  const liveTop = state.status==="running" && state.pairings.some(p=>p.result);
-  const champs = liveTop ? topAsChamps() : state.champions;
+  const running = state.status==="running";
+  // Im laufenden Turnier bleiben die Pokale LEER (werden erst am Ende graviert)
+  const champs = running ? [] : state.champions;
   const hasCh=(champs||[]).length>0;
   const card=document.createElement("div"); card.className="card lg";
-  const h2 = liveTop ? "Aktueller Pokal-Stand" : (hasCh?"Amtierende Titelverteidiger":"Pokale warten auf ihre Sieger");
-  const lead = liveTop ? "So stehen die Pokale gerade — noch ist nichts entschieden."
+  const h2 = (running||!hasCh) ? "Pokale warten auf ihre Sieger" : "Amtierende Titelverteidiger";
+  const lead = running ? "Entschieden wird's am Ende — dann werden die Top 3 hier eingraviert."
     : (hasCh?`${esc(state.champions[0].tournament||"")} · ${esc(fmtDate(state.champions[0].date))}`:"Die Top 3 dieses Turniers werden hier eingraviert.");
-  card.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('trophy')} ${liveTop?"Pokale":"Ruhmeshalle"}</div>
+  card.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('trophy')} ${running?"Pokale":"Ruhmeshalle"}</div>
     <h2 style="text-align:center;margin-bottom:4px">${h2}</h2>
     <p class="lead" style="text-align:center">${lead}</p>`;
   container.appendChild(card);
@@ -1253,7 +1253,7 @@ function renderBeamer(){
       </div>
       <div class="bm-center"><span id="bmClockSlot"></span></div>
       <div class="bm-right">
-        ${showHdrQr?`<div class="bm-hdr-qr"><div id="bmHdrQr"></div><span class="t">Mitmachen</span><span class="u">${esc(linkLabel(hdrQrTarget))}</span></div>`:""}
+        ${showHdrQr?`<div class="bm-hdr-qr"><div id="bmHdrQr"></div><span class="t">Live</span><span class="u">${esc(linkLabel(hdrQrTarget))}</span></div>`:""}
         <span class="bm-htl" id="bmHtlSlot"></span>
       </div>
     </div>
