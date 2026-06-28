@@ -30,7 +30,7 @@ const ADMIN_PASS   = "";   // nur Lokal-Modus (ohne Supabase) als simpler Test-S
    plateStyle  = "engrave" (Goldgravur auf dunklem Sockel) | "brass" (Messingschild). */
 const TROPHY_CONFIG = {
   images:        ["assets/pokal-gold.png", "assets/pokal-silber.png", "assets/pokal-bronze.png"],
-  plateTopPct:   [89, 89.3, 90],
+  plateTopPct:   [89, 89.3, 88.8],
   plateWidthPct: [45, 45, 45],
   plateLeftPct:  [56, 56, 56],     // horizontale Mitte der Plakette (%)
   plateRotateDeg:[-2.75, -3.5, -4.6],// Neigung passend zur gebackenen Schrift (Grad, negativ = gegen Uhrzeigersinn)
@@ -939,23 +939,14 @@ function renderFinished(app){
     wireAdminCommon();
   }
   const st=computeStandings();
-  if(st.length>=3){
+  if(st.length>=1){
+    const awarded = state.awarded && (state.champions||[]).length;
+    const champs = awarded ? state.champions : topAsChamps();
     const card=document.createElement("div"); card.className="card lg";
-    card.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('trophy')} Siegerehrung</div><h2 style="text-align:center;margin-bottom:6px">${esc(state.tournament_name)}</h2><div class="podium" id="pod"></div>`;
+    card.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('trophy')} Siegerehrung</div>
+      <h2 style="text-align:center;margin-bottom:6px">${esc(state.tournament_name)}${awarded?` · ${esc(fmtDate(state.champions[0].date))}`:""}</h2>`;
     app.appendChild(card);
-    const pod=$("#pod");
-    const order=[{p:st[1],pos:2,c:"p2",crown:"🥈"},{p:st[0],pos:1,c:"p1",crown:"👑"},{p:st[2],pos:3,c:"p3",crown:"🥉"}];
-    order.forEach(o=>{
-      const d=document.createElement("div"); d.className="pod "+o.c;
-      d.innerHTML=`<div class="crown">${o.crown}</div><div class="pname">${esc(o.p.name)}</div><div class="pkl">${esc(o.p.klasse||"")}</div><div class="ppts">${fmt(o.p.points)} Pkt</div><div class="stand">${o.pos}</div>`;
-      pod.appendChild(d);
-    });
-  }
-  if(state.awarded && (state.champions||[]).length){
-    const tc=document.createElement("div"); tc.className="card";
-    tc.innerHTML=`<div class="eyebrow" style="text-align:center">Auf den Pokalen verewigt</div><h2 style="text-align:center;margin-bottom:6px">${esc(state.tournament_name)} · ${esc(fmtDate(state.champions[0].date))}</h2>`;
-    app.appendChild(tc);
-    renderTrophies(tc, state.champions);
+    renderTrophies(card, champs);
   }
   renderTable(app, true);
   renderWall(app);
@@ -964,6 +955,8 @@ function renderFinished(app){
 /* ---------- POKALE / RUHMESHALLE ---------- */
 /* Name 2-zeilig: Vorname (Zeile 1) / Nachname(n) (Zeile 2) */
 function plName(s){ const p=esc((s||"").trim()).split(/\s+/); return p.length<2 ? (p[0]||"") : p[0]+"<br>"+p.slice(1).join(" "); }
+/* Aktuelle Top 3 als Pokal-Belegung (live, während/nach dem Turnier) */
+function topAsChamps(){ return computeStandings().slice(0,3).map((p,i)=>({rank:i+1, name:p.name, klasse:p.klasse})); }
 function cupSVG(rank){
   const c = rank===1?{a:"#edc75f",b:"#cf9a2e"}:rank===2?{a:"#d4d8df",b:"#9aa0a8"}:{a:"#dca97d",b:"#b06f3f"};
   return `<svg viewBox="0 0 200 220" width="100%" height="100%" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
@@ -988,15 +981,19 @@ function trophyFigure(rank, champ){
   const wRaw=Array.isArray(TROPHY_CONFIG.plateWidthPct)?TROPHY_CONFIG.plateWidthPct[i]:TROPHY_CONFIG.plateWidthPct;
   const wpc=(wRaw!=null?wRaw:70)+"%";
   const style=(TROPHY_CONFIG.plateStyle&&TROPHY_CONFIG.plateStyle[i])||"brass";
+  // Auto-Anpassung: längere Namen kleiner, damit nichts abgeschnitten wird
+  const len=(champ&&champ.name?champ.name.length:4);
+  const fit= len<=10?1 : len<=13?0.85 : len<=16?0.73 : len<=20?0.62 : len<=26?0.53 : 0.46;
   return `<figure class="trophy t${rank}">
     <div class="trophy-img" style="--plate-top:${top};--plate-left:${left};--plate-rot:${rot};--plate-w:${wpc}">
       <img src="${esc(img)}" alt="Pokal ${rank}. Platz" onerror="this.style.display='none';this.closest('.trophy-img').classList.add('fallback');this.parentNode.querySelector('.trophy-svg').style.display='block';">
       <div class="trophy-svg" style="display:none">${cupSVG(rank)}</div>
-      <div class="plaque plaque-${style}${champ?"":" empty"}">
+      <div class="plaque plaque-${style}${champ?"":" empty"}" style="--fit:${fit}">
         <span class="pl-name">${champ?esc(champ.name):"frei"}</span>
         ${champ&&champ.klasse?`<span class="pl-kl">${esc(champ.klasse)}</span>`:""}
       </div>
     </div>
+    <figcaption class="trophy-cap">${rank}. Platz</figcaption>
   </figure>`;
 }
 function renderTrophies(container, champs){
@@ -1113,7 +1110,8 @@ function renderBeamer(){
     body=`<div class="bm-section-title" style="text-align:center">${ic('trophy')} ${esc(state.tournament_name)} · Sieger</div><div id="bmtrophies"></div>`;
   }
   else if(panel==="waitcups"){
-    body=`<div class="bm-section-title" style="text-align:center">${ic('trophy')} Diese Pokale warten auf ihre Sieger</div><div id="bmtrophies"></div>`;
+    const hasRes=state.pairings.some(p=>p.result);
+    body=`<div class="bm-section-title" style="text-align:center">${ic('trophy')} ${hasRes?"Aktueller Pokal-Stand":"Diese Pokale warten auf ihre Sieger"}</div><div id="bmtrophies"></div>`;
   }
 
   r.innerHTML=`
@@ -1141,7 +1139,7 @@ function renderBeamer(){
     renderTrophies($("#bmtrophies"), state.champions);
   }
   if(panel==="champions"){ renderTrophies($("#bmtrophies"), state.champions); }
-  if(panel==="waitcups"){ renderTrophies($("#bmtrophies"), []); }
+  if(panel==="waitcups"){ const hasRes=state.pairings.some(p=>p.result); renderTrophies($("#bmtrophies"), hasRes?topAsChamps():[]); }
 }
 
 /* ---------- QR (nur Admin + Supabase) ---------- */

@@ -239,6 +239,9 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
   backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 10px 28px rgba(0,0,0,.3)}
 .trophy{margin:0;text-align:center}
+.trophy-cap{margin-top:6px;font-family:"Bricolage Grotesque";font-weight:800;font-size:.82rem;letter-spacing:.03em;text-transform:uppercase;color:#cdd2db}
+.trophy.t1 .trophy-cap{color:#edc75f}.trophy.t2 .trophy-cap{color:#d4d8df}.trophy.t3 .trophy-cap{color:#d8a878}
+.beamer .trophy-cap{margin-top:1vw;font-size:1.6vw}
 .trophy.t1{order:2}.trophy.t2{order:1}.trophy.t3{order:3}
 .trophy.t2,.trophy.t3{transform:scale(.9);transform-origin:bottom center}
 .trophy-img{position:relative;width:100%;aspect-ratio:2/3;display:flex;align-items:flex-end;justify-content:center;background:transparent}
@@ -247,16 +250,16 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .trophy-svg svg{width:100%;height:100%}
 .plaque{position:absolute;left:var(--plate-left,50%);top:var(--plate-top,60%);transform:translate(-50%,-50%) rotate(var(--plate-rot,0deg));width:var(--plate-w,70%);text-align:center;line-height:1.12}
 .trophy-img.fallback .plaque{top:84% !important}
-.plaque .pl-name{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plaque .pl-name{display:block;white-space:nowrap;overflow:visible}
 .plaque .pl-kl{display:block}
 /* Messingschild (Fallback-Trophäen) */
 .plaque-brass{background:linear-gradient(180deg,#fbf3df,#e9d6a6);border:1px solid #c9ad6e;border-radius:5px;padding:5px 6px;box-shadow:0 1px 2px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.6)}
-.plaque-brass .pl-name{font-family:"Bricolage Grotesque";font-weight:700;font-size:.82rem;color:#4a3a16;letter-spacing:.01em}
+.plaque-brass .pl-name{font-family:"Bricolage Grotesque";font-weight:700;font-size:calc(.82rem * var(--fit,1));color:#4a3a16;letter-spacing:.01em}
 .plaque-brass .pl-kl{font-size:.62rem;color:#7a6526;font-weight:600;margin-top:1px}
 .plaque-brass.empty .pl-name{color:#9c905f;font-weight:600;font-style:italic}
 /* Goldgravur direkt auf dunklem Sockel (HTL1-Pokal) */
 .plaque-engrave{filter:none}
-.plaque-engrave .pl-name{font-family:"Bricolage Grotesque";font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;text-shadow:0 1px 0 rgba(255,247,225,.35)}
+.plaque-engrave .pl-name{font-family:"Bricolage Grotesque";font-weight:700;font-size:calc(.68rem * var(--fit,1));text-transform:uppercase;letter-spacing:.02em;text-shadow:0 1px 0 rgba(255,247,225,.35)}
 .trophy.t1 .plaque-engrave .pl-name{color:#4a3712}
 .trophy.t2 .plaque-engrave .pl-name{color:#33373d}
 .trophy.t3 .plaque-engrave .pl-name{color:#3c2410}
@@ -401,8 +404,8 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
   .bm-tbl{font-size:4.4vw}.bm-tbl td{padding:1.4vw 1.6vw}.bm-tbl .k,.bm-tbl .b{font-size:3.4vw}.bm-tbl .r{width:8vw}
 }
 .beamer .trophies{max-width:62vw;margin:0 auto;gap:2vw}
-.beamer .plaque .pl-name{font-size:1.5vw}.beamer .plaque .pl-kl{font-size:1vw}
-.beamer .plaque-engrave .pl-name{font-size:1.35vw}
+.beamer .plaque .pl-name{font-size:calc(1.25vw * var(--fit,1))}.beamer .plaque .pl-kl{font-size:1vw}
+.beamer .plaque-engrave .pl-name{font-size:calc(1.15vw * var(--fit,1))}
 .beamer .podium{margin-top:1vw}
 .beamer-podium .pname{font-size:2vw}.beamer-podium .ppts{font-size:1.4vw}.beamer-podium .stand{font-size:3vw}
 .beamer-podium .pod.p1 .stand{height:14vh}.beamer-podium .pod.p2 .stand{height:10vh}.beamer-podium .pod.p3 .stand{height:8vh}
