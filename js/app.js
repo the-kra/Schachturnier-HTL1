@@ -30,7 +30,7 @@ const ADMIN_PASS   = "";   // nur Lokal-Modus (ohne Supabase) als simpler Test-S
    plateStyle  = "engrave" (Goldgravur auf dunklem Sockel) | "brass" (Messingschild). */
 const TROPHY_CONFIG = {
   images:        ["assets/pokal-gold_neu.png", "assets/pokal-silber_neu.png", "assets/pokal-bronze_neu.png"],
-  plateTopPct:   [85, 86, 85],         // [gold, silber, bronze] – Silber etwas tiefer
+  plateTopPct:   [84, 86, 86.5],       // [gold, silber, bronze]
   plateWidthPct: [50, 50, 50],
   plateLeftPct:  [56, 54, 54],         // horizontale Mitte der Plakette (%); Gold etwas weiter rechts
   plateRotateDeg:[-3.4, -2.0, -2.6],   // Neigung (Grad, negativ = gegen Uhrzeigersinn)
