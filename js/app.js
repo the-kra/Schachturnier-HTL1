@@ -1037,13 +1037,18 @@ function renderWall(container){
   card.innerHTML=html; container.appendChild(card);
 }
 function renderHall(container){
+  const liveTop = state.status==="running" && state.pairings.some(p=>p.result);
+  const champs = liveTop ? topAsChamps() : state.champions;
+  const hasCh=(champs||[]).length>0;
   const card=document.createElement("div"); card.className="card lg";
-  const hasCh=(state.champions||[]).length>0;
-  card.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('trophy')} Ruhmeshalle</div>
-    <h2 style="text-align:center;margin-bottom:4px">${hasCh?"Amtierende Titelverteidiger":"Pokale warten auf ihre Sieger"}</h2>
-    ${hasCh?`<p class="lead" style="text-align:center">${esc(state.champions[0].tournament||"")} · ${esc(fmtDate(state.champions[0].date))}</p>`:`<p class="lead" style="text-align:center">Die Top 3 dieses Turniers werden hier eingraviert.</p>`}`;
+  const h2 = liveTop ? "Aktueller Pokal-Stand" : (hasCh?"Amtierende Titelverteidiger":"Pokale warten auf ihre Sieger");
+  const lead = liveTop ? "So stehen die Pokale gerade — noch ist nichts entschieden."
+    : (hasCh?`${esc(state.champions[0].tournament||"")} · ${esc(fmtDate(state.champions[0].date))}`:"Die Top 3 dieses Turniers werden hier eingraviert.");
+  card.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('trophy')} ${liveTop?"Pokale":"Ruhmeshalle"}</div>
+    <h2 style="text-align:center;margin-bottom:4px">${h2}</h2>
+    <p class="lead" style="text-align:center">${lead}</p>`;
   container.appendChild(card);
-  renderTrophies(card, state.champions);
+  renderTrophies(card, champs);
   renderWall(container);
 }
 
@@ -1065,7 +1070,7 @@ function renderBeamer(){
   }else if(state.status==="running"){
     panels=["pairings","standings","waitcups"];   // Spielplan, Gesamtreihung, wartende Pokale
   }else{
-    panels=["champions","standings"];
+    panels=["sieger"];   // Pokale bleiben stehen, Endstand blendet darüber ein/aus
   }
   const panel = panels[ui.beamerIdx % panels.length];
   let body="";
@@ -1106,8 +1111,18 @@ function renderBeamer(){
     body=`<div class="bm-section-title">${ic('table')} ${state.status==="finished"?"Endstand":"Gesamtreihung"}</div>
       <table class="bm-tbl"><tbody>${st.map((s,i)=>`<tr class="${i<3?"top"+(i+1):""}"><td class="r">${i+1}</td><td class="n">${esc(s.name)}</td><td class="k">${esc(s.klasse||"")}</td><td class="p">${fmt(s.points)}</td><td class="b">${fmt(s.buch)}</td></tr>`).join("")}</tbody></table>`;
   }
-  else if(panel==="champions"){
-    body=`<div class="bm-section-title" style="text-align:center">${ic('trophy')} ${esc(state.tournament_name)} · Sieger</div><div id="bmtrophies"></div>`;
+  else if(panel==="sieger"){
+    const st=computeStandings().slice(0,10);
+    body=`<div class="bm-sieger">
+      <div class="bm-sieger-cups">
+        <div class="bm-section-title" style="text-align:center">${ic('trophy')} ${esc(state.tournament_name)} · Sieger</div>
+        <div id="bmtrophies"></div>
+      </div>
+      <div class="bm-sieger-tbl">
+        <div class="bm-section-title">${ic('table')} Endstand</div>
+        <table class="bm-tbl"><tbody>${st.map((s,i)=>`<tr class="${i<3?"top"+(i+1):""}"><td class="r">${i+1}</td><td class="n">${esc(s.name)}</td><td class="k">${esc(s.klasse||"")}</td><td class="p">${fmt(s.points)}</td><td class="b">${fmt(s.buch)}</td></tr>`).join("")}</tbody></table>
+      </div>
+    </div>`;
   }
   else if(panel==="waitcups"){
     const hasRes=state.pairings.some(p=>p.result);
@@ -1138,7 +1153,7 @@ function renderBeamer(){
     try{ new QRCode($("#bmqr"),{text:bmQrTarget,width:260,height:260,colorDark:"#20211d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
     renderTrophies($("#bmtrophies"), state.champions);
   }
-  if(panel==="champions"){ renderTrophies($("#bmtrophies"), state.champions); }
+  if(panel==="sieger"){ const aw=state.awarded&&(state.champions||[]).length; renderTrophies($("#bmtrophies"), aw?state.champions:topAsChamps()); }
   if(panel==="waitcups"){ const hasRes=state.pairings.some(p=>p.result); renderTrophies($("#bmtrophies"), hasRes?topAsChamps():[]); }
 }
 
@@ -1308,7 +1323,7 @@ async function boot(){
       .on("postgres_changes",{event:"*",schema:"public",table:"chess_halloffame"},scheduleSync)
       .subscribe();
   }
-  if(IS_BEAMER){ setInterval(()=>{ ui.beamerIdx++; render(); }, 12000); }
+  if(IS_BEAMER){ setInterval(()=>{ if(state.status==="running"){ ui.beamerIdx++; render(); } }, 12000); }
   render();
 }
 boot(); 

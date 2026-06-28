@@ -406,6 +406,15 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .beamer .trophies{max-width:62vw;margin:0 auto;gap:2vw}
 .beamer .plaque .pl-name{font-size:calc(1.25vw * var(--fit,1))}.beamer .plaque .pl-kl{font-size:1vw}
 .beamer .plaque-engrave .pl-name{font-size:calc(1.15vw * var(--fit,1))}
+/* Sieger-Ansicht: Pokale bleiben zentral stehen, Endstand blendet sanft darüber ein und wieder aus */
+.bm-sieger{position:relative;width:100%;margin:auto 0}
+.bm-sieger-cups{width:100%;animation:bmCupsPulse 24s ease-in-out infinite}
+.bm-sieger-tbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2vw;
+  background:rgba(8,11,16,.5);border-radius:1vw;opacity:0;pointer-events:none;animation:bmTblPulse 24s ease-in-out infinite}
+.bm-sieger-tbl .bm-tbl{max-width:66vw}
+@keyframes bmCupsPulse{0%,33%{opacity:1}45%,63%{opacity:.28}75%,100%{opacity:1}}
+@keyframes bmTblPulse{0%,33%{opacity:0}45%,63%{opacity:1}75%,100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.bm-sieger-cups,.bm-sieger-tbl{animation:none}.bm-sieger-tbl{opacity:0}}
 .beamer .podium{margin-top:1vw}
 .beamer-podium .pname{font-size:2vw}.beamer-podium .ppts{font-size:1.4vw}.beamer-podium .stand{font-size:3vw}
 .beamer-podium .pod.p1 .stand{height:14vh}.beamer-podium .pod.p2 .stand{height:10vh}.beamer-podium .pod.p3 .stand{height:8vh}
