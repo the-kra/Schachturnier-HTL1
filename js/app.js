@@ -660,7 +660,7 @@ function renderRegistration(app){
       <div class="codebox">
         <div class="field" style="margin:0;flex:1;min-width:220px"><label>Bretter — Bezeichnungen (eine pro Zeile/Komma · ${boardCap()} Bretter${boardCap()?"":" · leer = unbegrenzt"})</label>
           <textarea id="cfgBoards" rows="2" style="resize:vertical">${esc(state.board_labels||"")}</textarea></div>
-        <span class="code-hint">Mehr Partien als Bretter → Rest wartet in der Warteschlange und rückt automatisch nach. Leer = unbegrenzt (kein Brett).
+        <span class="code-hint">Mehr Partien als Bretter → Rest wartet in der Warteschlange und rückt automatisch nach. <b>Leer = keine Brettnummern & keine Warteschlange</b> (alle spielen gleichzeitig).
           <label class="chk" style="display:flex;align-items:center;gap:7px;margin-top:8px;cursor:pointer"><input type="checkbox" id="cfgBeamerBoards" ${state.beamer_boards!==false?"checked":""}> Brettnummern am Beamer anzeigen</label></span>
       </div>
       <div class="modepick">
