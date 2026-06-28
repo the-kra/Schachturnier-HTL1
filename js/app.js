@@ -833,6 +833,12 @@ function renderAdminBarRunning(app){
   wireAdminCommon();
 }
 function renderPlan(app){
+  // Neue Runde gestartet? Wer auf der bisher letzten Runde war, geht automatisch mit (Live-Folgen).
+  const prevMax = ui._maxRound||0;
+  if(state.current_round > prevMax){
+    if(!ui.viewRound || ui.viewRound===prevMax) ui.viewRound=state.current_round;
+    ui._maxRound = state.current_round;
+  }
   if(!ui.viewRound || ui.viewRound>state.current_round) ui.viewRound=state.current_round;
   const card=document.createElement("div"); card.className="card";
   card.innerHTML=`<div class="roundpick"><span class="eyebrow" style="margin:0">Runde anzeigen</span>
@@ -918,20 +924,29 @@ function renderPlan(app){
 /* ---------- TABELLE ---------- */
 function renderTable(app, finalMode){
   const st=computeStandings();
+  const canEdit = IS_ADMIN && state.status==="running";
   const card=document.createElement("div"); card.className="card";
   card.innerHTML=`<h2 style="margin-bottom:14px">${finalMode?"Endstand":"Zwischenstand"}</h2>
-    <table class="tbl"><thead><tr><th>#</th><th>Name</th><th>Kl.</th><th style="text-align:right">Pkt</th><th style="text-align:right">Buchh.</th></tr></thead><tbody id="tb"></tbody></table>`;
+    <table class="tbl"><thead><tr><th>#</th><th>Name</th><th>Kl.</th><th style="text-align:right">Pkt</th><th style="text-align:right">Buchh.</th>${canEdit?"<th></th>":""}</tr></thead><tbody id="tb"></tbody></table>`;
   app.appendChild(card);
   const tb=$("#tb");
   st.forEach((s,i)=>{
     const tr=document.createElement("tr");
     if(i===0) tr.className="top1"; else if(i===1) tr.className="top2"; else if(i===2) tr.className="top3";
     if(s.withdrawn) tr.classList.add("out");
-    tr.innerHTML=`<td class="rk">${i+1}</td><td class="nm">${esc(s.name)}</td><td class="kl">${esc(s.klasse||"")}</td>
+    tr.innerHTML=`<td class="rk">${i+1}</td><td class="nm">${esc(s.name)}${s.withdrawn?' <span class="kl">· ausgestiegen</span>':""}</td><td class="kl">${esc(s.klasse||"")}</td>
       <td class="pts">${fmt(s.points)}</td><td class="bz">${fmt(s.buch)}</td>`;
+    if(canEdit){
+      const td=document.createElement("td"); td.style.textAlign="right";
+      const b=document.createElement("button"); b.className="btn ghost sm";
+      b.textContent = s.withdrawn ? "Aufnehmen" : "Aussteiger";
+      b.title = s.withdrawn ? "Wieder mitspielen lassen" : "Steigt aus — wird ab nächster Runde nicht mehr ausgelost (Punkte bleiben)";
+      b.onclick=()=>setWithdrawn(s.id, !s.withdrawn).then(render);
+      td.appendChild(b); tr.appendChild(td);
+    }
     tb.appendChild(tr);
   });
-  if(st.length===0) tb.innerHTML=`<tr><td colspan="5"><div class="empty">Noch keine Ergebnisse</div></td></tr>`;
+  if(st.length===0) tb.innerHTML=`<tr><td colspan="${canEdit?6:5}"><div class="empty">Noch keine Ergebnisse</div></td></tr>`;
 }
 
 /* ---------- ENDE ---------- */
