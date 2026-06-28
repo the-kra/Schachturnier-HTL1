@@ -833,6 +833,8 @@ function renderAdminBarRunning(app){
   wireAdminCommon();
 }
 function renderPlan(app){
+  // Neues Turnier/neue Simulation (Runde sinkt) -> Zähler zurücksetzen
+  if((ui._maxRound||0) > state.current_round){ ui._maxRound=0; ui.viewRound=0; }
   // Neue Runde gestartet? Wer auf der bisher letzten Runde war, geht automatisch mit (Live-Folgen).
   const prevMax = ui._maxRound||0;
   if(state.current_round > prevMax){
