@@ -840,6 +840,10 @@ function renderRegistration(app){
 
   if(IS_ADMIN && SB_MODE) renderQR(app);
 
+  const clk=document.createElement("div"); clk.className="card hints";
+  clk.innerHTML=`<div class="hint-row">${ic('clock')}<span><b>Tipp zur Zeitnehmung:</b> Installier dir schon mal eine <b>Schachuhr-App</b> — z.&nbsp;B. <b>Schachuhr+</b> oder die <b>Schach-Uhr von Chess.com</b>.</span></div>`;
+  app.appendChild(clk);
+
   // Schweizer System erklärt (aufklappbar) — vor allem für Neulinge
   const info=document.createElement("details"); info.className="card swiss-reg";
   info.innerHTML=`<summary>${ic('info')} <b>Wie läuft das Turnier?</b> — Schweizer System einfach erklärt</summary>
@@ -865,6 +869,11 @@ function renderRunning(app){
     pb.innerHTML=`${ic('clock')} <b>Spielpause</b> — ${esc((state.pause_text||"").trim()||"gleich geht's weiter")}`;
     app.appendChild(pb);
   }
+
+  const hints=document.createElement("div"); hints.className="card hints";
+  hints.innerHTML=`<div class="hint-row">${ic('clock')}<span><b>Zeitnehmung:</b> bitte eine Schachuhr-App verwenden — z.&nbsp;B. <b>Schachuhr+</b> oder die <b>Schach-Uhr von Chess.com</b>.</span></div>
+    <div class="hint-row">${ic('reset')}<span><b>Nach jeder Partie</b> bitte die Figuren wieder aufstellen.</span></div>`;
+  app.appendChild(hints);
 
   const tabs=document.createElement("div"); tabs.className="tabs";
   tabs.innerHTML=`
@@ -1068,6 +1077,11 @@ function renderFinished(app){
     $("#btnReset").onclick=()=>confirmReset();
     wireAdminCommon();
   }
+
+  const lb=document.createElement("div"); lb.className="card hints";
+  lb.innerHTML=`<div class="hint-row">${ic('flag')}<span><b>Danke fürs Mitspielen!</b> Bitte alle <b>Bretter aufgebaut stehen lassen</b> — Figuren in Grundstellung.</span></div>`;
+  app.appendChild(lb);
+
   const st=standingsView();
   if(st.length>=1){
     const awarded = state.awarded && (state.champions||[]).length;
@@ -1326,6 +1340,8 @@ function renderBeamer(){
     </div>
     <div class="bm-stage${(panel==="pairings"||panel==="standings"||panel==="sieger")?"":" center"}">${body}</div>
     ${panels.length>1?`<div class="bm-dots">${panels.map((_,i)=>`<span class="${i===ui.beamerIdx%panels.length?"on":""}"></span>`).join("")}</div>`:""}
+    ${state.status==="running"?`<div class="bm-reminder">${ic('reset')} Nach jeder Partie bitte die Figuren wieder aufstellen</div>`
+      :state.status==="finished"?`<div class="bm-reminder">${ic('flag')} Bitte alle Bretter aufgebaut stehen lassen — danke!</div>`:""}
     <div class="bm-foot"><span id="bmFootSlot"></span></div>`;
   mountBeamerClock(); mountBeamerLogo(); mountBeamerFoot();
 
