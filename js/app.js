@@ -1349,7 +1349,8 @@ async function handleImportFile(file){
   try{
     const buf=await file.arrayBuffer();
     const wb=XLSX.read(buf,{type:"array"});
-    const ws=wb.Sheets[wb.SheetNames[0]];
+    // Aus einem Turnier-Export bevorzugt das Blatt "Teilnehmer", sonst das erste Blatt
+    const ws=wb.Sheets["Teilnehmer"] || wb.Sheets[wb.SheetNames[0]];
     const rows=XLSX.utils.sheet_to_json(ws,{header:1,blankrows:false});
     if(!rows.length){ toast("Datei ist leer"); return; }
     let start=0,nameCol=0,vorCol=-1,nachCol=-1,klasseCol=1;
