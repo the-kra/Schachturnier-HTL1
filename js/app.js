@@ -711,18 +711,19 @@ function renderRegistration(app){
     $("#regOtp").onkeydown=e=>{ if(e.key==="Enter") verify(); };
     $("#btnBack").onclick=()=>{ ui.regStep="form"; render(); };
   } else {
-    const needEmail=(VMODE()==="email"), needCode=(VMODE()==="code");
+    // Admin darf einzelne Teilnehmer direkt hinzufügen (ohne Code/E-Mail)
+    const needEmail=(VMODE()==="email") && !IS_ADMIN, needCode=(VMODE()==="code") && !IS_ADMIN;
     f.innerHTML=`
-      <div class="eyebrow">Jetzt mitmachen</div>
-      <h2>Zum Turnier anmelden</h2>
-      <p class="lead">${needEmail?"Du bekommst einen Bestätigungscode per E-Mail.":needCode?"Gib den Code vom Beamer ein, um dich anzumelden.":"Trag deinen Namen ein — du erscheinst sofort in der Liste."}</p>
+      <div class="eyebrow">${IS_ADMIN?"Lehrer":"Jetzt mitmachen"}</div>
+      <h2>${IS_ADMIN?"Teilnehmer hinzufügen":"Zum Turnier anmelden"}</h2>
+      <p class="lead">${IS_ADMIN?"Name (+ Klasse/Funktion) eintragen — die Person erscheint sofort in der Liste. Mehrere nacheinander möglich.":needEmail?"Du bekommst einen Bestätigungscode per E-Mail.":needCode?"Gib den Code vom Beamer ein, um dich anzumelden.":"Trag deinen Namen ein — du erscheinst sofort in der Liste."}</p>
       <div class="row">
         <div class="field" style="flex:2"><label>Name</label><input id="regName" placeholder="Vor- und Nachname" autocomplete="off"></div>
         <div class="field" style="flex:1"><label>Klasse / Funktion</label><input id="regKlasse" placeholder="z.B. 2AHET oder Lehrer" autocomplete="off"></div>
       </div>
       ${needEmail?`<div class="field"><label>E-Mail</label><input id="regEmail" type="email" placeholder="name@schule.at" autocomplete="email"></div>`:""}
       ${needCode?`<div class="field"><label>Anmeldecode (vom Beamer)</label><input id="regCode" inputmode="numeric" maxlength="12" placeholder="Code" autocomplete="off"></div>`:""}
-      <button class="btn block" id="btnReg">${needEmail?ic('mail')+" Code anfordern":ic('check')+" Anmelden"}</button>`;
+      <button class="btn block" id="btnReg">${IS_ADMIN?ic('check')+" Hinzufügen":needEmail?ic('mail')+" Code anfordern":ic('check')+" Anmelden"}</button>`;
     app.appendChild(f);
     const submit=async()=>{
       const name=$("#regName").value, klasse=$("#regKlasse").value;
