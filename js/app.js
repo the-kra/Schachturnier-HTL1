@@ -606,7 +606,7 @@ function renderRegistration(app){
       <div class="ab-actions" style="margin-top:8px;border-top:1px dashed rgba(255,255,255,.12);padding-top:10px">
         <span class="code-hint" style="width:100%">${ic('flask')} Zum Testen vor dem Event:</span>
         <button class="btn ghost sm" id="btnDemo" title="20 Beispiel-Teilnehmer zum Ausprobieren hinzufügen.">+20 Testdaten</button>
-        <button class="btn ghost sm" id="btnImport" title="Teilnehmer aus Excel/CSV laden. Erste Zeile als Überschrift, Spalten 'Name' und 'Klasse'. Duplikate werden übersprungen.">${ic('import')} Import Excel/CSV</button>
+        <button class="btn ghost sm" id="btnImport" title="Teilnehmer aus Excel/CSV laden. Erste Zeile als Überschrift, Spalten 'Vorname', 'Nachname', 'Klasse' (oder 'Name', 'Klasse'). Namen werden auf einen Vornamen gekürzt, Duplikate übersprungen.">${ic('import')} Import Excel/CSV</button>
         <button class="btn ghost sm" id="btnSim" title="Spielt ein komplettes Turnier mit Zufallsergebnissen durch — testet Auslosung, Tabelle und Pokale.">${ic('play')} Testlauf simulieren</button>
         ${(state.champions||[]).length?`<button class="btn ghost sm" id="btnClearCup" title="Test-Gravur von den Pokalen entfernen (Wall of Fame bleibt).">${ic('trash')} Gravur löschen</button>`:""}
         ${(state.halloffame||[]).length?`<button class="btn ghost sm" id="btnClearWall" title="Gesamte Wall of Fame löschen — nur zum Aufräumen von Testdaten.">${ic('trash')} Wall of Fame leeren</button>`:""}
@@ -1212,7 +1212,7 @@ async function handleImportFile(file){
       await addPlayer(name,klasse); n++;
     }
     render(); toast(n+" Teilnehmer importiert ✓");
-  }catch(e){ console.error(e); toast("Import fehlgeschlagen — Spalten 'Name'/'Klasse' prüfen"); }
+  }catch(e){ console.error(e); toast("Import fehlgeschlagen — Spalten 'Vorname'/'Nachname'/'Klasse' prüfen"); }
 }
 
 /* Wall of Fame + Pokale aus einer Export-Datei wiederherstellen
