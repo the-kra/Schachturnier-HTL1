@@ -1340,7 +1340,7 @@ function printCertificates(){
         <div class="grats">Herzliche Gratulation!</div>
         <div class="for">Diese Urkunde wird verliehen an</div>
         <div class="name">${vor}${nach?`<span class="nachname">${nach}</span>`:''}</div>
-        ${c.klasse?`<div class="kl">Klasse ${esc(c.klasse)}</div>`:''}
+        ${c.klasse?`<div class="kl">${/^\d/.test((c.klasse||'').trim())?'Klasse '+esc(c.klasse):esc(c.klasse)}</div>`:''}
         <p class="body">Für kluge Züge, ruhige Nerven und taktisches Können –<br>zum <b>${rw}</b> beim<br><span class="b-tit">${tname}</span></p>
       </div>
       <div class="c-foot">
