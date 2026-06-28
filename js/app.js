@@ -706,7 +706,8 @@ function renderRegistration(app){
         <button class="btn ghost sm" id="btnImport" title="Teilnehmer aus Excel/CSV laden. Erste Zeile als Überschrift, Spalten 'Vorname', 'Nachname', 'Klasse' (oder 'Name', 'Klasse'). Namen werden auf einen Vornamen gekürzt, Duplikate übersprungen.">${ic('import')} Import Excel/CSV</button>
         <button class="btn ghost sm" id="btnTemplate" title="Leere Excel-Vorlage mit den Spalten Vorname / Nachname / Klasse herunterladen (inkl. Beispielen, auch ein Lehrer).">${ic('table')} Vorlage</button>
         <button class="btn ghost sm" id="btnSim" title="Spielt ein komplettes Turnier mit Zufallsergebnissen durch — testet Auslosung, Tabelle und Pokale.">${ic('play')} Testlauf simulieren</button>
-        <button class="btn ghost sm" id="btnSimTb" title="Baut ein fertiges Turnier mit echtem Gleichstand: Platz 1=2 und 3=4 (auch 5=6, 7=8) — zum Testen des Stechens. Ersetzt aktuelle Teilnehmer.">${ic('play')} Stechen-Test</button>
+        <button class="btn ghost sm" id="btnSimTb" title="Baut ein fertiges Turnier mit echtem Gleichstand: Platz 1=2 und 3=4 (auch 5=6, 7=8) — zum Testen des Stechens. Ersetzt aktuelle Teilnehmer.">${ic('play')} Stechen-Test 2er</button>
+        <button class="btn ghost sm" id="btnSimTb3" title="Baut ein fertiges Turnier mit echtem 3er-Gleichstand: Platz 1=2=3 (und 4=5=6) — zum Testen des Stechens bei drei Gleichen. Ersetzt aktuelle Teilnehmer.">${ic('play')} Stechen-Test 3er</button>
         <button class="btn ghost sm" id="btnPreviewHall" title="Test: schreibt die aktuellen Top 3 (oder Beispielnamen) als Tafel mit Jahreszahl auf die Wall of Fame — nur Vorschau, wird NICHT gespeichert. Knopf nochmal = entfernen.">${ic('trophy')} WoF-Vorschau${(state.halloffame||[]).some(e=>e._preview)?" (entf.)":""}</button>
         ${(state.champions||[]).length?`<button class="btn ghost sm" id="btnClearCup" title="Test-Gravur von den Pokalen entfernen (Wall of Fame bleibt).">${ic('trash')} Gravur löschen</button>`:""}
         ${(state.halloffame||[]).length?`<button class="btn ghost sm" id="btnClearWall" title="Gesamte Wall of Fame löschen — nur zum Aufräumen von Testdaten.">${ic('trash')} Wall of Fame leeren</button>`:""}
@@ -738,6 +739,7 @@ function renderRegistration(app){
     const ihf=$("#impHallFile"); if(ihf) ihf.onchange=e=>importHallCups(e.target.files[0]);
     const sim=$("#btnSim"); if(sim) sim.onclick=simulateTournament;
     const simtb=$("#btnSimTb"); if(simtb) simtb.onclick=simulateStechen;
+    const simtb3=$("#btnSimTb3"); if(simtb3) simtb3.onclick=simulateStechen3;
     const ph=$("#btnPreviewHall"); if(ph) ph.onclick=previewHall;
     const clr=$("#btnClearCup"); if(clr) clr.onclick=()=>clearTrophies().then(()=>render());
     const clw=$("#btnClearWall"); if(clw) clw.onclick=()=>clearHallOfFame().then(()=>render());
@@ -1502,6 +1504,30 @@ async function simulateStechen(){
   if(SB_MODE) await loadAll();
   render();
   toast("Stechen-Test fertig — Platz 1↔2 und 3↔4 gleich, jetzt 'Stechen ↑' testen ✓");
+}
+
+/* Stechen-Test mit echtem 3er-Gleichstand: 6 Spieler, 3-Zyklus-symmetrisch
+   (A>B>C>A im Trio + jeder schlägt einen aus dem unteren Trio) → Platz 1=2=3
+   und 4=5=6 in allen Wertungen exakt gleich. */
+async function simulateStechen3(){
+  if(!isAdmin()) return;
+  if(state.players.length && !confirm("Stechen-Test (3er) ersetzt alle aktuellen Teilnehmer & Ergebnisse. Fortfahren?")) return;
+  toast("Stechen-Test (3er) wird aufgebaut…");
+  await resetAll();
+  const roster=[["Anna","2AHET"],["Bea","2BHET"],["Carl","3AHIT"],
+                ["Dora","1AHME"],["Emil","1BHME"],["Finn","4AHET"]];
+  for(const [n,k] of roster){ await addPlayer(n,k,{present:true}); }
+  const P=state.players;   // A=0 B=1 C=2 D=3 E=4 F=5
+  const g=(r,b,white,black,result)=>({round:r,board:b,white_id:white.id,black_id:black.id,result,active:true,board_label:""});
+  await insertPairings([
+    g(1,1,P[0],P[1],"1-0"), g(1,2,P[2],P[3],"1-0"), g(1,3,P[4],P[5],"1-0"),
+    g(2,1,P[1],P[2],"1-0"), g(2,2,P[0],P[4],"1-0"), g(2,3,P[3],P[5],"0-1"),
+    g(3,1,P[0],P[2],"0-1"), g(3,2,P[1],P[5],"1-0"), g(3,3,P[3],P[4],"1-0"),
+  ]);
+  await patchState({status:"finished", num_rounds:3, current_round:3});
+  if(SB_MODE) await loadAll();
+  render();
+  toast("Stechen-Test (3er) fertig — Platz 1=2=3 gleich, jetzt 'Stechen ↑' testen ✓");
 }
 
 /* Lädt eine leere Excel-Vorlage mit den richtigen Spalten herunter.
