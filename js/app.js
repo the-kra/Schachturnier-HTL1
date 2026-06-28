@@ -29,11 +29,11 @@ const ADMIN_PASS   = "";   // nur Lokal-Modus (ohne Supabase) als simpler Test-S
    plateTopPct = vertikale Position der Gravur je Pokal (% von oben) zum Justieren.
    plateStyle  = "engrave" (Goldgravur auf dunklem Sockel) | "brass" (Messingschild). */
 const TROPHY_CONFIG = {
-  images:        ["assets/pokal-gold.png", "assets/pokal-silber.png", "assets/pokal-bronze.png"],
-  plateTopPct:   [89, 89.3, 88.8],
-  plateWidthPct: [45, 45, 45],
-  plateLeftPct:  [56, 56, 56],     // horizontale Mitte der Plakette (%)
-  plateRotateDeg:[-2.75, -3.5, -4.6],// Neigung passend zur gebackenen Schrift (Grad, negativ = gegen Uhrzeigersinn)
+  images:        ["assets/pokal-gold_neu.png", "assets/pokal-silber_neu.png", "assets/pokal-bronze_neu.png"],
+  plateTopPct:   [89, 89, 89],
+  plateWidthPct: [50, 50, 50],
+  plateLeftPct:  [56, 56, 56],         // horizontale Mitte der Plakette (%)
+  plateRotateDeg:[2, 2, 2],            // Neigung passend zur Platte (Grad, positiv = im Uhrzeigersinn)
   plateStyle:    ["engrave", "engrave", "engrave"]
 };
 /* HTL1-LEGENDS-Wall (Banner ueber der Jahres-Doku) */
@@ -981,15 +981,16 @@ function trophyFigure(rank, champ){
   const wRaw=Array.isArray(TROPHY_CONFIG.plateWidthPct)?TROPHY_CONFIG.plateWidthPct[i]:TROPHY_CONFIG.plateWidthPct;
   const wpc=(wRaw!=null?wRaw:70)+"%";
   const style=(TROPHY_CONFIG.plateStyle&&TROPHY_CONFIG.plateStyle[i])||"brass";
-  // Auto-Anpassung: längere Namen kleiner, damit nichts abgeschnitten wird
-  const len=(champ&&champ.name?champ.name.length:4);
-  const fit= len<=10?1 : len<=13?0.85 : len<=16?0.73 : len<=20?0.62 : len<=26?0.53 : 0.46;
+  // Auto-Anpassung: an der längsten Zeile (Vor- oder Nachname) ausrichten
+  const words=(champ&&champ.name?champ.name.trim().split(/\s+/):["frei"]);
+  const longest=words.reduce((m,w)=>Math.max(m,w.length),0)||4;
+  const fit= longest<=7?1 : longest<=9?0.9 : longest<=12?0.78 : longest<=15?0.66 : longest<=19?0.56 : 0.48;
   return `<figure class="trophy t${rank}">
     <div class="trophy-img" style="--plate-top:${top};--plate-left:${left};--plate-rot:${rot};--plate-w:${wpc}">
       <img src="${esc(img)}" alt="Pokal ${rank}. Platz" onerror="this.style.display='none';this.closest('.trophy-img').classList.add('fallback');this.parentNode.querySelector('.trophy-svg').style.display='block';">
       <div class="trophy-svg" style="display:none">${cupSVG(rank)}</div>
       <div class="plaque plaque-${style}${champ?"":" empty"}" style="--fit:${fit}">
-        <span class="pl-name">${champ?esc(champ.name):"frei"}</span>
+        <span class="pl-name">${champ?plName(champ.name):"frei"}</span>
         ${champ&&champ.klasse?`<span class="pl-kl">${esc(champ.klasse)}</span>`:""}
       </div>
     </div>
