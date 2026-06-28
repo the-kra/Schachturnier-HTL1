@@ -45,6 +45,7 @@ alter table chess_state add column if not exists verify_mode text default 'code'
 -- Alternativ-Anmeldung (wenn Code leer): Hinweistext + externer Link (QR)
 alter table chess_state add column if not exists reg_text text default '';
 alter table chess_state add column if not exists reg_link text default '';
+alter table chess_state add column if not exists qr_extern boolean default false;
 
 -- Bretter (Liste der Bezeichnungen; Anzahl = Kapazität, leer = unbegrenzt)
 alter table chess_state add column if not exists board_labels text default 'Brett 1, Brett 2, Brett 3, Brett 4, Brett 5, Brett 6, Brett 7, Brett 8, Brett 9, Brett 10, Brett 11, Brett 12, Brett 13, Brett 14, Brett 15, Brett 16, Brett 17, Brett 18, Brett 19, Brett 20';

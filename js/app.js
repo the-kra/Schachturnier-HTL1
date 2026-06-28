@@ -64,8 +64,9 @@ let state = {
   awarded: false,
   verify_mode: VERIFY_DEFAULT,      // Anmeldebestätigung: none | code | email (Admin-Panel)
   event_code: "",                  // Anmeldecode (Modus "code")
-  reg_text: "",                    // Alternativ-Anmeldung: Hinweistext (wenn Code leer)
-  reg_link: "",                    // Alternativ-Anmeldung: externer Link (QR zeigt darauf)
+  reg_text: "",                    // Externer Link: Hinweistext
+  reg_link: "",                    // Externer Link: URL
+  qr_extern: false,                // QR/Anmeldung zeigt auf: false = Schüleransicht (App), true = externer Link
   board_labels: "Brett 1, Brett 2, Brett 3, Brett 4, Brett 5, Brett 6, Brett 7, Brett 8, Brett 9, Brett 10, Brett 11, Brett 12, Brett 13, Brett 14, Brett 15, Brett 16, Brett 17, Brett 18, Brett 19, Brett 20",  // Bretter (Liste); Anzahl = Kapazität, leer = unbegrenzt
   beamer_boards: true,             // Brettnummern am Beamer anzeigen (ein/aus)
   champions: [],                   // aktuelle Pokal-Inhaber [{rank,name,klasse,tournament,date}]
@@ -77,6 +78,10 @@ let ui = { tab: "plan", viewRound: 0, beamerIdx: 0, regStep: "form", regDraft: {
 
 /* Aktiver Anmeldemodus (aus DB-State, sonst Default) */
 function VMODE(){ return state.verify_mode || VERIFY_DEFAULT; }
+/* Externer Anmelde-Link aktiv? Sonst: Schüleransicht (App-Seite) */
+function useExtern(){ return !!(state.qr_extern && (state.reg_link||"").trim()); }
+function regTarget(){ return useExtern() ? (state.reg_link||"").trim() : (location.origin+location.pathname); }
+function linkLabel(u){ return String(u||"").replace(/^https?:\/\//,"").replace(/\/+$/,""); }
 const MODE_INFO = {
   none:  { label:"Offen",  desc:"Schüler tippen nur Name + Klasse und sind sofort in der Liste. Keine Bestätigung, keine Kontaktdaten — am schnellsten." },
   code:  { label:"Code",   desc:"Du legst unten einen Code fest, der am Beamer steht. Nur wer den Code eintippt, kann sich anmelden. Keine Kontaktdaten, DSGVO-freundlich." },
@@ -601,18 +606,27 @@ function renderRegistration(app){
         </div>
         <div class="mp-desc">${esc(MODE_INFO[VMODE()].desc)}</div>
       </div>
-      ${VMODE()==="code"?`<div class="codebox">
+      ${(VMODE()==="code" && !state.qr_extern)?`<div class="codebox">
         <div class="field" style="margin:0;max-width:160px"><label>Anmeldecode</label>
-          <input id="cfgCode" value="${esc(state.event_code||"")}" placeholder="leer = Alternativ-Link" maxlength="12" autocomplete="off"></div>
+          <input id="cfgCode" value="${esc(state.event_code||"")}" placeholder="Code" maxlength="12" autocomplete="off"></div>
         <button class="btn ghost sm" id="btnGenCode">${ic('shuffle')} Code</button>
-        <span class="code-hint">Code am Beamer zeigen — nur damit kann man sich anmelden. Leer = stattdessen Alternativ-Anmeldung unten.</span>
+        <span class="code-hint">Code am Beamer zeigen — nur damit kann man sich anmelden.</span>
+      </div>`:""}
+      <div class="modepick">
+        <div class="mp-head"><span class="mp-label">QR / Anmeldung zeigt auf</span>
+          <div class="mp-opts">
+            <button class="mp${!state.qr_extern?" on":""}" data-qr="self">Schüleransicht</button>
+            <button class="mp${state.qr_extern?" on":""}" data-qr="extern">Externer Link</button>
+          </div>
+        </div>
+        <div class="mp-desc">${state.qr_extern?"QR &amp; Links (Beamer, Dashboard, Schülerseite) zeigen auf deinen externen Link.":"QR &amp; Links zeigen auf die Schüleransicht — Spielplan, Tabelle &amp; Anmeldung in der App."}</div>
       </div>
-      <div class="codebox">
-        <div class="field" style="margin:0;flex:1;min-width:180px"><label>Alternativ-Anmeldung — Hinweistext (wenn Code leer)</label>
+      ${state.qr_extern?`<div class="codebox">
+        <div class="field" style="margin:0;flex:1;min-width:180px"><label>Externer Link — Hinweistext</label>
           <input id="cfgRegText" value="${esc(state.reg_text||"")}" placeholder="z.B. Anmeldung über Projekttage" maxlength="80"></div>
         <div class="field" style="margin:0;flex:1;min-width:180px"><label>Link (QR zeigt darauf)</label>
           <input id="cfgRegLink" value="${esc(state.reg_link||"")}" placeholder="https://…"></div>
-        <span class="code-hint">Bei leerem Code zeigen Beamer & Schülerseite diesen Text + einen QR-Code zum Link (statt der Sperre).</span>
+        <span class="code-hint">Beamer & Schülerseite zeigen diesen Text + QR zum Link statt der App-Anmeldung.</span>
       </div>`:""}
       <div class="ab-actions">
         <button class="btn" id="btnStart" ${active.length<2?"disabled":""}>${ic('shuffle')} Anmeldung schließen & auslosen</button>
@@ -638,6 +652,7 @@ function renderRegistration(app){
     const cb=$("#cfgBoards"); if(cb) cb.onchange=e=>patchState({board_labels:e.target.value}).then(render);
     const bb=$("#cfgBeamerBoards"); if(bb) bb.onchange=e=>patchState({beamer_boards:e.target.checked});
     ab.querySelectorAll(".mp").forEach(b=>b.onclick=()=>{
+      if(b.dataset.qr){ const ex=(b.dataset.qr==="extern"); if(ex!==!!state.qr_extern) patchState({qr_extern:ex}).then(render); return; }
       const m=b.dataset.m;
       if(m===VMODE()) return;
       if(m==="email" && !SB_MODE){ toast("E-Mail-Modus braucht Supabase"); return; }
@@ -673,20 +688,20 @@ function renderRegistration(app){
   const f=document.createElement("div"); f.className="card lg"; f.id="reg-anmeldung";
   const codeGate = (VMODE()==="code" && !(state.event_code||"").trim());
 
-  if(VMODE()==="email" && !SB_MODE){
+  if(useExtern() && !IS_ADMIN){
+    const altLink=regTarget();
+    f.innerHTML=`<div class="eyebrow">Anmeldung</div><h2>${esc(state.reg_text||"Anmeldung")}</h2>
+      <p class="lead">Scanne den Code oder öffne den Link zur Anmeldung.</p>
+      <div class="qrbox"><div id="altqr"></div>
+        <div class="linkfield"><div class="linkrow"><input id="altlink" readonly value="${esc(altLink)}"><a class="btn sm" href="${esc(altLink)}" target="_blank" rel="noopener">Öffnen</a></div></div></div>`;
+    app.appendChild(f);
+    try{ new QRCode($("#altqr"), {text:altLink, width:150, height:150, colorDark:"#20211d", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
+  } else if(VMODE()==="email" && !SB_MODE){
     f.innerHTML=`<div class="eyebrow">Anmeldung</div><h2>E-Mail-Bestätigung nicht verfügbar</h2>
       <p class="lead">Der E-Mail-Modus braucht Supabase. Im Lokal-Modus bitte im Admin-Panel auf <b>Offen</b> oder <b>Code</b> stellen.</p>`;
     app.appendChild(f);
-  } else if(codeGate){
-    const altLink=(state.reg_link||"").trim();
-    if(altLink){
-      f.innerHTML=`<div class="eyebrow">Anmeldung</div><h2>${esc(state.reg_text||"Anmeldung")}</h2>
-        <p class="lead">Scanne den Code oder öffne den Link zur Anmeldung.</p>
-        <div class="qrbox"><div id="altqr"></div>
-          <div class="linkfield"><div class="linkrow"><input id="altlink" readonly value="${esc(altLink)}"><a class="btn sm" href="${esc(altLink)}" target="_blank" rel="noopener">Öffnen</a></div></div></div>`;
-      app.appendChild(f);
-      try{ new QRCode($("#altqr"), {text:altLink, width:150, height:150, colorDark:"#20211d", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
-    } else {
+  } else if(codeGate && !IS_ADMIN){
+    {
       f.innerHTML=`<div class="eyebrow">Anmeldung</div><h2>Noch nicht freigeschaltet</h2>
         <p class="lead">Die Anmeldung wird gleich von der Lehrkraft freigeschaltet — der Code erscheint dann am Beamer.</p>`;
       app.appendChild(f);
@@ -746,7 +761,7 @@ function renderRegistration(app){
   }
 
   // Teilnehmerliste — bei externem Anmelde-Link in der Schüleransicht ausblenden
-  const altReg = (codeGate && (state.reg_link||"").trim());
+  const altReg = useExtern();
   if(!(altReg && !IS_ADMIN)){
   const l=document.createElement("div"); l.className="card";
   const list = [...state.players].sort((a,b)=>a.name.localeCompare(b.name,"de"));
@@ -1080,13 +1095,13 @@ function renderBeamer(){
 
   if(panel==="joinhall"){
     const active=state.players.filter(p=>!p.withdrawn);
-    const codeSet = (VMODE()==="code" && (state.event_code||"").trim());
-    const altLink = (VMODE()==="code" && !(state.event_code||"").trim() && (state.reg_link||"").trim()) || "";
-    if(altLink) bmQrTarget=altLink;
+    const codeSet = (VMODE()==="code" && (state.event_code||"").trim() && !useExtern());
+    const altLink = useExtern() ? regTarget() : "";
+    bmQrTarget = regTarget();
     const cap = altLink ? esc(state.reg_text||"Zur Anmeldung") : "Handy-Kamera drauf halten<br>& anmelden";
     body=`<div class="bm-joinhall">
       <div class="bm-jh-left">
-        <div class="bm-qr"><div id="bmqr"></div><div class="bm-qrcap">${cap}</div></div>
+        <div class="bm-qr"><div id="bmqr"></div><div class="bm-qrcap">${cap}</div><div class="bm-qrlink">${esc(linkLabel(bmQrTarget))}</div></div>
         ${codeSet?`<div class="bm-code">Anmeldecode <b>${esc(state.event_code)}</b></div>`:""}
         ${altLink?"":`<div class="bm-count"><b>${active.length}</b> angemeldet</div>`}
       </div>
@@ -1131,7 +1146,7 @@ function renderBeamer(){
   }
 
   // QR im Header: Ziel = externer Anmelde-Link (falls gesetzt) sonst die Schülerseite; nicht bei der Anmelde-Seite (dort steht der große QR)
-  const hdrQrTarget = (VMODE()==="code" && !(state.event_code||"").trim() && (state.reg_link||"").trim()) ? (state.reg_link||"").trim() : (location.origin+location.pathname);
+  const hdrQrTarget = regTarget();
   const showHdrQr = state.status!=="registration";
   r.innerHTML=`
     ${state.status==="running"?`<div class="bm-bgcups" id="bmBgCups"></div>`:""}
@@ -1146,7 +1161,7 @@ function renderBeamer(){
       </div>
       <div class="bm-center"><span id="bmClockSlot"></span></div>
       <div class="bm-right">
-        ${showHdrQr?`<div class="bm-hdr-qr"><div id="bmHdrQr"></div><span>Mitmachen</span></div>`:""}
+        ${showHdrQr?`<div class="bm-hdr-qr"><div id="bmHdrQr"></div><span class="t">Mitmachen</span><span class="u">${esc(linkLabel(hdrQrTarget))}</span></div>`:""}
         <span class="bm-htl" id="bmHtlSlot"></span>
       </div>
     </div>
@@ -1166,11 +1181,12 @@ function renderBeamer(){
 
 /* ---------- QR (nur Admin + Supabase) ---------- */
 function renderQR(app){
-  const viewer = location.origin + location.pathname;
+  const viewer = regTarget();
+  const extern = useExtern();
   const card=document.createElement("div"); card.className="card";
-  card.innerHTML=`<div class="eyebrow">Schüler einladen</div><h2 style="margin-bottom:12px">QR-Code für die Anmeldung</h2>
+  card.innerHTML=`<div class="eyebrow">Schüler einladen</div><h2 style="margin-bottom:12px">${extern?esc(state.reg_text||"Externer Anmelde-Link"):"QR-Code für die Anmeldung"}</h2>
     <div class="qrbox"><div id="qr"></div>
-      <div class="linkfield"><p class="lead" style="margin-bottom:8px">Schüler scannen den Code oder öffnen den Link — sie sehen Anmeldung, Spielplan und Tabelle live.</p>
+      <div class="linkfield"><p class="lead" style="margin-bottom:8px">${extern?"Externer Link — Schüler scannen den Code oder öffnen ihn.":"Schüler scannen den Code oder öffnen den Link — sie sehen Anmeldung, Spielplan und Tabelle live."}</p>
         <div class="linkrow"><input id="vlink" readonly value="${esc(viewer)}"><button class="btn sm" id="cpy">Kopieren</button></div></div></div>`;
   app.appendChild(card);
   try{ new QRCode($("#qr"), {text:viewer, width:132, height:132, colorDark:"#20211d", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
