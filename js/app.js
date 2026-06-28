@@ -1194,47 +1194,28 @@ function renderWall(container){
   // älteste zuerst (Timeline), füllt sich wie eine echte Tafel
   const keys=Object.keys(groups).sort((a,b)=> (a.split("|")[0]).localeCompare(b.split("|")[0]));
 
-  // Sieger werden direkt auf die (leeren) Tafeln graviert — links oben beginnend, zeilenweise.
-  const colC=[42.6,54.8,67.0,79.3,91.4];        // x-Mitten der 5 Spalten (%)
-  const rowC=[39.8,55.8,71.2,86.0];             // y-Mitten der 4 Reihen (%)
-  const COLS=5, MAX=COLS*rowC.length;
-  let plates="";
-  keys.slice(0,MAX).forEach((k,i)=>{
-    const col=i%COLS, row=Math.floor(i/COLS);
-    const [date,name]=k.split("|");
-    const yr=(String(date).match(/^(\d{4})/)||[,"20XX"])[1];
-    const ch=groups[k].slice().sort((a,b)=>a.rank-b.rank).find(e=>e.rank===1);
-    const nm=ch?ch.name:"—";
-    const longest=Math.max(4,...nm.split(/\s+/).map(w=>w.length));
-    const fit=longest<=6?1:longest<=8?0.82:longest<=11?0.66:longest<=14?0.55:0.46;
-    const prev=groups[k].some(e=>e._preview);
-    plates+=`<button class="lp${ui.wallSel===k?" sel":""}${prev?" prev":""}" data-k="${esc(k)}" style="left:${colC[col]}%;top:${rowC[row]}%">
-      <span class="lp-y">— ${esc(yr)} —</span>
-      <span class="lp-n" style="--lfit:${fit}">${ch?plName(nm):"—"}</span>
-    </button>`;
-  });
-
-  // Detail-Tafel (Klick auf eine Platte) — gravierter Stil, Rang/Name/Klasse/Datum
-  let detail="";
-  if(ui.wallSel && groups[ui.wallSel]){
-    const [date,name]=ui.wallSel.split("|");
-    const list=groups[ui.wallSel].slice().sort((a,b)=>a.rank-b.rank);
-    const med=["🥇","🥈","🥉"];
-    detail=`<div class="wall-detail">
-      <div class="wd-head">${esc(name||"Turnier")}<span>${esc(fmtDate(date))}</span></div>
-      <table class="wd-tbl"><tbody>${list.map(e=>`<tr><td class="wd-r">${med[e.rank-1]||(e.rank+".")}</td><td class="wd-n">${esc(e.name)}</td><td class="wd-k">${esc(e.klasse||"")}</td></tr>`).join("")}</tbody></table>
-    </div>`;
-  }
-
   const card=document.createElement("div"); card.className="card lg legends-card";
-  card.innerHTML=`<div class="legends-board">
-      <img class="legends-banner" src="${esc(LEGENDS_BOARD)}" alt="HTL1 Legends">
-      <div class="legends-plates">${plates}</div>
-    </div>
-    ${keys.length?`<p class="wall-hint">Auf eine Tafel tippen für Details (Rang · Name · Klasse · Datum).</p>`:'<div class="empty" style="padding:14px 10px">Hier füllt sich die Wall of Fame über die Jahre — jeder Turniersieger wird auf eine Tafel graviert.</div>'}
-    ${detail}`;
-  container.appendChild(card);
-  card.querySelectorAll(".lp").forEach(b=>b.onclick=()=>{ const k=b.dataset.k; ui.wallSel = (ui.wallSel===k)?null:k; render(); });
+  let html=`<img class="legends-banner" src="${esc(LEGENDS_BOARD)}" alt="HTL1 Legends">`;
+  if(keys.length===0){
+    html+=`<div class="empty" style="padding:18px 10px">Hier wird die Wall of Fame über die Jahre gefüllt — jeder Turniersieger bekommt seine eigene Tafel.</div>`;
+  }else{
+    html+=`<div class="legend-grid">`;
+    keys.forEach(k=>{
+      const [date,name]=k.split("|");
+      const yr=(String(date).match(/^(\d{4})/)||[,"20XX"])[1];
+      const list=groups[k].sort((a,b)=>a.rank-b.rank);
+      const ch=list.find(e=>e.rank===1);
+      const second=list.find(e=>e.rank===2), third=list.find(e=>e.rank===3);
+      const minor=[second?`🥈 ${esc(second.name)}`:null, third?`🥉 ${esc(third.name)}`:null].filter(Boolean).join("  ");
+      html+=`<div class="legend-plate" title="${esc(name||"Turnier")}">
+        <div class="lp-year">— ${esc(yr)} —</div>
+        <div class="lp-champ">🥇 ${ch?esc(ch.name):"—"}${ch&&ch.klasse?` <span class="lp-kl">${esc(ch.klasse)}</span>`:""}</div>
+        ${minor?`<div class="lp-minor">${minor}</div>`:""}
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  card.innerHTML=html; container.appendChild(card);
 }
 function renderHall(container){
   const running = state.status==="running";

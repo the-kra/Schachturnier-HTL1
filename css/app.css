@@ -293,26 +293,16 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 /* Wall of Fame / HTL1 Legends */
 .legends-card{background:#101114;border-color:#2a2c33}
 .legends-card .empty{color:#8b8d84}
-.legends-board{position:relative;container-type:inline-size;border-radius:12px;overflow:hidden}
-.legends-banner{width:100%;display:block}
-.legends-plates{position:absolute;inset:0;pointer-events:none}
-.lp{position:absolute;transform:translate(-50%,-50%);width:10.5%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25cqw;
-  background:none;border:none;padding:0;cursor:pointer;pointer-events:auto;font-family:"Bricolage Grotesque";line-height:1.03;text-align:center}
-.lp-y{font-size:1.0cqw;font-weight:800;letter-spacing:.05em;color:#3a2a12;text-shadow:0 .06cqw 0 rgba(255,240,205,.3)}
-.lp-n{font-size:calc(1.7cqw * var(--lfit,1));font-weight:800;text-transform:uppercase;color:#241806;line-height:1.0;max-width:11cqw;text-shadow:0 .06cqw 0 rgba(255,240,205,.3)}
-.lp:hover,.lp.sel{filter:drop-shadow(0 0 .4cqw rgba(232,150,56,.75))}
-.lp.sel .lp-n,.lp.prev .lp-n{color:#7c2f12}
-.wall-hint{text-align:center;color:var(--ink-soft);font-size:.84rem;margin:12px 0 2px}
-.wall-detail{margin-top:12px;border-radius:10px;padding:14px 16px;color:#2a1c08;
-  background:linear-gradient(160deg,#caa56e,#a9824c 55%,#8f6a39);border:1px solid #7a5b2e;
-  box-shadow:inset 0 1px 0 rgba(255,245,220,.5),inset 0 -2px 5px rgba(70,45,15,.4),0 3px 10px rgba(0,0,0,.4)}
-.wd-head{font-family:"Bricolage Grotesque";font-weight:800;font-size:1rem;text-transform:uppercase;letter-spacing:.04em;color:#2a1b06;display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1px solid rgba(80,55,20,.5);padding-bottom:8px;margin-bottom:6px;text-shadow:0 1px 0 rgba(255,245,220,.4)}
-.wd-head span{font-size:.8rem;font-weight:700;color:#5d451b}
-.wd-tbl{width:100%;border-collapse:collapse;font-family:"Bricolage Grotesque"}
-.wd-tbl td{padding:6px 4px;text-shadow:0 1px 0 rgba(255,245,220,.35)}
-.wd-r{width:1.9em;font-size:1.05rem}
-.wd-n{font-weight:800;text-transform:uppercase;color:#2a1b06}
-.wd-k{text-align:right;font-weight:700;color:#5d451b}
+.legends-banner{width:100%;border-radius:12px;display:block;margin-bottom:18px}
+.legend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.legend-plate{position:relative;border-radius:7px;padding:11px 12px 12px;text-align:center;
+  background:linear-gradient(158deg,#e3c389,#bd9355 46%,#9c763f);
+  border:1px solid #7d5e30;box-shadow:0 2px 6px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,247,225,.5),inset 0 -2px 4px rgba(80,55,20,.35);
+  background-image:radial-gradient(circle at 9px 9px,#5e4622 0 1.6px,transparent 2.4px),radial-gradient(circle at calc(100% - 9px) 9px,#5e4622 0 1.6px,transparent 2.4px),radial-gradient(circle at 9px calc(100% - 9px),#5e4622 0 1.6px,transparent 2.4px),radial-gradient(circle at calc(100% - 9px) calc(100% - 9px),#5e4622 0 1.6px,transparent 2.4px),linear-gradient(158deg,#e3c389,#bd9355 46%,#9c763f)}
+.lp-year{font-family:"Bricolage Grotesque";font-weight:800;font-size:.78rem;letter-spacing:.12em;color:#4a3713;margin-bottom:4px;text-shadow:0 1px 0 rgba(255,247,225,.4)}
+.lp-champ{font-family:"Bricolage Grotesque";font-weight:700;font-size:.94rem;color:#2f2206;line-height:1.15;text-shadow:0 1px 0 rgba(255,247,225,.35)}
+.lp-kl{font-weight:600;font-size:.74rem;color:#6a4f1c}
+.lp-minor{margin-top:5px;font-size:.72rem;font-weight:600;color:#5d451b;border-top:1px solid rgba(94,70,34,.4);padding-top:5px}
 
 /* ===================== BEAMER ===================== */
 .beamer-body{overflow:hidden}
@@ -373,8 +363,8 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 /* Beamer: Anmeldung */
 .bm-join{display:flex;gap:3vw;align-items:center;height:100%}
 /* Beamer: QR + Pokale gemeinsam */
-.bm-joinhall{display:flex;gap:2.6vw;align-items:flex-start;justify-content:center;height:100%;overflow:hidden;padding-top:5vh}
-.bm-jh-left{flex:none;display:flex;flex-direction:column;align-items:center;gap:1.1vw}
+.bm-joinhall{display:flex;gap:2.6vw;align-items:flex-start;justify-content:center;height:100%;overflow:hidden;padding-top:3vh}
+.bm-jh-left{flex:none;display:flex;flex-direction:column;align-items:center;gap:.7vw}
 .bm-jh-right{flex:0 1 auto;min-width:0;display:flex;flex-direction:column;justify-content:center}
 .bm-jh-right .bm-section-title{text-align:center;margin-bottom:.6vw}
 .bm-jh-left .bm-count{margin-bottom:0}
@@ -391,12 +381,12 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-qr{text-align:center;flex:none}
 .bm-qr #bmqr{background:#fff;padding:1.1vw;border-radius:2.4vw;box-shadow:var(--shadow-lg);display:inline-block}
 .bm-qr #bmqr img,.bm-qr #bmqr canvas{display:block;width:min(11vw,20vh) !important;height:min(11vw,20vh) !important;border-radius:1.2vw}
-.bm-qrcap{margin-top:1vw;font-weight:700;font-size:1.4vw;color:var(--ink-soft)}
+.bm-qrcap{margin-top:.6vw;font-weight:700;font-size:1.2vw;color:var(--ink-soft)}
 .bm-joininfo{flex:1;min-width:0}
-.bm-code{font-family:"Bricolage Grotesque";font-size:1.8vw;color:var(--ink-soft);margin-bottom:.8vw}
-.bm-code b{display:inline-block;font-size:3.4vw;font-weight:800;color:var(--accent-d);letter-spacing:.1em;background:var(--accent-soft);border:1px solid rgba(232,150,56,.4);border-radius:.6vw;padding:.1vw 1.2vw;margin-left:.6vw}
-.bm-count{font-family:"Bricolage Grotesque";font-size:2.4vw;margin-bottom:1.4vw}
-.bm-count b{font-size:5vw;color:var(--accent-d);font-weight:800}
+.bm-code{font-family:"Bricolage Grotesque";font-size:1.5vw;color:var(--ink-soft);margin-bottom:.3vw}
+.bm-code b{display:inline-block;font-size:2.8vw;font-weight:800;color:var(--accent-d);letter-spacing:.1em;background:var(--accent-soft);border:1px solid rgba(232,150,56,.4);border-radius:.6vw;padding:.1vw 1.1vw;margin-left:.6vw}
+.bm-count{font-family:"Bricolage Grotesque";font-size:1.9vw;margin-bottom:0}
+.bm-count b{font-size:4vw;color:var(--accent-d);font-weight:800}
 .bm-names{display:flex;flex-wrap:wrap;gap:.7vw;align-content:flex-start;max-height:32vh;overflow:hidden}
 .bm-chip{background:#23262d;border:1px solid var(--line);border-radius:999px;padding:.5vw 1.1vw;font-weight:600;font-size:1.5vw}
 .bm-chip i{color:var(--ink-soft);font-style:normal;font-size:1.1vw}
