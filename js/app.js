@@ -82,6 +82,15 @@ let ui = { tab: "plan", viewRound: 0, beamerIdx: 0, regStep: "form", regDraft: {
 function VMODE(){ return state.verify_mode || VERIFY_DEFAULT; }
 /* Tippt der/die Nutzer:in gerade in ein Feld? (dann kein Auto-Neu-Rendern) */
 function isTyping(){ const e=document.activeElement; return !!(e && (e.tagName==="INPUT"||e.tagName==="TEXTAREA"||e.tagName==="SELECT"||e.isContentEditable)); }
+/* Kompakte Signatur des Zustands — nur bei Änderung neu rendern (sonst restartet
+   z.B. die Sieger-Überblendung am Beamer bei jedem Poll). */
+function stateSig(){
+  return [state.updated_at, state.status, state.current_round, state.paused, state.pause_text,
+    state.awarded, (state.champions||[]).length, (state.halloffame||[]).length,
+    state.players.length, state.players.map(p=>p.withdrawn?1:0).join(""),
+    state.pairings.map(p=>(p.result||"")+(p.active?"1":"0")+(p.board_label||"")).join("|")
+  ].join("~");
+}
 /* Externer Anmelde-Link aktiv? Sonst: Schüleransicht (App-Seite) */
 function useExtern(){ return !!(state.qr_extern && (state.reg_link||"").trim()); }
 function regTarget(){ return useExtern() ? (state.reg_link||"").trim() : (location.origin+location.pathname); }
@@ -1373,13 +1382,17 @@ async function boot(){
     sb.auth.onAuthStateChange((_evt, sess)=>{ authUser = sess ? sess.user : null; if(IS_ADMIN) render(); });
     await loadAll();
     // Realtime-Änderungen coalescen: mehrere Events kurz hintereinander -> ein Reload+Render
-    let _syncT=null, _syncing=false, _pending=false;
+    let _syncT=null, _syncing=false, _pending=false, _lastSig=stateSig();
     const runSync=async()=>{
       if(_syncing){ _pending=true; return; }   // läuft schon -> nach Abschluss nachholen
       // Während man in ein Feld tippt NICHT neu rendern (sonst Eingabe weg + Scroll springt)
       if(isTyping()){ _syncT=setTimeout(runSync, 600); return; }
       _syncing=true;
-      try{ await loadAll(); if(!isTyping()) render(); else _pending=true; }
+      try{
+        await loadAll();
+        const sig=stateSig();
+        if(sig!==_lastSig){ _lastSig=sig; if(!isTyping()) render(); else _pending=true; }   // nur bei echter Änderung rendern
+      }
       finally{ _syncing=false; if(_pending && !isTyping()){ _pending=false; runSync(); } }
     };
     const scheduleSync=()=>{ clearTimeout(_syncT); _syncT=setTimeout(runSync, 120); };
