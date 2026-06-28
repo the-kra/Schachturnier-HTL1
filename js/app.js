@@ -1048,7 +1048,7 @@ function renderBeamer(){
   if(state.status==="registration"){
     panels=["joinhall"];               // QR + Pokale zusammen auf einer Seite
   }else if(state.status==="running"){
-    panels=["pairings","standings"];   // Spielplan + Gesamtreihung im Wechsel
+    panels=["pairings","standings","waitcups"];   // Spielplan, Gesamtreihung, wartende Pokale
   }else{
     panels=["champions","standings"];
   }
@@ -1094,6 +1094,9 @@ function renderBeamer(){
   else if(panel==="champions"){
     body=`<div class="bm-section-title" style="text-align:center">${ic('trophy')} ${esc(state.tournament_name)} · Sieger</div><div id="bmtrophies"></div>`;
   }
+  else if(panel==="waitcups"){
+    body=`<div class="bm-section-title" style="text-align:center">${ic('trophy')} Diese Pokale warten auf ihre Sieger</div><div id="bmtrophies"></div>`;
+  }
 
   r.innerHTML=`
     <div class="bm-top">
@@ -1120,6 +1123,7 @@ function renderBeamer(){
     renderTrophies($("#bmtrophies"), state.champions);
   }
   if(panel==="champions"){ renderTrophies($("#bmtrophies"), state.champions); }
+  if(panel==="waitcups"){ renderTrophies($("#bmtrophies"), []); }
 }
 
 /* ---------- QR (nur Admin + Supabase) ---------- */
