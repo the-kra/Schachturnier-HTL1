@@ -87,12 +87,12 @@ Danach den Modus einfach im Admin-Panel auf **E-Mail** stellen.
 
 ## Teilnehmer aus Excel/CSV importieren
 
-Im Admin (Anmeldephase): **Import Excel/CSV**. Erwartet eine Tabelle mit Kopfzeile und den Spalten **Name** und **Klasse** (`.xlsx`, `.xls` oder `.csv`). Reihenfolge egal, Spalten werden automatisch erkannt, Duplikate übersprungen.
+Im Admin (Anmeldephase): **Import Excel/CSV**. Erwartet eine Tabelle mit Kopfzeile und den Spalten **Vorname**, **Nachname**, **Klasse** (`.xlsx`, `.xls` oder `.csv`). Eine einzelne **Name**-Spalte funktioniert weiterhin. Reihenfolge egal, Spalten werden automatisch erkannt, Duplikate übersprungen. Namen werden beim Import **gekürzt** (nur ein Vorname + Nachname), damit sie sauber auf die Pokale passen.
 
-| Name | Klasse |
-|------|--------|
-| Lena Maier | 2AHET |
-| Paul Koch | 1BHET |
+| Vorname | Nachname | Klasse |
+|---------|----------|--------|
+| Lena | Maier | 2AHET |
+| Paul | Koch | 1BHET |
 
 ---
 
