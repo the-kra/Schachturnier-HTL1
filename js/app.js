@@ -80,6 +80,8 @@ let ui = { tab: "plan", viewRound: 0, beamerIdx: 0, regStep: "form", regDraft: {
 
 /* Aktiver Anmeldemodus (aus DB-State, sonst Default) */
 function VMODE(){ return state.verify_mode || VERIFY_DEFAULT; }
+/* Tippt der/die Nutzer:in gerade in ein Feld? (dann kein Auto-Neu-Rendern) */
+function isTyping(){ const e=document.activeElement; return !!(e && (e.tagName==="INPUT"||e.tagName==="TEXTAREA"||e.tagName==="SELECT"||e.isContentEditable)); }
 /* Externer Anmelde-Link aktiv? Sonst: Schüleransicht (App-Seite) */
 function useExtern(){ return !!(state.qr_extern && (state.reg_link||"").trim()); }
 function regTarget(){ return useExtern() ? (state.reg_link||"").trim() : (location.origin+location.pathname); }
@@ -1374,9 +1376,11 @@ async function boot(){
     let _syncT=null, _syncing=false, _pending=false;
     const runSync=async()=>{
       if(_syncing){ _pending=true; return; }   // läuft schon -> nach Abschluss nachholen
+      // Während man in ein Feld tippt NICHT neu rendern (sonst Eingabe weg + Scroll springt)
+      if(isTyping()){ _syncT=setTimeout(runSync, 600); return; }
       _syncing=true;
-      try{ await loadAll(); render(); }
-      finally{ _syncing=false; if(_pending){ _pending=false; runSync(); } }
+      try{ await loadAll(); if(!isTyping()) render(); else _pending=true; }
+      finally{ _syncing=false; if(_pending && !isTyping()){ _pending=false; runSync(); } }
     };
     const scheduleSync=()=>{ clearTimeout(_syncT); _syncT=setTimeout(runSync, 120); };
     sb.channel("chess-live")
