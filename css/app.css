@@ -144,8 +144,14 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .roundpick{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .roundpick select{width:auto;padding:9px 12px}
 .pair{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:13px;margin-bottom:9px;background:var(--bg-soft);animation:rise .3s both}
-.pair .bno{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center;font-weight:800;font-size:.85rem;color:var(--ink);flex:none;
+.pair .bno{min-width:30px;height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center;font-weight:800;font-size:.85rem;color:var(--ink);flex:none;
   background:linear-gradient(45deg,rgba(255,255,255,.08) 25%,transparent 25% 75%,rgba(255,255,255,.08) 75%) 0 0/10px 10px,#2b2f37}
+.pair .bno.labeled{background:var(--accent-soft);border-color:rgba(232,150,56,.4);color:var(--accent-d);font-size:.78rem;font-family:"Hanken Grotesk"}
+.pair .bno.wait{background:#23262d;color:var(--ink-soft);font-family:"Hanken Grotesk"}
+.pair.waiting{opacity:.75;border-style:dashed}
+.waitcard{border-color:rgba(232,150,56,.25)}
+.wait-go{margin-left:auto;flex:none}
+.res .bd-in{width:74px;height:30px;border:1px solid var(--line);border-radius:7px;background:var(--bg-soft);color:var(--ink);padding:0 7px;font-size:.8rem;font-family:inherit;margin-right:4px;flex:none}
 .brett-hint{margin-left:auto;font-size:.74rem;color:var(--ink-soft);font-weight:600}
 .pair .side{flex:1;min-width:0}
 .pair .side .nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -357,7 +363,12 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-bd{font-family:"Bricolage Grotesque";font-weight:800;color:var(--ink);font-size:1.3vw;width:2.4vw;height:2.4vw;flex:none;
   display:grid;place-items:center;border-radius:.4vw;border:1px solid var(--line);
   background:linear-gradient(45deg,rgba(255,255,255,.09) 25%,transparent 25% 75%,rgba(255,255,255,.09) 75%) 0 0/.8vw .8vw,#23262d}
+.bm-bd.lab{width:auto;min-width:2.4vw;padding:0 .7vw;background:var(--accent-soft);border-color:rgba(232,150,56,.4);color:var(--accent-d);font-family:"Hanken Grotesk";font-size:1.1vw}
 .bm-legend{font-family:"Hanken Grotesk";font-size:.95vw;font-weight:600;color:var(--ink-soft);letter-spacing:0;margin-left:.6vw}
+.bm-wait{margin-top:1.2vw;display:flex;flex-wrap:wrap;align-items:center;gap:.7vw 1vw}
+.bm-wait-t{font-weight:800;color:var(--accent-d);font-size:1.3vw}
+.bm-wchip{background:#23262d;border:1px solid var(--line);border-radius:.6vw;padding:.35vw 1vw;font-size:1.2vw;font-weight:600}
+.bm-wchip b{color:var(--accent-d)}
 .bm-pn{flex:1;font-weight:700;font-size:1.5vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bm-pn.r{text-align:right}
 .bm-res{font-family:"Bricolage Grotesque";font-weight:800;font-size:1.5vw;min-width:4vw;text-align:center;color:var(--accent-d)}

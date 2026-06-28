@@ -66,9 +66,10 @@ let state = {
   event_code: "",                  // Anmeldecode (Modus "code")
   reg_text: "",                    // Alternativ-Anmeldung: Hinweistext (wenn Code leer)
   reg_link: "",                    // Alternativ-Anmeldung: externer Link (QR zeigt darauf)
+  board_labels: "Brett 1, Brett 2, Brett 3, Brett 4, Brett 5, Brett 6, Brett 7, Brett 8, Brett 9, Brett 10, Brett 11, Brett 12, Brett 13, Brett 14, Brett 15, Brett 16, Brett 17, Brett 18, Brett 19, Brett 20",  // Bretter (Liste); Anzahl = Kapazität, leer = unbegrenzt
   champions: [],                   // aktuelle Pokal-Inhaber [{rank,name,klasse,tournament,date}]
   players: [],                     // {id,name,klasse,withdrawn,email,verified}
-  pairings: [],                    // {id,round,board,white_id,black_id,result}
+  pairings: [],                    // {id,round,board,white_id,black_id,result,active,board_label}
   halloffame: []                   // {tournament_name,event_date,rank,name,klasse}
 };
 let ui = { tab: "plan", viewRound: 0, beamerIdx: 0, regStep: "form", regDraft: {} };
@@ -146,14 +147,31 @@ async function insertPairings(arr){
   arr.forEach(p=>{ if(!p.id) p.id=uuid(); });
   state.pairings.push(...arr);
   if(SB_MODE){
-    const rows = arr.map(({id,round,board,white_id,black_id,result})=>({round,board,white_id,black_id,result}));
+    const rows = arr.map(({id,round,board,white_id,black_id,result,active,board_label})=>({round,board,white_id,black_id,result,active,board_label}));
     const {data} = await sb.from("chess_pairings").insert(rows).select();
     if(data){ /* IDs werden beim nächsten Reload sauber gezogen */ }
   }
 }
-async function setResult(id, result){
-  const p = state.pairings.find(x=>x.id===id); if(p) p.result=result;
+async function setResult(id, result, freedBoard){
+  const p = state.pairings.find(x=>x.id===id); if(!p) return;
+  const wasOpen = !p.result;
+  p.result=result;
   if(SB_MODE){ await sb.from("chess_pairings").update({result}).eq("id",id); }
+  // Warteschlange: aktives Brett wird frei -> nächstes Wartepaar aktivieren
+  if(result && wasOpen && p.active!==false && p.black_id!=null){
+    const next = state.pairings.find(x=>x.round===p.round && x.active===false && !x.result && x.black_id!=null);
+    if(next){
+      next.active=true; next.board_label=(freedBoard||"").trim();
+      if(SB_MODE){ await sb.from("chess_pairings").update({active:true, board_label:next.board_label}).eq("id",next.id); }
+    }
+  }
+}
+/* Wartepaar manuell aktiv setzen ("spielt") — optional mit Brett-Bezeichnung */
+async function activatePairing(id, label){
+  const p = state.pairings.find(x=>x.id===id); if(!p || p.active!==false) return;
+  p.active=true; p.board_label=(label||"").trim();
+  if(SB_MODE){ await sb.from("chess_pairings").update({active:true, board_label:p.board_label}).eq("id",id); }
+  render();
 }
 async function resetAll(){
   // champions + halloffame bleiben bewusst erhalten (Pokale + Wall of Fame)
@@ -351,9 +369,15 @@ function makePairings(round){
     if(!best || score<best.score){ best={...res, score}; if(score===0) break; }
   }
   const out=best.out;
-  if(bye) out.push({round,board:out.length+1,white_id:bye.id,black_id:null,result:"bye"});
+  // Brett-Kapazität: nur die ersten N Partien sind aktiv, der Rest wartet (Warteschlange)
+  const cap=boardCap();
+  out.forEach((p,i)=>{ p.active = (cap===0) || (i<cap); p.board_label=""; });
+  if(bye) out.push({round,board:out.length+1,white_id:bye.id,black_id:null,result:"bye",active:true,board_label:""});
   return out;
 }
+/* Bretter: Liste der Bezeichnungen (Anzahl = Kapazität, leer = unbegrenzt) */
+function boardLabels(){ return (state.board_labels||"").split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); }
+function boardCap(){ return boardLabels().length; }
 
 /* ============================ AKTIONEN ============================ */
 async function doRegister(name, klasse, extra){
@@ -531,7 +555,12 @@ function renderRegistration(app){
           <select id="cfgTime">${["3+2","5+0","5+3","10+0","10+5","15+0"].map(t=>`<option ${t==state.time_control?"selected":""}>${t}</option>`).join("")}</select></div>
       </div>
       <div class="forecast">${ic('clock')}<span>Geschätzte Dauer: <b>ca. ${fmtDur(fc.lo)} – ${fmtDur(fc.hi)}</b></span>
-        <span class="fc-sub">${fc.rounds} Runden · ${fc.games} Bretter · ${fc.n} Spieler${fc.n>=2&&fc.rounds<fc.recRounds?` · Tipp: ${fc.recRounds} Runden für ${fc.n} Spieler`:""}</span></div>
+        <span class="fc-sub">${fc.rounds} Runden · ${fc.games} Partien · ${fc.n} Spieler${fc.n>=2&&fc.rounds<fc.recRounds?` · Tipp: ${fc.recRounds} Runden für ${fc.n} Spieler`:""}</span></div>
+      <div class="codebox">
+        <div class="field" style="margin:0;flex:1;min-width:220px"><label>Bretter — Bezeichnungen (eine pro Zeile/Komma · ${boardCap()} Bretter${boardCap()?"":" · leer = unbegrenzt"})</label>
+          <textarea id="cfgBoards" rows="2" style="resize:vertical">${esc(state.board_labels||"")}</textarea></div>
+        <span class="code-hint">Mehr Partien als Bretter → Rest wartet in der Warteschlange und rückt automatisch nach. Leer = unbegrenzt (kein Brett).</span>
+      </div>
       <div class="modepick">
         <div class="mp-head"><span class="mp-label">Anmeldung</span>
           <div class="mp-opts">${["none","code","email"].map(m=>`<button class="mp${VMODE()===m?" on":""}" data-m="${m}" title="${esc(MODE_INFO[m].desc)}">${esc(MODE_INFO[m].label)}</button>`).join("")}</div>
@@ -571,6 +600,7 @@ function renderRegistration(app){
     $("#cfgName").onchange=e=>patchState({tournament_name:e.target.value||"Schachturnier"}).then(render);
     $("#cfgRounds").onchange=e=>patchState({num_rounds:+e.target.value}).then(render);
     $("#cfgTime").onchange=e=>patchState({time_control:e.target.value}).then(render);
+    const cb=$("#cfgBoards"); if(cb) cb.onchange=e=>patchState({board_labels:e.target.value}).then(render);
     ab.querySelectorAll(".mp").forEach(b=>b.onclick=()=>{
       const m=b.dataset.m;
       if(m===VMODE()) return;
@@ -752,15 +782,22 @@ function renderAdminBarRunning(app){
 function renderPlan(app){
   if(!ui.viewRound || ui.viewRound>state.current_round) ui.viewRound=state.current_round;
   const card=document.createElement("div"); card.className="card";
-  let html=`<div class="roundpick"><span class="eyebrow" style="margin:0">Runde anzeigen</span>
-    <select id="rsel">${Array.from({length:state.current_round},(_,i)=>i+1).map(r=>`<option value="${r}" ${r===ui.viewRound?"selected":""}>Runde ${r}</option>`).join("")}</select>
-    <span class="brett-hint">Nr. = Brett</span></div>`;
-  card.innerHTML=html;
+  card.innerHTML=`<div class="roundpick"><span class="eyebrow" style="margin:0">Runde anzeigen</span>
+    <select id="rsel">${Array.from({length:state.current_round},(_,i)=>i+1).map(r=>`<option value="${r}" ${r===ui.viewRound?"selected":""}>Runde ${r}</option>`).join("")}</select></div>`;
   app.appendChild(card);
   $("#rsel").onchange=e=>{ ui.viewRound=+e.target.value; render(); };
 
-  const prs=state.pairings.filter(p=>p.round===ui.viewRound).sort((a,b)=>a.board-b.board);
-  prs.forEach(p=>{
+  const labels=boardLabels();
+  if(IS_ADMIN && labels.length){
+    const dl=document.createElement("datalist"); dl.id="boardlist";
+    dl.innerHTML=labels.map(l=>`<option value="${esc(l)}"></option>`).join("");
+    card.appendChild(dl);
+  }
+  const allp=state.pairings.filter(p=>p.round===ui.viewRound);
+  const waiting=allp.filter(p=>p.active===false && !p.result && p.black_id!=null);
+  const playing=allp.filter(p=>!(p.active===false && !p.result)).sort((a,b)=>(a.board||0)-(b.board||0));
+
+  playing.forEach(p=>{
     const el=document.createElement("div"); el.className="pair";
     if(p.black_id===null||p.black_id===undefined){
       el.classList.add("byecard");
@@ -768,8 +805,9 @@ function renderPlan(app){
       card.appendChild(el); return;
     }
     const res=p.result;
+    const badge = p.board_label ? esc(p.board_label) : (res?"✓":"♟");
     el.innerHTML=`
-      <span class="bno">${p.board}</span>
+      <span class="bno${p.board_label?" labeled":""}">${badge}</span>
       <div class="side"><div class="nm">${esc(nm(p.white_id))}</div><div class="kl">${esc(kl(p.white_id))}</div></div>
       <span class="dot w" title="Weiß"></span>
       <span class="vs">vs</span>
@@ -777,20 +815,43 @@ function renderPlan(app){
       <div class="side right"><div class="nm">${esc(nm(p.black_id))}</div><div class="kl">${esc(kl(p.black_id))}</div></div>`;
     if(IS_ADMIN){
       const rc=document.createElement("div"); rc.className="res";
+      let bdInput=null;
+      if(labels.length){
+        bdInput=document.createElement("input"); bdInput.className="bd-in"; bdInput.placeholder="Brett"; bdInput.setAttribute("list","boardlist"); bdInput.value=p.board_label||"";
+        bdInput.title="Welches Brett wird frei (optional)"; rc.appendChild(bdInput);
+      }
       [["1-0","1:0"],["draw","½"],["0-1","0:1"]].forEach(([v,lbl])=>{
         const b=document.createElement("button"); b.textContent=lbl; if(res===v) b.classList.add("on");
-        b.onclick=()=>{ setResult(p.id, res===v?null:v).then(render); };
+        b.onclick=()=>{ setResult(p.id, res===v?null:v, bdInput?bdInput.value:"").then(render); };
         rc.appendChild(b);
       });
       el.appendChild(rc);
     }else{
-      const rv=document.createElement("div");
-      rv.className="resview"+(res?"":" pending");
-      rv.textContent = res==="1-0"?"1 : 0" : res==="0-1"?"0 : 1" : res==="draw"?"½ : ½" : "läuft";
+      const rv=document.createElement("div"); rv.className="resview"+(res?"":" pending");
+      rv.textContent = res==="1-0"?"1 : 0" : res==="0-1"?"0 : 1" : res==="draw"?"½ : ½" : (p.board_label?("▶ "+p.board_label):"läuft");
       el.appendChild(rv);
     }
     card.appendChild(el);
   });
+
+  if(waiting.length){
+    const wc=document.createElement("div"); wc.className="card waitcard";
+    wc.innerHTML=`<div class="eyebrow">⏳ Warteschlange · ${waiting.length} ${waiting.length===1?"Paarung":"Paarungen"}</div>
+      <p class="lead" style="margin-bottom:10px">Ihr seid gleich dran — spielt, sobald ein Brett frei wird${IS_ADMIN?` (oder per <b>spielt</b> sofort freigeben).`:`.`}</p>`;
+    app.appendChild(wc);
+    waiting.forEach((p,i)=>{
+      const el=document.createElement("div"); el.className="pair waiting";
+      el.innerHTML=`<span class="bno wait">${i+1}</span>
+        <div class="side"><div class="nm">${esc(nm(p.white_id))}</div><div class="kl">${esc(kl(p.white_id))}</div></div>
+        <span class="vs">vs</span>
+        <div class="side right"><div class="nm">${esc(nm(p.black_id))}</div><div class="kl">${esc(kl(p.black_id))}</div></div>`;
+      if(IS_ADMIN){
+        const b=document.createElement("button"); b.className="btn ghost sm wait-go"; b.textContent="spielt"; b.title="Jetzt aktiv setzen"; b.onclick=()=>activatePairing(p.id);
+        el.appendChild(b);
+      }
+      wc.appendChild(el);
+    });
+  }
 }
 
 /* ---------- TABELLE ---------- */
@@ -984,13 +1045,17 @@ function renderBeamer(){
       </div></div>`;
   }
   else if(panel==="pairings"){
-    const prs=state.pairings.filter(p=>p.round===state.current_round).sort((a,b)=>a.board-b.board);
-    body=`<div class="bm-section-title">${ic('clipboard')} Spielplan · Runde ${state.current_round} <span class="bm-legend">Nr. = Brett</span></div>
-      <div class="bm-pairgrid">${prs.map(p=>{
+    const allp=state.pairings.filter(p=>p.round===state.current_round);
+    const waiting=allp.filter(p=>p.active===false && !p.result && p.black_id!=null);
+    const playing=allp.filter(p=>!(p.active===false && !p.result)).sort((a,b)=>(a.board||0)-(b.board||0));
+    body=`<div class="bm-section-title">${ic('clipboard')} Spielplan · Runde ${state.current_round}</div>
+      <div class="bm-pairgrid">${playing.map(p=>{
         if(p.black_id==null) return `<div class="bm-pair bye"><span class="bm-bd">–</span><span class="bm-pn">${esc(nm(p.white_id))}</span><span class="bm-bye">Freilos</span></div>`;
         const res=p.result==="1-0"?"1 : 0":p.result==="0-1"?"0 : 1":p.result==="draw"?"½ : ½":"–";
-        return `<div class="bm-pair${p.result?" done":""}"><span class="bm-bd">${p.board}</span><span class="bm-pn">${esc(nm(p.white_id))}</span><span class="bm-res">${res}</span><span class="bm-pn r">${esc(nm(p.black_id))}</span></div>`;
-      }).join("")}</div>`;
+        const bd=p.board_label?esc(p.board_label):(p.result?"✓":"♟");
+        return `<div class="bm-pair${p.result?" done":""}"><span class="bm-bd${p.board_label?" lab":""}">${bd}</span><span class="bm-pn">${esc(nm(p.white_id))}</span><span class="bm-res">${res}</span><span class="bm-pn r">${esc(nm(p.black_id))}</span></div>`;
+      }).join("")}</div>
+      ${waiting.length?`<div class="bm-wait"><span class="bm-wait-t">⏳ Warteschlange</span>${waiting.map((p,i)=>`<span class="bm-wchip"><b>${i+1}.</b> ${esc(nm(p.white_id))} – ${esc(nm(p.black_id))}</span>`).join("")}</div>`:""}`;
   }
   else if(panel==="standings"){
     const st=computeStandings().slice(0,12);
