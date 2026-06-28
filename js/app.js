@@ -150,9 +150,17 @@ async function patchState(patch){
 }
 async function addPlayer(name, klasse, extra){
   extra = extra || {};
-  const rec = { id:uuid(), name, klasse, withdrawn:false, email:extra.email||null, verified:!!extra.verified };
-  if(SB_MODE){ const {data} = await sb.from("chess_players").insert({name,klasse,email:rec.email,verified:rec.verified}).select().single(); if(data) rec.id=data.id; }
+  const withdrawn = !extra.present;   // standardmäßig "nicht anwesend" (Anwesenheit per Haken bestätigen)
+  const rec = { id:uuid(), name, klasse, withdrawn, email:extra.email||null, verified:!!extra.verified };
+  if(SB_MODE){ const {data} = await sb.from("chess_players").insert({name,klasse,withdrawn,email:rec.email,verified:rec.verified}).select().single(); if(data) rec.id=data.id; }
   state.players.push(rec);
+}
+/* Bulk: alle Teilnehmer anwesend/abwesend setzen */
+async function setAllPresent(present){
+  const w=!present;
+  state.players.forEach(p=>p.withdrawn=w);
+  if(SB_MODE){ await sb.from("chess_players").update({withdrawn:w}).not("id","is",null); }
+  render();
 }
 async function removePlayer(id){
   state.players = state.players.filter(p=>p.id!==id);
@@ -274,6 +282,8 @@ function computeStandings(){
     points:pts[p.id], buch:buch[p.id], played:played[p.id]
   })).sort((a,b)=> (b.points-a.points) || (b.buch-a.buch) || a.name.localeCompare(b.name,"de"));
 }
+/* Tabellen-Anzeige: Abwesende, die nie gespielt haben, ausblenden (Aussteiger mit Partien bleiben). */
+function standingsView(){ return computeStandings().filter(s=> !s.withdrawn || s.played>0); }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 /* ---------- EXCEL-EXPORT (SheetJS) ---------- */
@@ -780,14 +790,20 @@ function renderRegistration(app){
   const list = [...state.players].sort((a,b)=>a.name.localeCompare(b.name,"de"));
   const absent=state.players.length-active.length;
   l.innerHTML=`
-    <div class="count-badge"><b>${active.length}</b><span>${IS_ADMIN?"anwesend":"angemeldet"}${absent>0?` · ${absent} abwesend`:""}</span></div>
-    ${IS_ADMIN&&list.length?'<div class="code-hint" style="margin:0 0 8px">Haken = <b>anwesend</b> und wird ausgelost. Vor der Auslosung Abwesende abhaken.</div>':""}
+    <div class="count-badge"><b>${IS_ADMIN?active.length:state.players.length}</b><span>${IS_ADMIN?"anwesend":"angemeldet"}${(IS_ADMIN&&absent>0)?` · ${absent} abwesend`:""}</span></div>
+    ${IS_ADMIN&&list.length?`<div class="code-hint" style="margin:0 0 8px">Standardmäßig <b>nicht anwesend</b> — Anwesende abhaken (oder Bulk). Nur Anwesende werden ausgelost.</div>
+      <div class="ab-actions" style="margin-bottom:10px">
+        <button class="btn ghost sm" id="btnAllPresent">${ic('check')} Alle anwesend</button>
+        <button class="btn ghost sm" id="btnAllAbsent">Alle abwesend</button>
+      </div>`:""}
     <div class="players" id="plist"></div>
     ${list.length===0?'<div class="empty"><div class="ico">'+KNIGHT_SVG+'</div>Noch niemand angemeldet — sei die/der Erste!</div>':""}`;
   app.appendChild(l);
+  if($("#btnAllPresent")) $("#btnAllPresent").onclick=()=>setAllPresent(true);
+  if($("#btnAllAbsent"))  $("#btnAllAbsent").onclick=()=>setAllPresent(false);
   const pl=$("#plist");
   list.forEach((p,i)=>{
-    const d=document.createElement("div"); d.className="pl"+(p.withdrawn?" out":"");
+    const d=document.createElement("div"); d.className="pl"+((p.withdrawn&&IS_ADMIN)?" out":"");
     d.innerHTML=`<span class="idx">${i+1}</span><span class="nm">${esc(p.name)}</span>${p.verified?'<span class="vchk" title="bestätigt">✓</span>':""}${p.klasse?`<span class="kl">${esc(p.klasse)}</span>`:""}`;
     if(IS_ADMIN){
       const chk=document.createElement("label"); chk.className="pres"; chk.title=p.withdrawn?"Abwesend — Haken setzen, um auszulosen":"Anwesend (wird ausgelost)";
@@ -846,7 +862,7 @@ function renderRunning(app){
     app.appendChild(nc);
     const addLate=async()=>{
       const n=($("#lateName").value||"").trim(); if(n.length<2){ toast("Bitte Namen eingeben"); return; }
-      await addPlayer(n, ($("#lateKlasse").value||"").trim());
+      await addPlayer(n, ($("#lateKlasse").value||"").trim(), {present:true});
       $("#lateName").value=""; $("#lateKlasse").value=""; $("#lateName").focus();
       toast("Aufgenommen — spielt ab der nächsten Runde ✓"); render();
     };
@@ -976,7 +992,7 @@ function renderPlan(app){
 
 /* ---------- TABELLE ---------- */
 function renderTable(app, finalMode){
-  const st=computeStandings();
+  const st=standingsView();
   const canEdit = IS_ADMIN && state.status==="running";
   const card=document.createElement("div"); card.className="card";
   card.innerHTML=`<h2 style="margin-bottom:14px">${finalMode?"Endstand":"Zwischenstand"}</h2>
@@ -1022,7 +1038,7 @@ function renderFinished(app){
     $("#btnReset").onclick=()=>confirmReset();
     wireAdminCommon();
   }
-  const st=computeStandings();
+  const st=standingsView();
   if(st.length>=1){
     const awarded = state.awarded && (state.champions||[]).length;
     const champs = state.champions||[];   // nur echte Gravur (Gravur löschen leert die Pokale)
@@ -1040,7 +1056,7 @@ function renderFinished(app){
 /* Name 2-zeilig: Vorname (Zeile 1) / Nachname(n) (Zeile 2) */
 function plName(s){ const p=esc((s||"").trim()).split(/\s+/); return p.length<2 ? (p[0]||"") : p[0]+"<br>"+p.slice(1).join(" "); }
 /* Aktuelle Top 3 als Pokal-Belegung (live, während/nach dem Turnier) */
-function topAsChamps(){ return computeStandings().slice(0,3).map((p,i)=>({rank:i+1, name:p.name, klasse:p.klasse})); }
+function topAsChamps(){ return standingsView().slice(0,3).map((p,i)=>({rank:i+1, name:p.name, klasse:p.klasse})); }
 function cupSVG(rank){
   const c = rank===1?{a:"#edc75f",b:"#cf9a2e"}:rank===2?{a:"#d4d8df",b:"#9aa0a8"}:{a:"#dca97d",b:"#b06f3f"};
   return `<svg viewBox="0 0 200 220" width="100%" height="100%" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
@@ -1179,7 +1195,7 @@ function renderBeamer(){
       <div class="bm-jh-left">
         <div class="bm-qr"><div id="bmqr"></div><div class="bm-qrcap">${cap}</div><div class="bm-qrlink">${esc(linkLabel(bmQrTarget))}</div></div>
         ${codeSet?`<div class="bm-code">Anmeldecode <b>${esc(state.event_code)}</b></div>`:""}
-        ${altLink?"":`<div class="bm-count"><b>${active.length}</b> angemeldet</div>`}
+        ${altLink?"":`<div class="bm-count"><b>${state.players.length}</b> angemeldet</div>`}
       </div>
       <div class="bm-jh-right">
         <div class="bm-section-title">${ic('trophy')} Titelverteidiger</div>
@@ -1203,12 +1219,12 @@ function renderBeamer(){
       ${waiting.length?`<div class="bm-wait"><span class="bm-wait-t">⏳ Warteschlange</span>${waiting.map((p,i)=>`<span class="bm-wchip"><b>${i+1}.</b> ${esc(nm(p.white_id))} – ${esc(nm(p.black_id))}</span>`).join("")}</div>`:""}`;
   }
   else if(panel==="standings"){
-    const st=computeStandings().slice(0,12);
+    const st=standingsView().slice(0,12);
     body=`<div class="bm-section-title">${ic('table')} ${state.status==="finished"?"Endstand":"Gesamtreihung"}</div>
       <table class="bm-tbl"><tbody>${st.map((s,i)=>`<tr class="${i<3?"top"+(i+1):""}"><td class="r">${i+1}</td><td class="n">${esc(s.name)}</td><td class="k">${esc(s.klasse||"")}</td><td class="p">${fmt(s.points)}</td><td class="b">${fmt(s.buch)}</td></tr>`).join("")}</tbody></table>`;
   }
   else if(panel==="sieger"){
-    const st=computeStandings().slice(0,10);
+    const st=standingsView().slice(0,10);
     body=`<div class="bm-sieger">
       <div class="bm-sieger-cups">
         <div class="bm-section-title" style="text-align:center">${ic('trophy')} ${esc(state.tournament_name)} · Sieger</div>
@@ -1277,7 +1293,7 @@ function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("sh
 async function addDemo(){
   const namen=["Lena Maier","Paul Koch","Mia Schuster","Jonas Weber","Emma Hofer","Felix Berger","Anna Reiter","Noah Tkalcic","Sophie Lang","David Pichler","Marie Fuchs","Lukas Gruber","Hannah Zöhrer","Tobias Novak","Laura Diem","Simon Vogel","Julia Aigner","Florian Ebner","Sarah Ostermann","Daniel Url"];
   const klassen=["1AHET","1BHET","2AHET","2BHET","3AHET"];
-  for(const n of namen){ await addPlayer(n, klassen[Math.floor(Math.random()*klassen.length)]); }
+  for(const n of namen){ await addPlayer(n, klassen[Math.floor(Math.random()*klassen.length)], {present:true}); }
   render(); toast("20 Testdaten hinzugefügt");
 }
 
