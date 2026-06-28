@@ -137,7 +137,7 @@ console.log(`${uris.length} Bilder extrahiert`);
 ## 5. Supabase einrichten
 
 1. **Projekt anlegen** auf supabase.com → neues Projekt, Region z.B. *Central EU (Frankfurt)* (näher an AT, DSGVO-freundlich).
-2. **Schema ausführen:** SQL-Editor öffnen, `sql/schema.sql` (Inhalt unten) einfügen, *Run*.
+2. **Schema ausführen:** SQL-Editor öffnen, **den aktuellen Inhalt von `sql/schema.sql`** (im Repo) einfügen, *Run*.
 3. **Keys holen:** Project Settings → API → `Project URL` und `anon public` key.
 4. **In die App eintragen** (oben in `app.js`):
 
@@ -149,6 +149,8 @@ const CONFIG = {
 ```
 
 ### `sql/schema.sql`
+
+> ⚠️ **Veraltet — nicht abtippen.** Maßgeblich ist die Datei **`sql/schema.sql`** im Repo (enthält alle neueren Spalten: `qr_extern, paused, pause_text, board_labels, beamer_boards, reg_text/reg_link, champions, …` sowie die idempotente Realtime-Einrichtung). Komplette Schritt-für-Schritt-Anleitung inkl. **Realtime-Check, Lehrer-Logins und Fehlersuche**: **`SUPABASE-SETUP.md`**. Der folgende Block ist nur ein historischer Auszug.
 
 ```sql
 create table chess_state (
@@ -359,12 +361,15 @@ Du sammelst dann personenbezogene Daten von (großteils) Minderjährigen:
 
 ---
 
-## 12. Offene Ausbaustufen (optional)
+## 12. Bereits umgesetzt / Offene Ausbaustufen
 
-- **Top-4-Playoff-Finale:** nach der letzten Schweizer-Runde Halbfinale/Finale am Beamer (für ein „echtes Endspiel").
-- **Eigene DB auf easyname** statt Supabase: möglich, aber dann brauchst du eine eigene Realtime-Lösung (WebSocket/Polling) — Supabase nimmt dir das ab. Für Live-Sync würde ich bei Supabase bleiben.
-- **Engere RLS:** Schreibzugriff auf Turniersteuerung absichern.
+**Inzwischen umgesetzt** (Stand aktuell): Brett-Warteschlange, Dauer-Schätzung (mit Warteschlange), klassische Bedenkzeit (40 Züge), Spielpause + Pausentext, Aussteiger im laufenden Turnier, QR-Umschalter (Schüleransicht/externer Link) + QR im Beamer-Header, Lehrer-Einzelzugang ohne Code, Excel-Import mit Vorname/Nachname/Klasse + Vorlage, freigestellte 3D-Pokale mit 2-zeiliger Gravur, Sieger-Überblendung am Beamer, **RLS-Absicherung** (`sql/auth.sql`), Echtzeit-Sync + Fallback-Poll.
+
+**Noch offen (optional):**
+- **Top-4-Playoff-Finale:** nach der letzten Schweizer-Runde Halbfinale/Finale am Beamer.
+- **Nachzügler mitten im Turnier** aufnehmen (aktuell nur vor Rundenstart bzw. via Aussteiger/Aufnehmen).
+- **Eigene DB auf easyname** statt Supabase: möglich, aber dann eigene Realtime-Lösung nötig — Supabase nimmt dir das ab.
 
 ---
 
-*Letzte Anpassungen: dunkles Design, Logo im Header/Beamer, Pokale auf schwarzem Display-Panel, HTL1-LEGENDS-Wall als Jahres-Doku, Anmeldebestätigung (none/code/email).*
+*Vollständige, aktuelle Funktions- und Setup-Doku: **`README.md`** und **`SUPABASE-SETUP.md`**.*

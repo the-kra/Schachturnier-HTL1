@@ -8,7 +8,7 @@ Ein schlankes Web-Tool, um an der Schule ein **Schachturnier im Schweizer System
 |---------|-------|------|
 | **Schüler** | Anmeldung per QR, Spielplan & Tabelle live mitverfolgen | https://the-kra.github.io/Schachturnier-HTL1/ |
 | **Lehrer** | Auslosung, Ergebnisse, Pokale — nur am eigenen Gerät | https://the-kra.github.io/Schachturnier-HTL1/?admin |
-| **Beamer** | Vollbild für den Projektor (Uhr, QR, Spielplan, Podest) | https://the-kra.github.io/Schachturnier-HTL1/?beamer |
+| **Beamer** | Vollbild für den Projektor (Uhr, QR, Spielplan, Pause, Sieger-Pokale) | https://the-kra.github.io/Schachturnier-HTL1/?beamer |
 
 > Am Beamer erscheint der QR-Code → Schüler scannen ihn und landen direkt in der Schüler-Ansicht. Die Lehrer-URL (`?admin`) nur auf dem eigenen Gerät öffnen. Siehe auch [LINKS.md](LINKS.md).
 
@@ -16,17 +16,20 @@ Ein schlankes Web-Tool, um an der Schule ein **Schachturnier im Schweizer System
 
 ## Was kann das Tool?
 
-- **Anmeldung per Handy** — Schüler scannen den QR-Code am Beamer und tragen sich selbst ein. Live sichtbar auf allen Geräten.
+- **Anmeldung per Handy** — Schüler scannen den QR-Code (Beamer-Header oder Anmelde-Seite) und tragen sich selbst ein. Live auf allen Geräten.
 - **Drei Anmeldemodi**, live im Admin-Panel umschaltbar (kein Code-Edit nötig):
-  - **Offen** – nur Name + Klasse
-  - **Code** – Event-Code vom Beamer (keine Kontaktdaten, DSGVO-freundlich) · *Standard*
-  - **E-Mail** – 6-stelliger Bestätigungscode an die Schul-Mail
-- **Schweizer System** — automatische Auslosung mit Farbausgleich, Vermeidung von Revanchen und Freilos-Handling bei ungerader Teilnehmerzahl.
-- **Live-Tabelle** mit Buchholz-Wertung, **Beameransicht** (Spielplan ↔ Gesamtreihung, 7-Segment-Uhr, Vollbild, Auto-Rotation, animierte Konstellationen).
-- **Teilnehmer-Import** aus Excel/CSV und **Export** als `.xlsx` (Tabelle, Teilnehmer, Paarungen, Ruhmeshalle).
-- **Pokale & Wall of Fame** — Top 3 werden auf 3 Pokale „graviert", alte Sieger wandern ins Jahres-Archiv.
-- **Lehrer-Login** über Supabase Auth; Steuerung serverseitig per RLS geschützt.
-- **Testlauf-Simulation** — spielt ein ganzes Turnier mit Zufallsergebnissen durch (zum Üben vor dem Event).
+  - **Offen** – nur Name + Klasse/Funktion · **Code** – Event-Code vom Beamer (DSGVO-freundlich, *Standard*) · **E-Mail** – 6-stelliger Code an die Schul-Mail
+- **QR-Umschalter** — QR/Anmeldung zeigt wahlweise auf die **Schüleransicht** (Spielplan, Tabelle & Anmeldung in der App) oder einen **externen Link**.
+- **Teilnehmer einzeln hinzufügen** (Lehrer, ohne Code) **oder** per **Excel/CSV-Import** (Spalten *Vorname, Nachname, Klasse* — oder *Name, Klasse*; Namen werden gekürzt). **Vorlage**-Download inklusive. Feld **„Klasse / Funktion"** (auch *Lehrer/Direktor* möglich).
+- **Schweizer System** — automatische Auslosung mit Farbausgleich, Revanche-Vermeidung und Freilos bei ungerader Anzahl.
+- **Brett-Warteschlange** — bei mehr Partien als Brettern warten die übrigen Paarungen und rücken automatisch nach, sobald ein Brett frei wird.
+- **Dauer-Schätzung (Forecast)** aus Runden, Bedenkzeit & Teilnehmern — berücksichtigt die Warteschlange. **Bedenkzeit** von Blitz bis **klassisch (40 Züge, FIDE)**.
+- **Live-Tabelle** (Buchholz) + große **Beameransicht**: Spielplan, Gesamtreihung, 7-Segment-Uhr, **QR im Header**, dezente Pokale im Hintergrund, **Sieger-Ansicht** (Pokale + Endstand überblenden), animierte Konstellationen — alles im Vollbild mit Auto-Rotation.
+- **Spielpause** — ein-/ausschaltbar, mit frei eintippbarem **Pausentext**; Beamer & Handy zeigen einen Pausen-Screen.
+- **Aussteiger** — Spieler im laufenden Turnier zurückziehen (zählt nicht mehr für die Auslosung, Punkte bleiben).
+- **Pokale & Wall of Fame** — Top 3 werden auf 3 Pokale „graviert" (2-zeilig, automatische Schriftgröße), alte Sieger wandern ins Jahres-Archiv. **Export** als `.xlsx`.
+- **Lehrer-Login** über Supabase Auth; Steuerung serverseitig per **RLS** geschützt. **Abmelden** oben im Header.
+- **Echtzeit-Sync** über Supabase Realtime (+ 8-Sek-Fallback-Poll); **Testlauf-Simulation** spielt ein ganzes Turnier durch.
 
 ## Rollen (über URL-Parameter)
 
@@ -35,6 +38,18 @@ Ein schlankes Web-Tool, um an der Schule ein **Schachturnier im Schweizer System
 | `index.html` | Schüler / Zuschauer (Anmeldung, Spielplan, Tabelle) |
 | `index.html?admin` | Lehrer-Steuerung |
 | `index.html?beamer` | Vollbild-Beamer (rotiert automatisch) |
+
+---
+
+## Ablauf am Event-Tag (Lehrer)
+
+1. **Vorbereitung:** Turniername, Runden, Bedenkzeit, Bretter und Anmeldemodus im Admin einstellen. Bei `?admin` mit Lehrer-Mail **einloggen** (oben erscheint **Abmelden**).
+2. **Anmeldung:** Beamer (`?beamer`) zeigt den QR. Schüler melden sich per Handy an — oder der Lehrer trägt sie über **„Teilnehmer hinzufügen"** / **Excel-Import** ein. Liste füllt sich live.
+3. **Start:** **„Anmeldung schließen & auslosen"** → Runde 1. Danach pro Runde Ergebnisse eintragen (`1:0 / ½ / 0:1`), bei Warteschlange Brett zuweisen, dann **„Runde N auslosen"**.
+4. **Während des Turniers:** **Spielpause** (mit Pausentext) ein-/ausschalten, **Aussteiger** in der Zwischenstand-Tabelle zurückziehen, Runden zurückblättern.
+5. **Ende:** nach der letzten Runde **„Turnier beenden"** → **„Pokale gravieren (Top 3)"**. Beamer zeigt die Sieger-Pokale; alte Inhaber wandern in die Wall of Fame. (Test-Gravur via **„Gravur löschen"** entfernbar.)
+
+> Alles synchronisiert sich automatisch auf Schüler-Handys und Beamer (Supabase Realtime). Kein manuelles Aktualisieren nötig.
 
 ---
 
@@ -109,26 +124,28 @@ Im Admin (Anmeldephase): **Import Excel/CSV**. Erwartet eine Tabelle mit Kopfzei
 ## Projektstruktur
 
 ```
-index.html         Markup (lädt CDN-Libs + css/js)
-css/app.css        Styles (dunkles Design, Inline-SVG-Icons)
-js/app.js          gesamte Logik — CONFIG + VERIFY_DEFAULT + ADMIN_EMAILS ganz oben
-assets/            Logo, Legends-Wall, 3 Pokale
-sql/schema.sql     DB-Einrichtung (zuerst)
-sql/auth.sql       Lehrer-Login + RLS (danach)
-tools/normalize.py Pokalbilder einheitlich aufbereiten
-.htaccess          nur für easyname/Apache (GitHub Pages ignoriert es)
+index.html          Markup (lädt CDN-Libs + css/js)
+css/app.css         Styles (dunkles Design, Inline-SVG-Icons)
+js/app.js           gesamte Logik — CONFIG + VERIFY_DEFAULT + ADMIN_EMAILS ganz oben
+assets/             Logo, Legends-Wall, 3 Pokale (…_neu.png, freigestellt)
+sql/schema.sql      DB-Einrichtung: Tabellen, Spalten, Realtime (zuerst)
+sql/auth.sql        Lehrer-Login + RLS (danach)
+SUPABASE-SETUP.md   komplette Schritt-für-Schritt-Anleitung (DB neu aufsetzen)
+tools/              normalize.py + Test-Importdatei (Vorname/Nachname/Klasse)
+.htaccess           nur für easyname/Apache (GitHub Pages ignoriert es)
 ```
 
 ---
 
 ## Vor dem Event prüfen
 
-- [ ] Supabase-Projekt + `CONFIG` gesetzt, `schema.sql` **und** `auth.sql` ausgeführt
+- [ ] Supabase-Projekt + `CONFIG` gesetzt, `schema.sql` **und** `auth.sql` ausgeführt (→ **[SUPABASE-SETUP.md](SUPABASE-SETUP.md)**)
+- [ ] **Realtime** für alle 4 Tabellen aktiv (sonst kommt z. B. die Pause nicht am Handy an)
 - [ ] Test: als Nicht-Lehrer ein Ergebnis eintragen wollen → muss von der DB abgelehnt werden (RLS aktiv)
-- [ ] Lehrer-Konten angelegt, Login funktioniert
+- [ ] Lehrer-Konten angelegt, Login funktioniert (Abmelden-Button oben sichtbar)
 - [ ] (E-Mail-Modus) SMTP getestet — Testanmeldung kommt an, Rate-Limit hochgesetzt
-- [ ] Beamer-URL am Projektor getestet (QR scannbar, ggf. Code sichtbar)
-- [ ] Turniername, Runden, Bedenkzeit, Anmeldemodus eingestellt
-- [ ] Probe-Auslosung mit Testdaten gemacht
+- [ ] Beamer-URL am Projektor getestet (QR scannbar, Spielplan passt, Pause & Sieger-Pokale ok)
+- [ ] Turniername, Runden, Bedenkzeit, Bretter, Anmeldemodus eingestellt
+- [ ] **Testlauf simulieren** auf 2. Gerät mitverfolgt (Runden/Tabelle/Pause/Endstand laufen automatisch mit)
 
 > Ausführliche Hintergründe (SMTP, DSGVO, Bild-Auslagerung, RLS-Details): **[UEBERNAHME-schachturnier.md](UEBERNAHME-schachturnier.md)**.
