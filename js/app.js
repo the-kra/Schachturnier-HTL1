@@ -1328,33 +1328,39 @@ function printCertificates(){
     const parts=(c.name||'').trim().split(/\s+/);
     const vor=esc(parts[0]||''); const nach=esc(parts.slice(1).join(' '));
     return `<section class="cert"><div class="frame">
-      <img class="logo" src="${logo}" onerror="this.style.display='none'">
-      <div class="org">${tname}</div>
-      <div class="rule">${RANK_PIECE[c.rank-1]||'♞'}</div>
-      <div class="title">Urkunde</div>
-      <img class="cup" src="${trophy}" onerror="this.style.display='none'">
-      <div class="rank rank${c.rank}">${rw}</div>
-      <div class="grats">Herzliche Gratulation!</div>
-      <div class="for">Diese Urkunde wird verliehen an</div>
-      <div class="name">${vor}${nach?`<span class="nachname">${nach}</span>`:''}</div>
-      ${c.klasse?`<div class="kl">Klasse ${esc(c.klasse)}</div>`:''}
-      <p class="body">Für kluge Züge, ruhige Nerven und taktisches Können –<br>zum <b>${rw}</b> beim<br><span class="b-tit">${tname}</span></p>
-      <div class="foot">${datum?`<div class="meta">${datum}</div>`:''}
-        <div class="sigrow">
-          <div class="sig"><span>Turnierleitung</span></div>
-          <img class="seal" src="${seal}" onerror="this.style.display='none'">
-        </div></div>
+      <div class="c-head">
+        <img class="logo" src="${logo}" onerror="this.style.display='none'">
+        <div class="org">${tname}</div>
+        <div class="rule">${RANK_PIECE[c.rank-1]||'♞'}</div>
+        <div class="title">Urkunde</div>
+      </div>
+      <div class="c-body">
+        <img class="cup" src="${trophy}" onerror="this.style.display='none'">
+        <div class="rank rank${c.rank}">${rw}</div>
+        <div class="grats">Herzliche Gratulation!</div>
+        <div class="for">Diese Urkunde wird verliehen an</div>
+        <div class="name">${vor}${nach?`<span class="nachname">${nach}</span>`:''}</div>
+        ${c.klasse?`<div class="kl">Klasse ${esc(c.klasse)}</div>`:''}
+        <p class="body">Für kluge Züge, ruhige Nerven und taktisches Können –<br>zum <b>${rw}</b> beim<br><span class="b-tit">${tname}</span></p>
+      </div>
+      <div class="c-foot">
+        ${datum?`<div class="meta">${datum}</div>`:''}
+        <div class="sig"><span>Turnierleitung</span></div>
+        <img class="seal" src="${seal}" onerror="this.style.display='none'">
+      </div>
     </div></section>`;
   }).join('');
   const css=`*{margin:0;padding:0;box-sizing:border-box}@page{size:A4 portrait;margin:0}
     html,body{margin:0;padding:0}
     body{font-family:"EB Garamond",Georgia,serif;color:#3a2e12;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .cert{page-break-after:always}
+    .cert{height:296mm;display:flex;align-items:center;justify-content:center;overflow:hidden;page-break-after:always}
     .cert:last-child{page-break-after:auto}
-    .frame{margin:8mm;min-height:236mm;border:1mm solid #b8893f;border-radius:3mm;
+    .frame{width:194mm;min-height:250mm;border:1mm solid #b8893f;border-radius:3mm;
       box-shadow:inset 0 0 0 .5mm #d8b974,inset 0 0 0 2mm #fffdf7,inset 0 0 0 2.4mm #e7cf95;
       background:radial-gradient(135% 78% at 50% 0,#fffdf7 0,#f7eed6 100%);
-      display:flex;flex-direction:column;align-items:center;text-align:center;padding:11mm 18mm}
+      display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;padding:13mm 18mm}
+    .c-head,.c-body,.c-foot{display:flex;flex-direction:column;align-items:center;width:100%}
+    .c-foot{gap:4.5mm}
     .logo{height:17mm;width:auto;margin-bottom:1.5mm}
     .org{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:4.3mm;letter-spacing:.1em;color:#7a5a22;text-transform:uppercase;line-height:1.2}
     .rule{display:flex;align-items:center;justify-content:center;gap:4mm;width:46%;margin:2.5mm 0 .5mm;color:#bd9a52;font-size:5mm}
@@ -1370,10 +1376,8 @@ function printCertificates(){
     .kl{font-size:4.6mm;color:#7a5a22;font-weight:600;letter-spacing:.02em}
     .body{font-size:4.1mm;line-height:1.55;color:#4a3c1c;max-width:140mm;margin:5mm auto 0}
     .body .b-tit{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;color:#7a5414;letter-spacing:.01em}
-    .foot{margin-top:auto;width:100%;padding-top:6mm}
-    .meta{font-family:"Bricolage Grotesque",sans-serif;font-size:3.8mm;color:#6a5a2a;margin-bottom:6mm;letter-spacing:.04em}
-    .sigrow{display:flex;align-items:center;justify-content:center;gap:14mm}
-    .sig span{display:block;border-top:.4mm solid #b8893f;padding-top:1.8mm;width:62mm;font-size:3.6mm;color:#6a5a2a;text-align:center}
+    .meta{font-family:"Bricolage Grotesque",sans-serif;font-size:3.8mm;color:#6a5a2a;margin-bottom:1mm;letter-spacing:.04em}
+    .sig span{display:block;border-top:.4mm solid #b8893f;padding-top:1.8mm;width:64mm;font-size:3.6mm;color:#6a5a2a;text-align:center}
     .seal{height:15mm;width:auto;opacity:.5}`;
   const w=window.open('','_blank');
   if(!w){ toast("Bitte Pop-ups erlauben, um die Urkunden zu öffnen"); return; }
