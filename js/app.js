@@ -1069,7 +1069,7 @@ function renderBeamer(){
   if(state.status==="registration"){
     panels=["joinhall"];               // QR + Pokale zusammen auf einer Seite
   }else if(state.status==="running"){
-    panels=["pairings","standings","waitcups"];   // Spielplan, Gesamtreihung, wartende Pokale
+    panels=["pairings","standings"];   // Pokale liegen dauerhaft abgeschwächt im Hintergrund
   }else{
     panels=["sieger"];   // Pokale bleiben stehen, Endstand blendet darüber ein/aus
   }
@@ -1125,12 +1125,9 @@ function renderBeamer(){
       </div>
     </div>`;
   }
-  else if(panel==="waitcups"){
-    const hasRes=state.pairings.some(p=>p.result);
-    body=`<div class="bm-section-title" style="text-align:center">${ic('trophy')} ${hasRes?"Aktueller Pokal-Stand":"Diese Pokale warten auf ihre Sieger"}</div><div id="bmtrophies"></div>`;
-  }
 
   r.innerHTML=`
+    ${state.status==="running"?`<div class="bm-bgcups" id="bmBgCups"></div>`:""}
     <div class="bm-top">
       <div class="bm-left">
         <img class="bm-logo" src="${HTL1_LOGO}" alt="HTL1">
@@ -1155,7 +1152,7 @@ function renderBeamer(){
     renderTrophies($("#bmtrophies"), state.champions);
   }
   if(panel==="sieger"){ const aw=state.awarded&&(state.champions||[]).length; renderTrophies($("#bmtrophies"), aw?state.champions:topAsChamps()); }
-  if(panel==="waitcups"){ const hasRes=state.pairings.some(p=>p.result); renderTrophies($("#bmtrophies"), hasRes?topAsChamps():[]); }
+  if(state.status==="running"){ const bc=$("#bmBgCups"); if(bc) renderTrophies(bc, []); }   // leere Pokale als Hintergrund
 }
 
 /* ---------- QR (nur Admin + Supabase) ---------- */
