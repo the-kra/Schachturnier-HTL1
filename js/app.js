@@ -105,6 +105,7 @@ const $ = sel => document.querySelector(sel);
 
 /* ---- Inline-SVG-Icons (schlicht, einfarbig, erben Textfarbe) ---- */
 const ICONS = {
+  info:     '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6h.01"/>',
   monitor:  '<rect x="2.5" y="3.5" width="19" height="13" rx="2"/><path d="M8.5 20.5h7M12 16.5v4"/>',
   table:    '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9.5h18M3 15h18M9 4v16"/>',
   lock:     '<rect x="4.5" y="10.5" width="15" height="9.5" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>',
@@ -819,6 +820,12 @@ function renderRegistration(app){
 
   if(IS_ADMIN && SB_MODE) renderQR(app);
 
+  // Schweizer System erklärt (aufklappbar) — vor allem für Neulinge
+  const info=document.createElement("details"); info.className="card swiss-reg";
+  info.innerHTML=`<summary>${ic('info')} <b>Wie läuft das Turnier?</b> — Schweizer System einfach erklärt</summary>
+    <div style="margin-top:14px">${swissInfoHTML()}</div>`;
+  app.appendChild(info);
+
   // Beim Admin bleibt die Halle unten (Schüler haben sie oben)
   if(IS_ADMIN) renderHall(app);
 }
@@ -843,12 +850,14 @@ function renderRunning(app){
   tabs.innerHTML=`
     <button class="${ui.tab==="plan"?"on":""}" data-t="plan">${ic('clipboard')} Spielplan</button>
     <button class="${ui.tab==="table"?"on":""}" data-t="table">${ic('table')} Tabelle</button>
-    <button class="${ui.tab==="hall"?"on":""}" data-t="hall">${ic('trophy')} Pokale</button>`;
+    <button class="${ui.tab==="hall"?"on":""}" data-t="hall">${ic('trophy')} Pokale</button>
+    <button class="${ui.tab==="info"?"on":""}" data-t="info">${ic('info')} Info</button>`;
   app.appendChild(tabs);
   tabs.querySelectorAll("button").forEach(b=>b.onclick=()=>{ ui.tab=b.dataset.t; render(); });
 
   if(ui.tab==="plan") renderPlan(app);
   else if(ui.tab==="hall") renderHall(app);
+  else if(ui.tab==="info") renderInfo(app);
   else renderTable(app, false);
 
   if(IS_ADMIN){
@@ -1152,6 +1161,24 @@ function renderHall(container){
   container.appendChild(card);
   renderTrophies(card, champs);
   renderWall(container);
+}
+/* Schweizer System — einfache Erklärung (Schüler-Info) */
+function swissInfoHTML(){
+  return `<p class="lead" style="text-align:center;margin-bottom:16px"><b>Niemand scheidet aus.</b> Alle spielen gleich viele Runden — und du triffst immer auf jemanden, der bisher <b>ähnlich gut</b> war.</p>
+    <div class="swiss-pts"><span><b>Sieg</b> 1</span><span><b>Remis</b> ½</span><span><b>Niederlage</b> 0</span><span><b>Freilos</b> 1</span></div>
+    <ol class="swiss-steps">
+      <li><b>Runde für Runde:</b> Nach jeder Runde werden alle nach Punkten sortiert. Dann gilt <b>Gleich gegen Gleich</b> — Sieger spielen gegen Sieger, usw.</li>
+      <li><b>Keine Revanche:</b> Zwei Spieler treffen <b>nie zweimal</b> aufeinander. Weiß/Schwarz wird über das Turnier ausgeglichen.</li>
+      <li><b>Ungerade Anzahl?</b> Dann hat eine Person ein <b>Freilos</b> (1 Punkt geschenkt) — niemand bekommt zwei.</li>
+      <li><b>Sieger:</b> Wer am Ende die <b>meisten Punkte</b> hat. Bei Gleichstand entscheidet die <b>Buchholz-Wertung</b> = Summe der Punkte deiner Gegner. Wer die <b>stärkeren</b> Gegner hatte, steht vorne.</li>
+    </ol>
+    <p class="lead" style="text-align:center;margin-top:14px">💡 Das Schöne: Auch nach einer Niederlage <b>spielst du weiter</b> — gegen ähnlich starke Gegner. So bleibt's für alle spannend und fair.</p>`;
+}
+function renderInfo(app){
+  const card=document.createElement("div"); card.className="card lg";
+  card.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('info')} So funktioniert's</div>
+    <h2 style="text-align:center;margin-bottom:6px">Schweizer System — kurz erklärt</h2>${swissInfoHTML()}`;
+  app.appendChild(card);
 }
 
 /* ---------- BEAMER-ANSICHT ---------- */
