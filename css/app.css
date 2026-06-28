@@ -142,6 +142,13 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .swiss-reg>summary{cursor:pointer;font-size:1rem;list-style:none;display:flex;align-items:center;gap:9px}
 .swiss-reg>summary::-webkit-details-marker{display:none}
 .swiss-reg>summary svg{width:18px;height:18px;flex:none;stroke:var(--accent-d)}
+.swiss-more{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.swiss-more>summary{cursor:pointer;font-weight:700;color:var(--accent-d);list-style:none}
+.swiss-more>summary::-webkit-details-marker{display:none}
+.swiss-more>summary::before{content:"▸ "}
+.swiss-more[open]>summary::before{content:"▾ "}
+.swiss-detail{margin:12px 0 0;padding-left:1.2em;display:flex;flex-direction:column;gap:9px;line-height:1.55}
+.swiss-detail li::marker{color:var(--ink-soft)}
 
 /* QR */
 .qrbox{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
@@ -428,11 +435,11 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-sieger{position:relative;width:100%;margin:0;display:flex;flex-direction:column;justify-content:flex-start;min-height:100%;padding-top:1vh}
 .bm-sieger-cups{width:100%;animation:bmCupsPulse 24s ease-in-out infinite}
 .bm-sieger-cups .trophies{max-width:min(52vw,94vh)}
-.bm-sieger-tbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.5vw;padding:.6vh 0 1.6vh;
+.bm-sieger-tbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4vw;padding:1.5vh 0;overflow:hidden;
   background:rgba(8,11,16,.5);border-radius:1vw;opacity:0;pointer-events:none;animation:bmTblPulse 24s ease-in-out infinite}
-.bm-sieger-tbl .bm-tbl{max-width:66vw;font-size:1.85vw}
-.bm-sieger-tbl .bm-tbl td{padding:.28vw 1vw;line-height:1.15}
-.bm-sieger-tbl .bm-tbl .k,.bm-sieger-tbl .bm-tbl .b{font-size:1.45vw}
+.bm-sieger-tbl .bm-tbl{max-width:66vw;font-size:1.6vw}
+.bm-sieger-tbl .bm-tbl td{padding:.18vw 1vw;line-height:1.35}
+.bm-sieger-tbl .bm-tbl .k,.bm-sieger-tbl .bm-tbl .b{font-size:1.3vw}
 @keyframes bmCupsPulse{0%,33%{opacity:1}45%,63%{opacity:.28}75%,100%{opacity:1}}
 @keyframes bmTblPulse{0%,33%{opacity:0}45%,63%{opacity:1}75%,100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.bm-sieger-cups,.bm-sieger-tbl{animation:none}.bm-sieger-tbl{opacity:0}}

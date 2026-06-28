@@ -251,6 +251,24 @@ async function clearHallOfFame(){
   if(SB_MODE){ await sb.from("chess_halloffame").delete().neq("rank",-1); }
   render(); toast("Wall of Fame geleert");
 }
+/* Wall-of-Fame-Vorschau (NICHT gespeichert) — zum Testen der Gravur/Tafel. Knopf = Toggle. */
+function previewHall(){
+  if((state.halloffame||[]).some(e=>e._preview)){
+    state.halloffame = (state.halloffame||[]).filter(e=>!e._preview);
+    render(); toast("Vorschau entfernt"); return;
+  }
+  let src;
+  if(state.champions && state.champions.length) src = state.champions.map(c=>({rank:c.rank,name:c.name,klasse:c.klasse}));
+  else {
+    const top = standingsView().slice(0,3);
+    src = top.length ? top.map((s,i)=>({rank:i+1,name:s.name,klasse:s.klasse}))
+        : [{rank:1,name:"Max Beispiel",klasse:"3AHET"},{rank:2,name:"Lena Muster",klasse:"2BHET"},{rank:3,name:"Tom Test",klasse:"1CHME"}];
+  }
+  const today = new Date().toISOString().slice(0,10);
+  const entries = src.map(c=>({ _preview:true, tournament_name:(state.tournament_name||"Schachturnier")+" · Vorschau", event_date:today, rank:c.rank, name:c.name, klasse:c.klasse||"" }));
+  state.halloffame = [...entries, ...(state.halloffame||[])];
+  render(); toast("Wall-of-Fame-Vorschau (nicht gespeichert) — Knopf nochmal = entfernen");
+}
 
 /* ============================ SCHWEIZER SYSTEM ============================ */
 function playerStats(){
@@ -664,6 +682,7 @@ function renderRegistration(app){
         <button class="btn ghost sm" id="btnImport" title="Teilnehmer aus Excel/CSV laden. Erste Zeile als Überschrift, Spalten 'Vorname', 'Nachname', 'Klasse' (oder 'Name', 'Klasse'). Namen werden auf einen Vornamen gekürzt, Duplikate übersprungen.">${ic('import')} Import Excel/CSV</button>
         <button class="btn ghost sm" id="btnTemplate" title="Leere Excel-Vorlage mit den Spalten Vorname / Nachname / Klasse herunterladen (inkl. Beispielen, auch ein Lehrer).">${ic('table')} Vorlage</button>
         <button class="btn ghost sm" id="btnSim" title="Spielt ein komplettes Turnier mit Zufallsergebnissen durch — testet Auslosung, Tabelle und Pokale.">${ic('play')} Testlauf simulieren</button>
+        <button class="btn ghost sm" id="btnPreviewHall" title="Test: schreibt die aktuellen Top 3 (oder Beispielnamen) als Tafel mit Jahreszahl auf die Wall of Fame — nur Vorschau, wird NICHT gespeichert. Knopf nochmal = entfernen.">${ic('trophy')} WoF-Vorschau${(state.halloffame||[]).some(e=>e._preview)?" (entf.)":""}</button>
         ${(state.champions||[]).length?`<button class="btn ghost sm" id="btnClearCup" title="Test-Gravur von den Pokalen entfernen (Wall of Fame bleibt).">${ic('trash')} Gravur löschen</button>`:""}
         ${(state.halloffame||[]).length?`<button class="btn ghost sm" id="btnClearWall" title="Gesamte Wall of Fame löschen — nur zum Aufräumen von Testdaten.">${ic('trash')} Wall of Fame leeren</button>`:""}
         <button class="btn ghost sm" id="btnImpHall" title="Wall of Fame + Pokale aus einer Excel-Export-Datei wiederherstellen (Blätter 'Ruhmeshalle' und 'Pokale').">${ic('trophy')} Pokale/Hall importieren</button>
@@ -691,6 +710,7 @@ function renderRegistration(app){
     const ih=$("#btnImpHall"); if(ih) ih.onclick=()=>{ const f=$("#impHallFile"); if(f) f.click(); };
     const ihf=$("#impHallFile"); if(ihf) ihf.onchange=e=>importHallCups(e.target.files[0]);
     const sim=$("#btnSim"); if(sim) sim.onclick=simulateTournament;
+    const ph=$("#btnPreviewHall"); if(ph) ph.onclick=previewHall;
     const clr=$("#btnClearCup"); if(clr) clr.onclick=()=>clearTrophies().then(()=>render());
     const clw=$("#btnClearWall"); if(clw) clw.onclick=()=>clearHallOfFame().then(()=>render());
     const cc=$("#cfgCode"); if(cc) cc.onchange=e=>patchState({event_code:e.target.value.trim()}).then(render);
@@ -1172,6 +1192,14 @@ function swissInfoHTML(){
       <li><b>Ungerade Anzahl?</b> Dann hat eine Person ein <b>Freilos</b> (1 Punkt geschenkt) — niemand bekommt zwei.</li>
       <li><b>Sieger:</b> Wer am Ende die <b>meisten Punkte</b> hat. Bei Gleichstand entscheidet die <b>Buchholz-Wertung</b> = Summe der Punkte deiner Gegner. Wer die <b>stärkeren</b> Gegner hatte, steht vorne.</li>
     </ol>
+    <details class="swiss-more"><summary>Noch genauer — für Interessierte</summary>
+      <ul class="swiss-detail">
+        <li><b>Start völlig zufällig:</b> Runde 1 wird komplett <b>random</b> ausgelost — keine Setzliste, jeder kann auf jeden treffen.</li>
+        <li><b>Freilos-Regel:</b> Das Freilos geht an den Spieler mit den <b>wenigsten Punkten</b> (am niedrigsten in der Tabelle), der noch <b>kein</b> Freilos hatte. So bekommt möglichst niemand zwei.</li>
+        <li><b>Buchholz-Berechnung:</b> Summe der Punkte <b>aller deiner Gegner</b> am Turnierende. <br>Beispiel: deine 3 Gegner haben 4, 3 und 2 Punkte → Buchholz = <b>4+3+2 = 9</b>. Bei Punktgleichheit gewinnt die <b>höhere</b> Buchholz. Ein Freilos zählt dabei <b>keinen</b> Gegner.</li>
+        <li><b>Warum Buchholz?</b> Sie belohnt den <b>härteren Weg</b>: gleich viele Punkte gegen <b>starke</b> Gegner ist mehr wert als gegen schwache.</li>
+      </ul>
+    </details>
     <p class="lead" style="text-align:center;margin-top:14px">💡 Das Schöne: Auch nach einer Niederlage <b>spielst du weiter</b> — gegen ähnlich starke Gegner. So bleibt's für alle spannend und fair.</p>`;
 }
 function renderInfo(app){
@@ -1252,7 +1280,7 @@ function renderBeamer(){
       <table class="bm-tbl"><tbody>${st.map((s,i)=>`<tr class="${i<3?"top"+(i+1):""}"><td class="r">${i+1}</td><td class="n">${esc(s.name)}</td><td class="k">${esc(s.klasse||"")}</td><td class="p">${fmt(s.points)}</td><td class="b">${fmt(s.buch)}</td></tr>`).join("")}</tbody></table>`;
   }
   else if(panel==="sieger"){
-    const st=standingsView().slice(0,10);
+    const st=standingsView().slice(0,8);
     body=`<div class="bm-sieger">
       <div class="bm-sieger-cups">
         <div class="bm-section-title" style="text-align:center">${ic('trophy')} ${esc(state.tournament_name)} · Sieger</div>
