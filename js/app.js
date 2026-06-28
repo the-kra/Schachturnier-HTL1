@@ -746,12 +746,23 @@ function renderRegistration(app){
     wireAdminCommon();
   }
 
-  // Schülerseite: oben CTA bzw. "Turnier startet in Kürze", dann Pokale
+  // Schülerseite: oben CTA bzw. "Turnier startet in Kürze", dann Tipp, dann Pokale
   if(!IS_ADMIN){
     if(liveOnly()){
       const soon=document.createElement("div"); soon.className="reg-soon";
       soon.innerHTML=`${ic('clock')} <b>Turnier startet in Kürze</b>`;
       app.appendChild(soon);
+    } else {
+      const cta=document.createElement("a"); cta.className="btn block reg-cta"; cta.href="#reg-anmeldung";
+      cta.innerHTML=ic('arrow')+" Zur Anmeldung";
+      cta.onclick=e=>{ e.preventDefault(); const t=$("#reg-anmeldung"); if(t) t.scrollIntoView({behavior:"smooth",block:"start"}); };
+      app.appendChild(cta);
+    }
+    // Tipp gleich unter "Turnier startet in Kürze"
+    const clk=document.createElement("div"); clk.className="card hints";
+    clk.innerHTML=`<div class="hint-row">${ic('clock')}<span><b>Tipp zur Zeitnehmung:</b> Installier dir schon mal eine <b>Schachuhr-App</b> — z.&nbsp;B. <b>Schachuhr+</b> oder die <b>Schach-Uhr von Chess.com</b>.</span></div>`;
+    app.appendChild(clk);
+    if(liveOnly()){
       // Teilen-QR (zeigt auf die Liveansicht)
       const share=document.createElement("div"); share.className="card"; share.id="reg-anmeldung";
       const shareUrl=regTarget();
@@ -761,11 +772,6 @@ function renderRegistration(app){
           <div class="linkfield"><div class="linkrow"><input id="sharelink" readonly value="${esc(shareUrl)}"><a class="btn sm" href="${esc(shareUrl)}" target="_blank" rel="noopener">Öffnen</a></div></div></div>`;
       app.appendChild(share);
       try{ new QRCode($("#shareqr"), {text:shareUrl, width:150, height:150, colorDark:"#20211d", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
-    } else {
-      const cta=document.createElement("a"); cta.className="btn block reg-cta"; cta.href="#reg-anmeldung";
-      cta.innerHTML=ic('arrow')+" Zur Anmeldung";
-      cta.onclick=e=>{ e.preventDefault(); const t=$("#reg-anmeldung"); if(t) t.scrollIntoView({behavior:"smooth",block:"start"}); };
-      app.appendChild(cta);
     }
     renderHall(app);
   }
@@ -883,9 +889,11 @@ function renderRegistration(app){
 
   if(IS_ADMIN && SB_MODE) renderQR(app);
 
-  const clk=document.createElement("div"); clk.className="card hints";
-  clk.innerHTML=`<div class="hint-row">${ic('clock')}<span><b>Tipp zur Zeitnehmung:</b> Installier dir schon mal eine <b>Schachuhr-App</b> — z.&nbsp;B. <b>Schachuhr+</b> oder die <b>Schach-Uhr von Chess.com</b>.</span></div>`;
-  app.appendChild(clk);
+  if(IS_ADMIN){
+    const clk=document.createElement("div"); clk.className="card hints";
+    clk.innerHTML=`<div class="hint-row">${ic('clock')}<span><b>Tipp zur Zeitnehmung:</b> Installier dir schon mal eine <b>Schachuhr-App</b> — z.&nbsp;B. <b>Schachuhr+</b> oder die <b>Schach-Uhr von Chess.com</b>.</span></div>`;
+    app.appendChild(clk);
+  }
 
   // Schweizer System erklärt (aufklappbar) — vor allem für Neulinge
   const info=document.createElement("details"); info.className="card swiss-reg";
