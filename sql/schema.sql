@@ -62,6 +62,8 @@ alter table chess_pairings add column if not exists board_label text default '';
 -- optionale Anmeldebestätigung:
 alter table chess_players add column if not exists email text;
 alter table chess_players add column if not exists verified boolean default false;
+-- Stechen: manueller Tiebreak-Wert (höher = vorne), nur bei echtem Gleichstand
+alter table chess_players add column if not exists tiebreak int default 0;
 
 -- Wall of Fame (Archiv aller bisherigen Sieger):
 create table if not exists chess_halloffame (

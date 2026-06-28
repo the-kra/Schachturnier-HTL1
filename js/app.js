@@ -152,7 +152,7 @@ async function patchState(patch){
 async function addPlayer(name, klasse, extra){
   extra = extra || {};
   const withdrawn = !extra.present;   // standardmäßig "nicht anwesend" (Anwesenheit per Haken bestätigen)
-  const rec = { id:uuid(), name, klasse, withdrawn, email:extra.email||null, verified:!!extra.verified };
+  const rec = { id:uuid(), name, klasse, withdrawn, email:extra.email||null, verified:!!extra.verified, tiebreak:0 };
   if(SB_MODE){ const {data} = await sb.from("chess_players").insert({name,klasse,withdrawn,email:rec.email,verified:rec.verified}).select().single(); if(data) rec.id=data.id; }
   state.players.push(rec);
 }
@@ -170,6 +170,20 @@ async function removePlayer(id){
 async function toggleWithdrawn(id, val){
   const p = state.players.find(x=>x.id===id); if(p) p.withdrawn=val;
   if(SB_MODE){ await sb.from("chess_players").update({withdrawn:val}).eq("id",id); }
+}
+/* Stechen: markiert den Spieler als Sieger seiner Gleichstand-Gruppe (Toggle). */
+async function tiebreakWinner(id){
+  const st=computeStandings();
+  const me=st.find(s=>s.id===id); if(!me) return;
+  const group=st.filter(s=> s.points===me.points && s.buch===me.buch && s.sonn===me.sonn && s.wins===me.wins);
+  if(group.length<2){ toast("Hier gibt es keinen echten Gleichstand"); return; }
+  const others=group.filter(s=>s.id!==id).map(s=>s.tiebreak||0);
+  const already=(me.tiebreak||0) > Math.max(0,...others);
+  const val=already ? 0 : Math.max(0,...group.map(s=>s.tiebreak||0))+1;
+  const p=state.players.find(x=>x.id===id); if(!p) return;
+  p.tiebreak=val;
+  if(SB_MODE){ await sb.from("chess_players").update({tiebreak:val}).eq("id",id); }
+  render(); toast(already ? "Stechen zurückgesetzt" : p.name+" als Stechen-Sieger nach vorne ✓");
 }
 async function insertPairings(arr){
   arr.forEach(p=>{ if(!p.id) p.id=uuid(); });
@@ -283,23 +297,29 @@ function playerStats(){
   return st;
 }
 function computeStandings(){
-  const pts={}, played={}, opp={};
-  state.players.forEach(p=>{ pts[p.id]=0; played[p.id]=0; opp[p.id]=[]; });
+  const pts={}, played={}, opp={}, res={}, wins={};
+  state.players.forEach(p=>{ pts[p.id]=0; played[p.id]=0; opp[p.id]=[]; res[p.id]=[]; wins[p.id]=0; });
   state.pairings.forEach(pr=>{
     if(!pr.result) return;
     if(pr.result==="bye"){ pts[pr.white_id]=(pts[pr.white_id]||0)+1; return; }
     played[pr.white_id]++; played[pr.black_id]++;
     opp[pr.white_id].push(pr.black_id); opp[pr.black_id].push(pr.white_id);
-    if(pr.result==="1-0") pts[pr.white_id]+=1;
-    else if(pr.result==="0-1") pts[pr.black_id]+=1;
-    else if(pr.result==="draw"){ pts[pr.white_id]+=0.5; pts[pr.black_id]+=0.5; }
+    let sw,sb;   // Teilergebnis Weiß/Schwarz (1 / ½ / 0)
+    if(pr.result==="1-0"){ pts[pr.white_id]+=1; sw=1; sb=0; wins[pr.white_id]++; }
+    else if(pr.result==="0-1"){ pts[pr.black_id]+=1; sw=0; sb=1; wins[pr.black_id]++; }
+    else if(pr.result==="draw"){ pts[pr.white_id]+=0.5; pts[pr.black_id]+=0.5; sw=0.5; sb=0.5; }
+    else return;
+    res[pr.white_id].push({o:pr.black_id,s:sw}); res[pr.black_id].push({o:pr.white_id,s:sb});
   });
-  const buch={};
-  state.players.forEach(p=>{ buch[p.id]=opp[p.id].reduce((s,o)=>s+(pts[o]||0),0); });
+  const buch={}, sonn={};
+  state.players.forEach(p=>{
+    buch[p.id]=opp[p.id].reduce((s,o)=>s+(pts[o]||0),0);
+    sonn[p.id]=res[p.id].reduce((s,r)=>s+r.s*(pts[r.o]||0),0);   // Sonneborn-Berger
+  });
   return state.players.map(p=>({
     id:p.id, name:p.name, klasse:p.klasse, withdrawn:p.withdrawn,
-    points:pts[p.id], buch:buch[p.id], played:played[p.id]
-  })).sort((a,b)=> (b.points-a.points) || (b.buch-a.buch) || a.name.localeCompare(b.name,"de"));
+    points:pts[p.id], buch:buch[p.id], sonn:sonn[p.id], wins:wins[p.id], played:played[p.id], tiebreak:p.tiebreak||0
+  })).sort((a,b)=> (b.points-a.points) || (b.buch-a.buch) || (b.sonn-a.sonn) || (b.wins-a.wins) || (b.tiebreak-a.tiebreak) || a.name.localeCompare(b.name,"de"));
 }
 /* Tabellen-Anzeige: Abwesende, die nie gespielt haben, ausblenden (Aussteiger mit Partien bleiben). */
 function standingsView(){ return computeStandings().filter(s=> !s.withdrawn || s.played>0); }
@@ -311,8 +331,8 @@ function exportExcel(){
   const wb=XLSX.utils.book_new();
 
   const st=computeStandings();
-  const tab=[["#","Name","Klasse","Punkte","Buchholz","Partien"]];
-  st.forEach((s,i)=>tab.push([i+1,s.name,s.klasse||"",s.points,s.buch,s.played]));
+  const tab=[["#","Name","Klasse","Punkte","Buchholz","Sonneborn-Berger","Siege","Partien"]];
+  st.forEach((s,i)=>tab.push([i+1,s.name,s.klasse||"",s.points,s.buch,s.sonn,s.wins,s.played]));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tab), "Tabelle");
 
   const tn=[["Name","Klasse","Status","Bestätigt"]];
@@ -1032,16 +1052,22 @@ function renderPlan(app){
 /* ---------- TABELLE ---------- */
 function renderTable(app, finalMode){
   const st=standingsView();
-  const canEdit = IS_ADMIN && state.status==="running";
+  const canEdit = IS_ADMIN && state.status==="running";   // Aussteiger
+  const canTb   = IS_ADMIN && state.status==="finished";   // Stechen
+  const sameRank=(a,b)=> a.points===b.points && a.buch===b.buch && a.sonn===b.sonn && a.wins===b.wins;
+  const tied=new Set();
+  if(canTb) st.forEach((s,i)=>{ if(st.some((o,j)=>i!==j && sameRank(s,o))) tied.add(s.id); });
   const card=document.createElement("div"); card.className="card";
   card.innerHTML=`<h2 style="margin-bottom:14px">${finalMode?"Endstand":"Zwischenstand"}</h2>
-    <table class="tbl"><thead><tr><th>#</th><th>Name</th><th>Kl.</th><th style="text-align:right">Pkt</th><th style="text-align:right">Buchh.</th>${canEdit?"<th></th>":""}</tr></thead><tbody id="tb"></tbody></table>`;
+    ${(canTb&&tied.size)?'<div class="code-hint" style="margin:-6px 0 12px">Echter Gleichstand (gleiche Punkte, Buchholz, Sonneborn-Berger & Siege). Nach einem <b>Stechen</b> (Blitzpartie) den Sieger mit <b>„Stechen ↑"</b> nach vorne setzen.</div>':""}
+    <table class="tbl"><thead><tr><th>#</th><th>Name</th><th>Kl.</th><th style="text-align:right">Pkt</th><th style="text-align:right">Buchh.</th>${(canEdit||canTb)?"<th></th>":""}</tr></thead><tbody id="tb"></tbody></table>`;
   app.appendChild(card);
   const tb=$("#tb");
   st.forEach((s,i)=>{
     const tr=document.createElement("tr");
     if(i===0) tr.className="top1"; else if(i===1) tr.className="top2"; else if(i===2) tr.className="top3";
     if(s.withdrawn) tr.classList.add("out");
+    if(canTb) tr.title=`Sonneborn-Berger ${fmt(s.sonn)} · Siege ${s.wins}`;
     tr.innerHTML=`<td class="rk">${i+1}</td><td class="nm">${esc(s.name)}${s.withdrawn?' <span class="kl">· ausgestiegen</span>':""}</td><td class="kl">${esc(s.klasse||"")}</td>
       <td class="pts">${fmt(s.points)}</td><td class="bz">${fmt(s.buch)}</td>`;
     if(canEdit){
@@ -1051,10 +1077,19 @@ function renderTable(app, finalMode){
       b.title = s.withdrawn ? "Wieder mitspielen lassen" : "Steigt aus — wird ab nächster Runde nicht mehr ausgelost (Punkte bleiben)";
       b.onclick=()=>toggleWithdrawn(s.id, !s.withdrawn).then(()=>{ toast(s.withdrawn?"Wieder dabei ✓":"Ausgestiegen — ab nächster Runde nicht mehr ausgelost"); render(); });
       td.appendChild(b); tr.appendChild(td);
+    } else if(canTb){
+      const td=document.createElement("td"); td.style.textAlign="right";
+      if(tied.has(s.id)){
+        const b=document.createElement("button"); b.className="btn ghost sm"; b.textContent="Stechen ↑";
+        b.title="Sieger des Stechens — bei Gleichstand nach vorne (nochmal klicken = zurücksetzen)";
+        b.onclick=()=>tiebreakWinner(s.id);
+        td.appendChild(b);
+      }
+      tr.appendChild(td);
     }
     tb.appendChild(tr);
   });
-  if(st.length===0) tb.innerHTML=`<tr><td colspan="${canEdit?6:5}"><div class="empty">Noch keine Ergebnisse</div></td></tr>`;
+  if(st.length===0) tb.innerHTML=`<tr><td colspan="${(canEdit||canTb)?6:5}"><div class="empty">Noch keine Ergebnisse</div></td></tr>`;
 }
 
 /* ---------- ENDE ---------- */
@@ -1223,6 +1258,8 @@ function swissInfoHTML(){
             → <b>Anna</b> steht vorne, weil sie gegen stärkere Gegner gespielt hat.</div>
         </li>
         <li><b>Warum Buchholz?</b> Sie belohnt den <b>härteren Weg</b>: gleich viele Punkte gegen <b>starke</b> Gegner ist mehr wert als gegen schwache.</li>
+        <li><b>Reihenfolge bei Gleichstand:</b> Punkte → Buchholz → <b>Sonneborn-Berger</b> → <b>Anzahl Siege</b>. Ist <b>alles</b> gleich, entscheidet ein <b>Stechen</b> (kurze Blitzpartie).</li>
+        <li><b>Sonneborn-Berger</b> ist wie Buchholz, gewichtet aber nach deinem Ergebnis: <b>voller</b> Gegnerwert bei Sieg, <b>halber</b> bei Remis, <b>nichts</b> bei Niederlage.</li>
       </ul>
     </details>
     <p class="lead" style="text-align:center;margin-top:14px">💡 Das Schöne: Auch nach einer Niederlage <b>spielst du weiter</b> — gegen ähnlich starke Gegner. So bleibt's für alle spannend und fair.</p>`;
