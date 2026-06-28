@@ -33,7 +33,7 @@ const TROPHY_CONFIG = {
   plateTopPct:   [89, 89, 89],
   plateWidthPct: [50, 50, 50],
   plateLeftPct:  [56, 56, 56],         // horizontale Mitte der Plakette (%)
-  plateRotateDeg:[2, 2, 2],            // Neigung passend zur Platte (Grad, positiv = im Uhrzeigersinn)
+  plateRotateDeg:[-1.4, -1.4, -1.2],   // Neigung passend zur Platte (Grad, negativ = gegen Uhrzeigersinn)
   plateStyle:    ["engrave", "engrave", "engrave"]
 };
 /* HTL1-LEGENDS-Wall (Banner ueber der Jahres-Doku) */
@@ -1145,7 +1145,7 @@ function renderBeamer(){
         <span class="bm-htl" id="bmHtlSlot"></span>
       </div>
     </div>
-    <div class="bm-stage${(panel==="pairings"||panel==="standings")?"":" center"}">${body}</div>
+    <div class="bm-stage${(panel==="pairings"||panel==="standings"||panel==="sieger")?"":" center"}">${body}</div>
     ${panels.length>1?`<div class="bm-dots">${panels.map((_,i)=>`<span class="${i===ui.beamerIdx%panels.length?"on":""}"></span>`).join("")}</div>`:""}
     <div class="bm-foot"><span id="bmFootSlot"></span></div>`;
   mountBeamerClock(); mountBeamerLogo(); mountBeamerFoot();
