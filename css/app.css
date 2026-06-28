@@ -295,6 +295,11 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-status{display:inline-block;align-self:flex-start;font-weight:700;font-size:1.05vw;color:var(--accent-d);background:var(--accent-soft);padding:.4vw 1vw;border-radius:999px;white-space:nowrap;margin-top:.6vw}
 .bm-htl{flex:none;display:flex;align-items:center}
 .bm-htl svg{height:9vw;width:auto;display:block}
+/* QR im Header (Mitmachen, während Turnier & Endstand) */
+.bm-hdr-qr{flex:none;display:flex;flex-direction:column;align-items:center;gap:.35vw}
+.bm-hdr-qr>div{width:6.4vw;height:6.4vw;background:#fff;border-radius:.5vw;padding:.3vw;box-shadow:0 .2vw .6vw rgba(0,0,0,.4)}
+.bm-hdr-qr canvas,.bm-hdr-qr img{width:100%!important;height:100%!important;display:block}
+.bm-hdr-qr span{font-size:.82vw;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft)}
 /* 7-Segment-Uhr + kranzlab */
 .bm-clock{position:relative;font-family:"DSEG7 Classic",ui-monospace,monospace;font-weight:bold;font-size:2.9vw;line-height:1;letter-spacing:.18vw}
 .bm-clock .lit{color:#22b4e2;position:relative;z-index:2;text-shadow:0 0 .4vw rgba(28,170,220,.9),0 0 1vw rgba(28,170,220,.5)}
@@ -362,9 +367,8 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-dim{color:var(--ink-soft);font-size:1.6vw}
 
 /* Beamer: Paarungen */
-.bm-pairgrid{display:grid;grid-template-columns:1fr 1fr;gap:.7vw 2vw;align-content:start;overflow:hidden}
-.bm-pairgrid:has(.bm-pair:nth-child(13)){grid-template-columns:1fr 1fr 1fr}
-.bm-pair{display:flex;align-items:center;gap:1vw;background:#23262d;border:1px solid var(--line);border-radius:.8vw;padding:.7vw 1vw}
+.bm-pairgrid{display:grid;grid-template-columns:1fr 1fr;gap:calc(.7vw * var(--pscale,1)) 2vw;align-content:start;overflow:hidden}
+.bm-pair{display:flex;align-items:center;gap:1vw;background:#23262d;border:1px solid var(--line);border-radius:.8vw;padding:calc(.7vw * var(--pscale,1)) 1vw}
 .bm-pair.done{background:var(--accent-soft);border-color:rgba(232,150,56,.4)}
 .bm-bd{font-family:"Bricolage Grotesque";font-weight:800;color:var(--ink);font-size:1.3vw;width:2.4vw;height:2.4vw;flex:none;
   display:grid;place-items:center;border-radius:.4vw;border:1px solid var(--line);
@@ -375,9 +379,9 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-wait-t{font-weight:800;color:var(--accent-d);font-size:1.3vw}
 .bm-wchip{background:#23262d;border:1px solid var(--line);border-radius:.6vw;padding:.35vw 1vw;font-size:1.2vw;font-weight:600}
 .bm-wchip b{color:var(--accent-d)}
-.bm-pn{flex:1;font-weight:700;font-size:1.5vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bm-pn{flex:1;font-weight:700;font-size:calc(1.5vw * var(--pscale,1));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bm-pn.r{text-align:right}
-.bm-res{font-family:"Bricolage Grotesque";font-weight:800;font-size:1.5vw;min-width:4vw;text-align:center;color:var(--accent-d)}
+.bm-res{font-family:"Bricolage Grotesque";font-weight:800;font-size:calc(1.5vw * var(--pscale,1));min-width:4vw;text-align:center;color:var(--accent-d)}
 .bm-pair.bye{justify-content:space-between}
 .bm-bye{font-weight:700;color:var(--accent-d);font-size:1.3vw}
 

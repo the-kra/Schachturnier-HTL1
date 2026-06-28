@@ -1099,8 +1099,11 @@ function renderBeamer(){
     const allp=state.pairings.filter(p=>p.round===state.current_round);
     const waiting=allp.filter(p=>p.active===false && !p.result && p.black_id!=null);
     const playing=allp.filter(p=>!(p.active===false && !p.result)).sort((a,b)=>(a.board||0)-(b.board||0));
+    const cols = playing.length>12 ? 3 : 2;
+    const rows = Math.ceil(playing.length/cols);
+    const pscale = rows<=5?1 : rows<=6?0.9 : rows<=7?0.8 : rows<=8?0.7 : rows<=10?0.6 : 0.52;
     body=`<div class="bm-section-title">${ic('clipboard')} Spielplan · Runde ${state.current_round}</div>
-      <div class="bm-pairgrid">${playing.map(p=>{
+      <div class="bm-pairgrid" style="grid-template-columns:repeat(${cols},1fr);--pscale:${pscale}">${playing.map(p=>{
         const showBd = state.beamer_boards!==false && p.board_label;
         if(p.black_id==null) return `<div class="bm-pair bye"><span class="bm-pn">${esc(nm(p.white_id))}</span><span class="bm-bye">Freilos</span></div>`;
         const res=p.result==="1-0"?"1 : 0":p.result==="0-1"?"0 : 1":p.result==="draw"?"½ : ½":"–";
@@ -1127,6 +1130,9 @@ function renderBeamer(){
     </div>`;
   }
 
+  // QR im Header: Ziel = externer Anmelde-Link (falls gesetzt) sonst die Schülerseite; nicht bei der Anmelde-Seite (dort steht der große QR)
+  const hdrQrTarget = (VMODE()==="code" && !(state.event_code||"").trim() && (state.reg_link||"").trim()) ? (state.reg_link||"").trim() : (location.origin+location.pathname);
+  const showHdrQr = state.status!=="registration";
   r.innerHTML=`
     ${state.status==="running"?`<div class="bm-bgcups" id="bmBgCups"></div>`:""}
     <div class="bm-top">
@@ -1140,6 +1146,7 @@ function renderBeamer(){
       </div>
       <div class="bm-center"><span id="bmClockSlot"></span></div>
       <div class="bm-right">
+        ${showHdrQr?`<div class="bm-hdr-qr"><div id="bmHdrQr"></div><span>Mitmachen</span></div>`:""}
         <span class="bm-htl" id="bmHtlSlot"></span>
       </div>
     </div>
@@ -1154,6 +1161,7 @@ function renderBeamer(){
   }
   if(panel==="sieger"){ renderTrophies($("#bmtrophies"), state.champions||[]); }
   if(state.status==="running"){ const bc=$("#bmBgCups"); if(bc) renderTrophies(bc, []); }   // leere Pokale als Hintergrund
+  if(showHdrQr){ const qe=$("#bmHdrQr"); if(qe){ try{ new QRCode(qe,{text:hdrQrTarget,width:220,height:220,colorDark:"#20211d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }catch(e){} } }
 }
 
 /* ---------- QR (nur Admin + Supabase) ---------- */
