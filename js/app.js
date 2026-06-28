@@ -1150,6 +1150,7 @@ function renderFinished(app){
     ab.innerHTML=`<div class="ab-top">${ic('teacher')}Turnier beendet <span class="lk">${esc(state.time_control)} · ${state.num_rounds} Runden</span></div>
       <div class="ab-actions">
         ${state.awarded?`<span class="ab-note">${ic('checkCircle')} Pokale graviert</span>`:`<button class="btn" id="btnAward">${ic('trophy')} Pokale gravieren (Top 3)</button>`}
+        ${(state.champions||[]).length?`<button class="btn ghost sm" id="btnCert" title="Urkunden für die Top 3 (Schullogo, Pokal, Name, Klasse, Datum) als druckbare PDF öffnen.">${ic('table')} Urkunden (PDF)</button>`:""}
         ${(state.champions||[]).length?`<button class="btn ghost sm" id="btnClearCup" title="Gravur von den Pokalen entfernen (z.B. nach einem Test). Wall of Fame bleibt.">${ic('trash')} Gravur löschen</button>`:""}
         <button class="btn ghost sm" id="btnPreviewHall" title="Test: schreibt die aktuellen Top 3 als Tafel mit Jahreszahl auf die Wall of Fame — nur Vorschau, wird NICHT gespeichert. Knopf nochmal = entfernen.">${ic('trophy')} WoF-Vorschau${(state.halloffame||[]).some(e=>e._preview)?" (entf.)":""}</button>
         <a class="btn ghost sm" href="${esc(beamer)}" target="_blank" rel="noopener">${ic('monitor')} Beamer</a>
@@ -1159,6 +1160,7 @@ function renderFinished(app){
       ${state.awarded?"":'<div class="ab-hint">Bisherige Pokal-Inhaber wandern dabei in die Wall of Fame, die neuen Top 3 kommen auf die Pokale.</div>'}`;
     app.appendChild(ab);
     if($("#btnAward")) $("#btnAward").onclick=awardTrophies;
+    if($("#btnCert")) $("#btnCert").onclick=printCertificates;
     if($("#btnClearCup")) $("#btnClearCup").onclick=()=>clearTrophies().then(()=>render());
     if($("#btnPreviewHall")) $("#btnPreviewHall").onclick=previewHall;
     $("#btnReset").onclick=()=>confirmReset();
@@ -1281,7 +1283,67 @@ function renderHall(container){
     <p class="lead" style="text-align:center">${lead}</p>`;
   container.appendChild(card);
   renderTrophies(card, champs);
+  // Tafel der Top 3 (Name + Klasse) — direkt unter den Pokalen
+  if(hasCh){
+    const sorted=[...champs].sort((a,b)=>a.rank-b.rank);
+    const t=document.createElement("div"); t.className="card podium-card";
+    t.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('trophy')} Siegertafel</div>
+      <table class="podium-tbl"><tbody>${sorted.map(c=>`<tr class="pr${c.rank}">
+        <td class="pr-r">${c.rank}.</td><td class="pr-n">${esc(c.name)}</td><td class="pr-k">${esc(c.klasse||"")}</td></tr>`).join("")}</tbody></table>`;
+    container.appendChild(t);
+  }
   renderWall(container);
+}
+/* Urkunden (Top 3) als druckbare A4-Quer-Seiten -> Druckdialog -> "Als PDF speichern". */
+function printCertificates(){
+  const champs=[...(state.champions||[])].sort((a,b)=>a.rank-b.rank);
+  if(!champs.length){ toast("Erst 'Pokale gravieren' — dann gibt es Urkunden"); return; }
+  const base=new URL('./',location.href).href;
+  const logo=base+'assets/logo.png';
+  const tname=esc(state.tournament_name||'Schachturnier');
+  const place=['1. Platz','2. Platz','3. Platz'];
+  const cards=champs.map(c=>{
+    const trophy=base+(TROPHY_CONFIG.images[c.rank-1]||'');
+    const datum=esc(fmtDate(c.date)||'');
+    return `<section class="cert"><div class="frame frame${c.rank}">
+      <header><img class="logo" src="${logo}" onerror="this.style.display='none'"><div class="org">${tname}</div></header>
+      <div class="title">Urkunde</div>
+      <div class="rank rank${c.rank}">${place[c.rank-1]||(c.rank+'. Platz')}</div>
+      <img class="cup" src="${trophy}" onerror="this.style.display='none'">
+      <div class="for">verliehen an</div>
+      <div class="name">${esc(c.name)}</div>
+      ${c.klasse?`<div class="kl">${esc(c.klasse)}</div>`:''}
+      <div class="foot"><div class="meta">${tname}${datum?' · '+datum:''}</div>
+        <div class="sig"><span>Turnierleitung</span><span>Datum</span></div></div>
+    </div></section>`;
+  }).join('');
+  const css=`*{margin:0;padding:0;box-sizing:border-box}@page{size:A4 landscape;margin:0}
+    body{font-family:"Hanken Grotesk",system-ui,Arial,sans-serif;color:#2a2208;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .cert{width:297mm;height:210mm;padding:9mm;page-break-after:always;display:flex}
+    .frame{flex:1;border:1.4mm solid #b8893f;border-radius:5mm;box-shadow:inset 0 0 0 1mm #e7cf95;
+      background:radial-gradient(120% 90% at 50% 0,#fffdf6 0,#f6ecd2 100%);
+      display:flex;flex-direction:column;align-items:center;text-align:center;padding:11mm 18mm}
+    header{display:flex;align-items:center;gap:6mm;margin-bottom:3mm}
+    .logo{height:20mm;width:auto}
+    .org{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:6.5mm;letter-spacing:.06em;color:#7a5a22;text-transform:uppercase}
+    .title{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:21mm;letter-spacing:.14em;color:#9a6f29;text-transform:uppercase;line-height:1;margin:1mm 0 2mm}
+    .rank{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:8mm;letter-spacing:.05em;padding:1.6mm 9mm;border-radius:30mm;color:#fff}
+    .rank1{background:linear-gradient(90deg,#caa24a,#a87f2f)}.rank2{background:linear-gradient(90deg,#9aa0a8,#777d86)}.rank3{background:linear-gradient(90deg,#c08a52,#9c6a39)}
+    .cup{height:52mm;width:auto;margin:1mm 0}
+    .for{font-size:4.6mm;color:#8a7536;letter-spacing:.05em}
+    .name{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:16mm;color:#241905;line-height:1.04;margin:1mm 0}
+    .kl{font-size:6mm;color:#7a5a22;font-weight:700}
+    .foot{margin-top:auto;width:100%}
+    .meta{font-size:5mm;color:#6a5a2a;margin-bottom:7mm;font-weight:600}
+    .sig{display:flex;justify-content:space-around;gap:18mm}
+    .sig span{border-top:.4mm solid #b8893f;padding-top:2mm;width:62mm;font-size:4mm;color:#6a5a2a}`;
+  const w=window.open('','_blank');
+  if(!w){ toast("Bitte Pop-ups erlauben, um die Urkunden zu öffnen"); return; }
+  w.document.write(`<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Urkunden – ${tname}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Hanken+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>${css}</style></head><body>${cards}
+    <scr`+`ipt>window.onload=function(){setTimeout(function(){window.print();},500);};</scr`+`ipt></body></html>`);
+  w.document.close();
 }
 /* Schweizer System — einfache Erklärung (Schüler-Info) */
 function swissInfoHTML(){

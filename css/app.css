@@ -293,6 +293,17 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .trophy.t3 .plaque-engrave .pl-name{color:#160c03}
 .plaque-engrave .pl-kl{display:none}
 .plaque-engrave.empty .pl-name{color:#7a6630;font-style:italic;font-weight:600;text-transform:none;text-shadow:none}
+/* Siegertafel (Top 3, Name + Klasse) unter den Pokalen */
+.podium-card{margin-top:14px}
+.podium-tbl{width:100%;border-collapse:collapse;margin-top:6px}
+.podium-tbl td{padding:11px 12px;border-bottom:1px solid var(--line);font-size:1.02rem}
+.podium-tbl tr:last-child td{border-bottom:none}
+.podium-tbl .pr-r{width:2.2em;font-family:"Bricolage Grotesque";font-weight:800;color:var(--accent-d);font-size:1.1rem}
+.podium-tbl .pr-n{font-weight:700}
+.podium-tbl .pr-k{text-align:right;color:var(--ink-soft);font-weight:600}
+.podium-tbl tr.pr1 .pr-r{color:#d9af52}
+.podium-tbl tr.pr2 .pr-r{color:#a9adb4}
+.podium-tbl tr.pr3 .pr-r{color:#c08a52}
 
 /* Wall of Fame / HTL1 Legends */
 .legends-card{background:#101114;border-color:#2a2c33}
