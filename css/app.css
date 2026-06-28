@@ -325,6 +325,9 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .lp-kl{font-weight:600;font-size:.68rem;color:#6a4f1c}
 .lp-p1 .lp-nm{font-size:.9rem;font-weight:800}
 .lp-p1 .lp-pc{color:#7a5414;font-size:1.05rem}
+.lp-del{position:absolute;top:5px;right:5px;width:21px;height:21px;border-radius:50%;border:1px solid rgba(120,40,20,.45);
+  background:rgba(255,250,240,.7);color:#8a2d12;font-weight:800;font-size:.72rem;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0;z-index:3}
+.lp-del:hover{background:#d9433a;color:#fff;border-color:#d9433a}
 
 /* ===================== BEAMER ===================== */
 .beamer-body{overflow:hidden}

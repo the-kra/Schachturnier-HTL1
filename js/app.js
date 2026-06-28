@@ -270,6 +270,19 @@ async function clearHallOfFame(){
   if(SB_MODE){ await sb.from("chess_halloffame").delete().neq("rank",-1); }
   render(); toast("Wall of Fame geleert");
 }
+/* Einzelne Tafel (ein Turnier) aus der Wall of Fame löschen. */
+async function deleteHallGroup(date, tournament){
+  const keyOf=e=>((e.event_date||"")+"|"+(e.tournament_name||""));
+  const key=(date||"")+"|"+(tournament||"");
+  const all=state.halloffame||[];
+  const grp=all.filter(e=>keyOf(e)===key);
+  if(!grp.length) return;
+  if(!confirm(`Diese Tafel von der Wall of Fame löschen?\n\n${(tournament||"Turnier")}${date?" · "+fmtDate(date):""}\n\nKann nicht rückgängig gemacht werden.`)) return;
+  state.halloffame = all.filter(e=>keyOf(e)!==key);
+  const ids=grp.map(e=>e.id).filter(Boolean);
+  if(SB_MODE && ids.length){ await sb.from("chess_halloffame").delete().in("id",ids); }
+  render(); toast("Tafel gelöscht");
+}
 /* Wall-of-Fame-Vorschau (NICHT gespeichert) — zum Testen der Gravur/Tafel. Knopf = Toggle. */
 function previewHall(){
   if((state.halloffame||[]).some(e=>e._preview)){
@@ -1262,6 +1275,7 @@ function renderWall(container){
       const yr=(String(date).match(/^(\d{4})/)||[,"20XX"])[1];
       const list=groups[k].sort((a,b)=>a.rank-b.rank).slice(0,3);
       html+=`<div class="legend-plate" title="${esc(name||"Turnier")}">
+        ${IS_ADMIN?`<button class="lp-del" data-d="${esc(date)}" data-t="${esc(name)}" title="Diese Tafel löschen">✕</button>`:""}
         <div class="lp-year">— ${esc(yr)} —</div>
         <ol class="lp-podium">${list.map(e=>`<li class="lp-p${e.rank}">
           <span class="lp-pc">${RANK_PIECE[e.rank-1]||"•"}</span>
@@ -1271,6 +1285,7 @@ function renderWall(container){
     html+=`</div>`;
   }
   card.innerHTML=html; container.appendChild(card);
+  if(IS_ADMIN) card.querySelectorAll(".lp-del").forEach(b=>b.onclick=()=>deleteHallGroup(b.dataset.d, b.dataset.t));
 }
 function renderHall(container){
   const running = state.status==="running";
