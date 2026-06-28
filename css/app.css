@@ -63,8 +63,10 @@ a{color:var(--accent-d)}
 .htl-mark{flex:none;display:flex;align-items:center;transition:transform .15s}
 .htl-mark:hover{transform:translateY(-1px)}
 .htl-mark svg{height:100px;width:auto;display:block}
-@media(max-width:780px){.hdr-clock,.hdr-kranzlab{display:none}}
-@media(max-width:560px){.htl-mark{display:none}.hdr-right{flex:0}}
+@media(max-width:780px){.hdr-kranzlab{display:none}.hdr-clock{font-size:1.15rem;letter-spacing:1px}}
+@media(max-width:560px){.htl-mark{display:none}.hdr-right{flex:0}.hdr-clock{font-size:1rem}}
+.reg-soon{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--accent-soft);border:1px solid rgba(232,150,56,.4);color:var(--accent-d);border-radius:14px;padding:16px 18px;font-size:1.15rem;font-weight:700;margin-bottom:6px}
+.reg-soon svg{width:22px;height:22px;flex:none}
 .logo-txt{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
 .logo h1{font-family:"Orbitron",sans-serif;font-size:1.5rem;font-weight:800;letter-spacing:.01em;line-height:1.05}
 .logo .sub{font-family:"Orbitron",sans-serif;font-size:.66rem;color:var(--accent-d);font-weight:600;letter-spacing:.18em;text-transform:uppercase;margin-top:3px}
@@ -133,12 +135,14 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .pl .pres input{width:15px;height:15px;margin:0;cursor:pointer;accent-color:var(--accent-d)}
 .pl.out .pres{text-decoration:none}
 /* Schweizer-System-Info */
-.swiss-pts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:18px}
-.swiss-pts span{background:var(--bg-soft);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.92rem}
+.swiss-pts{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:18px}
+.swiss-pts span{font-family:"Bricolage Grotesque";font-weight:700;background:var(--bg-soft);border:1px solid var(--line);border-radius:10px;padding:8px 15px;font-size:.95rem;letter-spacing:.01em}
 .swiss-pts span b{color:var(--accent-d)}
-.swiss-steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:11px;line-height:1.55}
-.swiss-steps li{padding-left:4px}
-.swiss-steps li::marker{color:var(--accent-d);font-weight:800}
+.swiss-steps{margin:0;padding:0;list-style:none;counter-reset:swiss;display:flex;flex-direction:column;gap:10px}
+.swiss-steps li{counter-increment:swiss;position:relative;padding:12px 14px 12px 46px;background:var(--bg-soft);border:1px solid var(--line);border-radius:11px;
+  font-family:"Bricolage Grotesque";font-size:1rem;line-height:1.5;letter-spacing:.005em}
+.swiss-steps li::before{content:counter(swiss);position:absolute;left:11px;top:11px;width:24px;height:24px;border-radius:7px;
+  display:grid;place-items:center;font-weight:800;font-size:.9rem;color:var(--bg);background:var(--accent-d)}
 .swiss-reg>summary{cursor:pointer;font-size:1rem;list-style:none;display:flex;align-items:center;gap:9px}
 .swiss-reg>summary::-webkit-details-marker{display:none}
 .swiss-reg>summary svg{width:18px;height:18px;flex:none;stroke:var(--accent-d)}

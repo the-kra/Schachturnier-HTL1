@@ -740,16 +740,23 @@ function renderRegistration(app){
     wireAdminCommon();
   }
 
-  // Schülerseite: oben ein Sprung-Button zur Anmeldung, dann Pokale, dann Anmelde-Info
+  // Schülerseite: oben CTA bzw. "Turnier startet in Kürze", dann Pokale
   if(!IS_ADMIN){
-    const cta=document.createElement("a"); cta.className="btn block reg-cta"; cta.href="#reg-anmeldung";
-    cta.innerHTML=ic('arrow')+" Zur Anmeldung";
-    cta.onclick=e=>{ e.preventDefault(); const t=$("#reg-anmeldung"); if(t) t.scrollIntoView({behavior:"smooth",block:"start"}); };
-    app.appendChild(cta);
+    if(useExtern()){
+      const cta=document.createElement("a"); cta.className="btn block reg-cta"; cta.href="#reg-anmeldung";
+      cta.innerHTML=ic('arrow')+" Zur Anmeldung";
+      cta.onclick=e=>{ e.preventDefault(); const t=$("#reg-anmeldung"); if(t) t.scrollIntoView({behavior:"smooth",block:"start"}); };
+      app.appendChild(cta);
+    } else {
+      const soon=document.createElement("div"); soon.className="reg-soon";
+      soon.innerHTML=`${ic('clock')} <b>Turnier startet in Kürze</b>`;
+      app.appendChild(soon);
+    }
     renderHall(app);
   }
 
-  // Anmeldeformular (alle) — abhängig vom Bestätigungsmodus
+  // Anmeldeformular — nur für Lehrer (Hinzufügen) oder bei aktivem externem Link
+  if(IS_ADMIN || useExtern()){
   const f=document.createElement("div"); f.className="card lg"; f.id="reg-anmeldung";
   const codeGate = (VMODE()==="code" && !(state.event_code||"").trim());
 
@@ -824,6 +831,7 @@ function renderRegistration(app){
     const lastField = needCode?$("#regCode"):$("#regKlasse");
     if(lastField) lastField.onkeydown=e=>{ if(e.key==="Enter") submit(); };
   }
+  }
 
   // Teilnehmerliste — bei externem Anmelde-Link in der Schüleransicht ausblenden
   const altReg = useExtern();
@@ -832,7 +840,7 @@ function renderRegistration(app){
   const list = [...state.players].sort((a,b)=>a.name.localeCompare(b.name,"de"));
   const absent=state.players.length-active.length;
   l.innerHTML=`
-    <div class="count-badge"><b>${IS_ADMIN?active.length:state.players.length}</b><span>${IS_ADMIN?"anwesend":"angemeldet"}${(IS_ADMIN&&absent>0)?` · ${absent} abwesend`:""}</span></div>
+    <div class="count-badge"><b>${IS_ADMIN?active.length:state.players.length}</b><span>${IS_ADMIN?"anwesend":"Teilnehmer"}${(IS_ADMIN&&absent>0)?` · ${absent} abwesend`:""}</span></div>
     ${IS_ADMIN&&list.length?`<div class="code-hint" style="margin:0 0 8px">Standardmäßig <b>nicht anwesend</b> — Anwesende abhaken (oder Bulk). Nur Anwesende werden ausgelost.</div>
       <div class="ab-actions" style="margin-bottom:10px">
         <button class="btn ghost sm" id="btnAllPresent">${ic('check')} Alle anwesend</button>
@@ -1310,12 +1318,12 @@ function renderBeamer(){
     const codeSet = (VMODE()==="code" && (state.event_code||"").trim() && !useExtern());
     const altLink = useExtern() ? regTarget() : "";
     bmQrTarget = regTarget();
-    const cap = altLink ? esc(state.reg_text||"Zur Anmeldung") : "Handy-Kamera drauf halten<br>& anmelden";
+    const cap = altLink ? esc(state.reg_text||"Zur Anmeldung") : "Handy-Kamera drauf halten<br>& live mitverfolgen";
     body=`<div class="bm-joinhall">
       <div class="bm-jh-left">
         <div class="bm-qr"><div id="bmqr"></div><div class="bm-qrcap">${cap}</div><div class="bm-qrlink">${esc(linkLabel(bmQrTarget))}</div></div>
         ${codeSet?`<div class="bm-code">Anmeldecode <b>${esc(state.event_code)}</b></div>`:""}
-        ${altLink?"":`<div class="bm-count"><b>${state.players.length}</b> angemeldet</div>`}
+        ${altLink?"":`<div class="bm-count"><b>${state.players.length}</b> Teilnehmer</div>`}
       </div>
       <div class="bm-jh-right">
         <div class="bm-section-title">${ic('trophy')} Titelverteidiger</div>
