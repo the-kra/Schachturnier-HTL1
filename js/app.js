@@ -449,6 +449,21 @@ function parseTC(tc){
   if(m) return { base:+m[1], inc:+m[2] };
   const b=parseInt(tc,10); return { base:isNaN(b)?5:b, inc:0 };
 }
+/* <option>-Liste für die Bedenkzeit, gruppiert; eigener (nicht gelisteter) Wert bleibt erhalten */
+function tcOptions(cur){
+  const groups=[
+    ["Blitz / Schnellschach", [["3+2","3 min + 2 Sek"],["5+0","5 min"],["5+3","5 min + 3 Sek"],["10+0","10 min"],["10+5","10 min + 5 Sek"],["15+0","15 min"],["15+10","15 min + 10 Sek"],["20+0","20 min"],["25+10","25 min + 10 Sek"]]],
+    ["Standard / Klassisch (40 Züge)", [["30+0","30 min"],["30+30","30 min + 30 Sek"],["60+0","60 min"],["60+30","60 min + 30 Sek"],["90+30","90 min + 30 Sek · 40 Züge (FIDE)"],["120+0","120 min · 40 Züge"]]],
+  ];
+  let found=false,out="";
+  for(const [g,opts] of groups){
+    out+=`<optgroup label="${g}">`;
+    for(const [v,lbl] of opts){ const sel=v===cur; if(sel)found=true; out+=`<option value="${v}"${sel?" selected":""}>${lbl}</option>`; }
+    out+="</optgroup>";
+  }
+  if(!found && cur) out=`<option value="${esc(cur)}" selected>${esc(cur)} (eigene)</option>`+out;
+  return out;
+}
 function fmtDur(min){
   min=Math.max(0,Math.round(min));
   const h=Math.floor(min/60), m=min%60;
@@ -568,9 +583,10 @@ function renderRegistration(app){
         <div class="field" style="margin:0"><label>Turniername</label><input id="cfgName" value="${esc(state.tournament_name)}"></div>
         <div class="field" style="margin:0;max-width:120px"><label>Runden</label>
           <select id="cfgRounds">${[4,5,6,7,8,9].map(n=>`<option ${n==state.num_rounds?"selected":""}>${n}</option>`).join("")}</select></div>
-        <div class="field" style="margin:0;max-width:140px"><label>Bedenkzeit</label>
-          <select id="cfgTime">${["3+2","5+0","5+3","10+0","10+5","15+0"].map(t=>`<option ${t==state.time_control?"selected":""}>${t}</option>`).join("")}</select></div>
+        <div class="field" style="margin:0;max-width:250px"><label>Bedenkzeit pro Spieler</label>
+          <select id="cfgTime">${tcOptions(state.time_control)}</select></div>
       </div>
+      <span class="code-hint">Format „Minuten + Sekunden je Zug". „40 Züge (FIDE)" = klassische Turnierzeit: die angegebene Zeit gilt für die ersten 40 Züge.</span>
       <div class="forecast">${ic('clock')}<span>Geschätzte Dauer: <b>ca. ${fmtDur(fc.lo)} – ${fmtDur(fc.hi)}</b></span>
         <span class="fc-sub">${fc.rounds} Runden · ${fc.games} Partien · ${fc.n} Spieler${fc.waves>1?` · ⏳ ${fc.cap} Bretter → ${Math.ceil(fc.waves*10)/10}× nacheinander`:""}${fc.n>=2&&fc.rounds<fc.recRounds?` · Tipp: ${fc.recRounds} Runden`:""}</span></div>
       <div class="codebox">
