@@ -1101,6 +1101,7 @@ function renderFinished(app){
       <div class="ab-actions">
         ${state.awarded?`<span class="ab-note">${ic('checkCircle')} Pokale graviert</span>`:`<button class="btn" id="btnAward">${ic('trophy')} Pokale gravieren (Top 3)</button>`}
         ${(state.champions||[]).length?`<button class="btn ghost sm" id="btnClearCup" title="Gravur von den Pokalen entfernen (z.B. nach einem Test). Wall of Fame bleibt.">${ic('trash')} Gravur löschen</button>`:""}
+        <button class="btn ghost sm" id="btnPreviewHall" title="Test: schreibt die aktuellen Top 3 als Tafel mit Jahreszahl auf die Wall of Fame — nur Vorschau, wird NICHT gespeichert. Knopf nochmal = entfernen.">${ic('trophy')} WoF-Vorschau${(state.halloffame||[]).some(e=>e._preview)?" (entf.)":""}</button>
         <a class="btn ghost sm" href="${esc(beamer)}" target="_blank" rel="noopener">${ic('monitor')} Beamer</a>
         <button class="btn danger sm" id="btnReset">${ic('reset')} Neues Turnier</button>
         ${adminCommonBtns()}
@@ -1109,6 +1110,7 @@ function renderFinished(app){
     app.appendChild(ab);
     if($("#btnAward")) $("#btnAward").onclick=awardTrophies;
     if($("#btnClearCup")) $("#btnClearCup").onclick=()=>clearTrophies().then(()=>render());
+    if($("#btnPreviewHall")) $("#btnPreviewHall").onclick=previewHall;
     $("#btnReset").onclick=()=>confirmReset();
     wireAdminCommon();
   }
