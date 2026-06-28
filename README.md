@@ -55,6 +55,8 @@ Der Browser spricht direkt mit Supabase über den öffentlichen Key — **kein e
 ### 1. Projekt anlegen
 [supabase.com](https://supabase.com) → neues Projekt, Region **Central EU (Frankfurt)** (näher an AT, DSGVO-freundlich).
 
+> **Komplette Schritt-für-Schritt-Anleitung (DB neu/2. Mal aufsetzen):** **[SUPABASE-SETUP.md](SUPABASE-SETUP.md)** — inkl. Realtime-Check, Lehrer-Logins und Fehlersuche.
+
 ### 2. Datenbank-Schema einspielen
 SQL-Editor öffnen und **in dieser Reihenfolge** ausführen:
 1. `sql/schema.sql` — legt Tabellen, Realtime und Spalten an.

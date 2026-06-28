@@ -76,4 +76,8 @@ create table if not exists chess_halloffame (
 alter table chess_halloffame enable row level security;
 create policy "open" on chess_halloffame for all using (true) with check (true);
 
-alter publication supabase_realtime add table chess_state, chess_players, chess_pairings, chess_halloffame;
+-- Realtime: alle Tabellen ins Publication (idempotent — Fehler "already member" wird ignoriert)
+do $$ begin alter publication supabase_realtime add table chess_state;      exception when duplicate_object then null; end $$;
+do $$ begin alter publication supabase_realtime add table chess_players;    exception when duplicate_object then null; end $$;
+do $$ begin alter publication supabase_realtime add table chess_pairings;   exception when duplicate_object then null; end $$;
+do $$ begin alter publication supabase_realtime add table chess_halloffame; exception when duplicate_object then null; end $$;

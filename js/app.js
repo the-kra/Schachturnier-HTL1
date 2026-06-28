@@ -1385,6 +1385,9 @@ async function boot(){
       .on("postgres_changes",{event:"*",schema:"public",table:"chess_pairings"},scheduleSync)
       .on("postgres_changes",{event:"*",schema:"public",table:"chess_halloffame"},scheduleSync)
       .subscribe();
+    // Fallback-Poll: fängt verpasste Realtime-Events ab (z.B. wenn eine Tabelle
+    // nicht im supabase_realtime-Publication ist) — alle 8 s ein leiser Reload.
+    setInterval(()=>{ if(document.visibilityState!=="hidden") scheduleSync(); }, 8000);
   }
   if(IS_BEAMER){ setInterval(()=>{ if(state.status==="running"){ ui.beamerIdx++; render(); } }, 12000); }
   render();
