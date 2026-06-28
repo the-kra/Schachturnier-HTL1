@@ -68,6 +68,7 @@ let state = {
   reg_link: "",                    // Externer Link: URL
   qr_extern: false,                // QR/Anmeldung zeigt auf: false = Schüleransicht (App), true = externer Link
   paused: false,                   // Spielpause (Beamer/Handy zeigen Pausen-Screen)
+  pause_text: "",                  // optionaler Pausentext (z.B. "Mittagspause bis 13:00")
   board_labels: "Brett 1, Brett 2, Brett 3, Brett 4, Brett 5, Brett 6, Brett 7, Brett 8, Brett 9, Brett 10, Brett 11, Brett 12, Brett 13, Brett 14, Brett 15, Brett 16, Brett 17, Brett 18, Brett 19, Brett 20",  // Bretter (Liste); Anzahl = Kapazität, leer = unbegrenzt
   beamer_boards: true,             // Brettnummern am Beamer anzeigen (ein/aus)
   champions: [],                   // aktuelle Pokal-Inhaber [{rank,name,klasse,tournament,date}]
@@ -798,7 +799,7 @@ function renderRunning(app){
 
   if(state.paused){
     const pb=document.createElement("div"); pb.className="pausebanner";
-    pb.innerHTML=`${ic('clock')} <b>Spielpause</b> — gleich geht's weiter`;
+    pb.innerHTML=`${ic('clock')} <b>Spielpause</b> — ${esc((state.pause_text||"").trim()||"gleich geht's weiter")}`;
     app.appendChild(pb);
   }
 
@@ -829,6 +830,7 @@ function renderAdminBarRunning(app){
         : `<button class="btn" id="btnNext" ${allDone?"":"disabled"}>${ic('arrow')} Runde ${cur+1} auslosen${allDone?"":" (Ergebnisse fehlen)"}</button>`}
       ${noResultsYet?`<button class="btn ghost sm" id="btnRe">${ic('shuffle')} Runde ${cur} neu auslosen</button>`:""}
       <button class="btn ghost sm" id="btnPause">${state.paused?ic('play')+" Weiter spielen":ic('clock')+" Spielpause"}</button>
+      ${state.paused?`<input id="cfgPauseText" class="bd-in" style="min-width:220px;flex:1" placeholder="Pausentext (optional), z.B. Mittagspause bis 13:00" value="${esc(state.pause_text||"")}">`:""}
       <a class="btn ghost sm" href="${esc(location.origin+location.pathname+"?beamer")}" target="_blank" rel="noopener">${ic('monitor')} Beamer</a>
       ${adminCommonBtns()}
       <button class="btn danger sm" id="btnReset" title="Laufendes Turnier abbrechen und von vorne beginnen.">${ic('reset')} Turnier neu starten</button>
@@ -838,6 +840,7 @@ function renderAdminBarRunning(app){
   if($("#btnFin"))  $("#btnFin").onclick=finishTournament;
   if($("#btnRe"))   $("#btnRe").onclick=()=>regeneratePairings(cur);
   if($("#btnPause"))$("#btnPause").onclick=()=>patchState({paused:!state.paused}).then(render);
+  if($("#cfgPauseText"))$("#cfgPauseText").onchange=e=>patchState({pause_text:e.target.value}).then(render);
   if($("#btnReset"))$("#btnReset").onclick=()=>confirmReset("Das laufende Turnier wird ABGEBROCHEN.");
   wireAdminCommon();
 }
@@ -952,7 +955,7 @@ function renderTable(app, finalMode){
       const b=document.createElement("button"); b.className="btn ghost sm";
       b.textContent = s.withdrawn ? "Aufnehmen" : "Aussteiger";
       b.title = s.withdrawn ? "Wieder mitspielen lassen" : "Steigt aus — wird ab nächster Runde nicht mehr ausgelost (Punkte bleiben)";
-      b.onclick=()=>setWithdrawn(s.id, !s.withdrawn).then(render);
+      b.onclick=()=>toggleWithdrawn(s.id, !s.withdrawn).then(()=>{ toast(s.withdrawn?"Wieder dabei ✓":"Ausgestiegen — ab nächster Runde nicht mehr ausgelost"); render(); });
       td.appendChild(b); tr.appendChild(td);
     }
     tb.appendChild(tr);
@@ -1121,9 +1124,10 @@ function renderBeamer(){
 
   if(panel==="pause"){
     const done=state.current_round>=state.num_rounds;
+    const sub=(state.pause_text||"").trim() || (done?"Gleich folgt die Siegerehrung.":`Gleich geht's weiter — Runde ${state.current_round} von ${state.num_rounds}`);
     body=`<div class="bm-pause">
       <div class="bm-pause-big">${ic('clock')} Spielpause</div>
-      <div class="bm-pause-sub">${done?"Gleich folgt die Siegerehrung.":`Gleich geht's weiter — Runde ${state.current_round} von ${state.num_rounds}`}</div>
+      <div class="bm-pause-sub">${esc(sub)}</div>
     </div>`;
   }
   else if(panel==="joinhall"){
