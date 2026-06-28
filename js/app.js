@@ -1334,11 +1334,14 @@ async function boot(){
     sb.auth.onAuthStateChange((_evt, sess)=>{ authUser = sess ? sess.user : null; if(IS_ADMIN) render(); });
     await loadAll();
     // Realtime-Änderungen coalescen: mehrere Events kurz hintereinander -> ein Reload+Render
-    let _syncT=null, _syncing=false;
-    const scheduleSync=()=>{ clearTimeout(_syncT); _syncT=setTimeout(async()=>{
-      if(_syncing) return; _syncing=true;
-      try{ await loadAll(); render(); } finally{ _syncing=false; }
-    }, 120); };
+    let _syncT=null, _syncing=false, _pending=false;
+    const runSync=async()=>{
+      if(_syncing){ _pending=true; return; }   // läuft schon -> nach Abschluss nachholen
+      _syncing=true;
+      try{ await loadAll(); render(); }
+      finally{ _syncing=false; if(_pending){ _pending=false; runSync(); } }
+    };
+    const scheduleSync=()=>{ clearTimeout(_syncT); _syncT=setTimeout(runSync, 120); };
     sb.channel("chess-live")
       .on("postgres_changes",{event:"*",schema:"public",table:"chess_state"},scheduleSync)
       .on("postgres_changes",{event:"*",schema:"public",table:"chess_players"},scheduleSync)

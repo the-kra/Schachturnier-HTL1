@@ -414,7 +414,7 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 /* Sieger-Ansicht: Pokale bleiben zentral stehen, Endstand blendet sanft darüber ein und wieder aus */
 .bm-sieger{position:relative;width:100%;margin:0;display:flex;flex-direction:column;justify-content:flex-start;min-height:100%;padding-top:1vh}
 .bm-sieger-cups{width:100%;animation:bmCupsPulse 24s ease-in-out infinite}
-.bm-sieger-cups .trophies{max-width:min(54vw,100vh)}
+.bm-sieger-cups .trophies{max-width:min(52vw,94vh)}
 .bm-sieger-tbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.5vw;padding:.6vh 0 1.6vh;
   background:rgba(8,11,16,.5);border-radius:1vw;opacity:0;pointer-events:none;animation:bmTblPulse 24s ease-in-out infinite}
 .bm-sieger-tbl .bm-tbl{max-width:66vw;font-size:1.85vw}
@@ -425,7 +425,7 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 @media (prefers-reduced-motion:reduce){.bm-sieger-cups,.bm-sieger-tbl{animation:none}.bm-sieger-tbl{opacity:0}}
 /* Auslosung: leere Pokale dauerhaft abgeschwächt im Hintergrund (ohne Gravur) */
 .bm-bgcups{position:absolute;inset:0;z-index:0;display:flex;align-items:center;justify-content:center;opacity:.13;pointer-events:none}
-.bm-bgcups .trophies{max-width:72vw;background:none;border:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0;margin:0}
+.bm-bgcups .trophies{max-width:min(62vw,118vh);background:none;border:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0;margin:0}
 .bm-bgcups .plaque,.bm-bgcups .trophy-cap{display:none}
 .beamer>.bm-top,.beamer>.bm-stage,.beamer>.bm-dots,.beamer>.bm-foot{position:relative;z-index:1}
 .beamer .podium{margin-top:1vw}
