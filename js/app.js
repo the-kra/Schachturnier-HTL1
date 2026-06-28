@@ -1309,6 +1309,8 @@ function printCertificates(){
     const trophy=base+(TROPHY_CONFIG.images[c.rank-1]||'');
     const datum=esc(fmtDate(c.date)||'');
     const rw=place[c.rank-1]||(c.rank+'. Platz');
+    const parts=(c.name||'').trim().split(/\s+/);
+    const vor=esc(parts[0]||''); const nach=esc(parts.slice(1).join(' '));
     return `<section class="cert"><div class="frame">
       <img class="logo" src="${logo}" onerror="this.style.display='none'">
       <div class="org">${tname}</div>
@@ -1318,20 +1320,22 @@ function printCertificates(){
       <div class="rank rank${c.rank}">${rw}</div>
       <div class="grats">Herzliche Gratulation!</div>
       <div class="for">Diese Urkunde wird verliehen an</div>
-      <div class="name">${esc(c.name)}</div>
+      <div class="name">${vor}${nach?`<span class="nachname">${nach}</span>`:''}</div>
       ${c.klasse?`<div class="kl">Klasse ${esc(c.klasse)}</div>`:''}
-      <p class="body">Danke für deine Teilnahme am <b>${tname}</b>. Mit Einsatz, Köpfchen und Spielfreude hast du den <b>${rw}</b> erreicht — herzliche Gratulation zu dieser starken Leistung!</p>
-      <div class="foot"><div class="meta">${tname}${datum?' · '+datum:''}</div>
-        <div class="sig"><span>Turnierleitung</span><span>Ort, Datum</span></div></div>
+      <p class="body">Für kluge Züge, ruhige Nerven und taktisches Können –<br>zum <b>${rw}</b> beim<br><span class="b-tit">${tname}</span></p>
+      <div class="foot">${datum?`<div class="meta">${datum}</div>`:''}
+        <div class="sig"><span>Turnierleitung</span></div></div>
     </div></section>`;
   }).join('');
   const css=`*{margin:0;padding:0;box-sizing:border-box}@page{size:A4 portrait;margin:0}
+    html,body{margin:0;padding:0}
     body{font-family:"EB Garamond",Georgia,serif;color:#3a2e12;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .cert{width:210mm;height:297mm;padding:10mm;page-break-after:always;display:flex}
-    .frame{flex:1;border:1.2mm solid #b8893f;border-radius:3mm;
+    .cert{page-break-after:always}
+    .cert:last-child{page-break-after:auto}
+    .frame{margin:9mm;min-height:274mm;border:1.2mm solid #b8893f;border-radius:3mm;
       box-shadow:inset 0 0 0 .6mm #d8b974,inset 0 0 0 2.4mm #fffdf7,inset 0 0 0 2.9mm #e7cf95;
       background:radial-gradient(135% 78% at 50% 0,#fffdf7 0,#f7eed6 100%);
-      display:flex;flex-direction:column;align-items:center;text-align:center;padding:15mm 20mm}
+      display:flex;flex-direction:column;align-items:center;text-align:center;padding:14mm 20mm}
     .logo{height:23mm;width:auto;margin-bottom:2.5mm}
     .org{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:5.4mm;letter-spacing:.12em;color:#7a5a22;text-transform:uppercase}
     .rule{display:flex;align-items:center;justify-content:center;gap:5mm;width:52%;margin:4mm 0 1mm;color:#bd9a52;font-size:6.5mm}
@@ -1342,13 +1346,15 @@ function printCertificates(){
     .rank1{background:linear-gradient(90deg,#caa24a,#a87f2f)}.rank2{background:linear-gradient(90deg,#9aa0a8,#777d86)}.rank3{background:linear-gradient(90deg,#c08a52,#9c6a39)}
     .grats{font-family:"Playfair Display",Georgia,serif;font-style:italic;font-size:9mm;color:#7a5414;margin:6mm 0 1mm}
     .for{font-size:5mm;color:#8a7536;letter-spacing:.03em}
-    .name{font-family:"Playfair Display",Georgia,serif;font-weight:800;font-size:17mm;color:#241905;line-height:1.05;margin:2mm 0 1mm}
+    .name{font-family:"Playfair Display",Georgia,serif;font-weight:800;font-size:18mm;color:#241905;line-height:1.04;margin:2mm 0 1mm}
+    .name .nachname{display:block;font-size:9mm;font-weight:700;color:#3a2a08;line-height:1.1;margin-top:.5mm}
     .kl{font-size:5.6mm;color:#7a5a22;font-weight:600;letter-spacing:.02em}
-    .body{font-size:4.8mm;line-height:1.65;color:#4a3c1c;max-width:135mm;margin:7mm auto 0}
-    .foot{margin-top:auto;width:100%;padding-top:8mm}
+    .body{font-size:5mm;line-height:1.7;color:#4a3c1c;max-width:150mm;margin:8mm auto 0}
+    .body .b-tit{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;color:#7a5414;letter-spacing:.01em}
+    .foot{margin-top:auto;width:100%;padding-top:10mm}
     .meta{font-family:"Bricolage Grotesque",sans-serif;font-size:4.2mm;color:#6a5a2a;margin-bottom:10mm;letter-spacing:.04em}
-    .sig{display:flex;justify-content:space-around;gap:14mm}
-    .sig span{border-top:.4mm solid #b8893f;padding-top:2mm;width:64mm;font-size:3.8mm;color:#6a5a2a}`;
+    .sig{display:flex;justify-content:center}
+    .sig span{border-top:.4mm solid #b8893f;padding-top:2mm;width:72mm;font-size:3.8mm;color:#6a5a2a;text-align:center}`;
   const w=window.open('','_blank');
   if(!w){ toast("Bitte Pop-ups erlauben, um die Urkunden zu öffnen"); return; }
   w.document.write(`<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Urkunden – ${tname}</title>
