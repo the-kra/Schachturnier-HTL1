@@ -944,6 +944,8 @@ function renderFinished(app){
 }
 
 /* ---------- POKALE / RUHMESHALLE ---------- */
+/* Name 2-zeilig: Vorname (Zeile 1) / Nachname(n) (Zeile 2) */
+function plName(s){ const p=esc((s||"").trim()).split(/\s+/); return p.length<2 ? (p[0]||"") : p[0]+"<br>"+p.slice(1).join(" "); }
 function cupSVG(rank){
   const c = rank===1?{a:"#edc75f",b:"#cf9a2e"}:rank===2?{a:"#d4d8df",b:"#9aa0a8"}:{a:"#dca97d",b:"#b06f3f"};
   return `<svg viewBox="0 0 200 220" width="100%" height="100%" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
@@ -1048,7 +1050,7 @@ function renderBeamer(){
   }else if(state.status==="running"){
     panels=["pairings","standings"];   // Spielplan + Gesamtreihung im Wechsel
   }else{
-    panels=["podium","standings"];
+    panels=["champions","standings"];
   }
   const panel = panels[ui.beamerIdx % panels.length];
   let body="";
@@ -1089,11 +1091,8 @@ function renderBeamer(){
     body=`<div class="bm-section-title">${ic('table')} ${state.status==="finished"?"Endstand":"Gesamtreihung"}</div>
       <table class="bm-tbl"><tbody>${st.map((s,i)=>`<tr class="${i<3?"top"+(i+1):""}"><td class="r">${i+1}</td><td class="n">${esc(s.name)}</td><td class="k">${esc(s.klasse||"")}</td><td class="p">${fmt(s.points)}</td><td class="b">${fmt(s.buch)}</td></tr>`).join("")}</tbody></table>`;
   }
-  else if(panel==="podium"){
-    const st=computeStandings();
-    const o=[{p:st[1],pos:2,c:"p2",m:"🥈"},{p:st[0],pos:1,c:"p1",m:"🥇"},{p:st[2],pos:3,c:"p3",m:"🥉"}].filter(x=>x.p);
-    body=`<div class="bm-section-title">${ic('trophy')} ${esc(state.tournament_name)}</div>
-      <div class="podium beamer-podium">${o.map(x=>`<div class="pod ${x.c}"><div class="crown">${x.m}</div><div class="pname">${esc(x.p.name)}</div><div class="pkl">${esc(x.p.klasse||"")}</div><div class="ppts">${fmt(x.p.points)} Pkt</div><div class="stand">${x.pos}</div></div>`).join("")}</div>`;
+  else if(panel==="champions"){
+    body=`<div class="bm-section-title" style="text-align:center">${ic('trophy')} ${esc(state.tournament_name)} · Sieger</div><div id="bmtrophies"></div>`;
   }
 
   r.innerHTML=`
@@ -1120,6 +1119,7 @@ function renderBeamer(){
     try{ new QRCode($("#bmqr"),{text:bmQrTarget,width:260,height:260,colorDark:"#20211d",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
     renderTrophies($("#bmtrophies"), state.champions);
   }
+  if(panel==="champions"){ renderTrophies($("#bmtrophies"), state.champions); }
 }
 
 /* ---------- QR (nur Admin + Supabase) ---------- */
@@ -1193,7 +1193,15 @@ async function handleImportFile(file){
     let n=0;
     for(let i=start;i<rows.length;i++){
       const row=rows[i]||[];
-      const name = (vorCol>-1||nachCol>-1) ? (S(row,vorCol)+" "+S(row,nachCol)).trim() : S(row,nameCol);
+      // Namen bereinigen: nur EIN Vorname + Nachname (damit's nicht zu lang wird)
+      let name;
+      if(vorCol>-1||nachCol>-1){
+        const vor=(S(row,vorCol).split(/\s+/)[0]||"");   // nur der erste Vorname
+        name=(vor+" "+S(row,nachCol)).trim();
+      }else{
+        const t=S(row,nameCol).split(/\s+/).filter(Boolean);
+        name = t.length<2 ? (t[0]||"") : t[0]+" "+t[t.length-1];   // Vorname + letzter Nachname
+      }
       const klasse=S(row,klasseCol);
       if(name.length<2) continue;
       if(state.players.some(p=>p.name.toLowerCase()===name.toLowerCase() && (p.klasse||"").toLowerCase()===klasse.toLowerCase())) continue;
