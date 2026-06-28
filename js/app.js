@@ -1196,7 +1196,18 @@ function swissInfoHTML(){
       <ul class="swiss-detail">
         <li><b>Start völlig zufällig:</b> Runde 1 wird komplett <b>random</b> ausgelost — keine Setzliste, jeder kann auf jeden treffen.</li>
         <li><b>Freilos-Regel:</b> Das Freilos geht an den Spieler mit den <b>wenigsten Punkten</b> (am niedrigsten in der Tabelle), der noch <b>kein</b> Freilos hatte. So bekommt möglichst niemand zwei.</li>
-        <li><b>Buchholz-Berechnung:</b> Summe der Punkte <b>aller deiner Gegner</b> am Turnierende. <br>Beispiel: deine 3 Gegner haben 4, 3 und 2 Punkte → Buchholz = <b>4+3+2 = 9</b>. Bei Punktgleichheit gewinnt die <b>höhere</b> Buchholz. Ein Freilos zählt dabei <b>keinen</b> Gegner.</li>
+        <li><b>Buchholz-Wertung — so wird gerechnet:</b>
+          <ul class="swiss-sub">
+            <li>Man zählt die <b>Endpunkte</b> (nach der letzten Runde) von <b>allen</b> deinen Gegnern zusammen — egal ob du gegen sie gewonnen oder verloren hast.</li>
+            <li>Es zählen die <b>Schlusspunkte</b> der Gegner, nicht die zum Zeitpunkt eurer Partie.</li>
+            <li><b>Höhere</b> Buchholz = du hattest die <b>stärkeren</b> Gegner → bei Punktgleichheit stehst du <b>vorne</b>.</li>
+            <li>Ein <b>Freilos</b> hat keinen Gegner und zählt <b>0</b> — deshalb ist ein Freilos im Tiebreak leicht nachteilig.</li>
+          </ul>
+          <div class="swiss-ex"><b>Beispiel</b> — Anna und Ben haben je <b>4 Punkte</b>:<br>
+            Anna: Gegner mit 5 · 4 · 3 · 2 · 1 → Buchholz = 5+4+3+2+1 = <b>15</b><br>
+            Ben: Gegner mit 3 · 3 · 2 · 2 · 1 → Buchholz = 3+3+2+2+1 = <b>11</b><br>
+            → <b>Anna</b> steht vorne, weil sie gegen stärkere Gegner gespielt hat.</div>
+        </li>
         <li><b>Warum Buchholz?</b> Sie belohnt den <b>härteren Weg</b>: gleich viele Punkte gegen <b>starke</b> Gegner ist mehr wert als gegen schwache.</li>
       </ul>
     </details>
