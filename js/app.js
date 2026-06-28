@@ -607,6 +607,7 @@ function renderRegistration(app){
         <span class="code-hint" style="width:100%">${ic('flask')} Zum Testen vor dem Event:</span>
         <button class="btn ghost sm" id="btnDemo" title="20 Beispiel-Teilnehmer zum Ausprobieren hinzufügen.">+20 Testdaten</button>
         <button class="btn ghost sm" id="btnImport" title="Teilnehmer aus Excel/CSV laden. Erste Zeile als Überschrift, Spalten 'Vorname', 'Nachname', 'Klasse' (oder 'Name', 'Klasse'). Namen werden auf einen Vornamen gekürzt, Duplikate übersprungen.">${ic('import')} Import Excel/CSV</button>
+        <button class="btn ghost sm" id="btnTemplate" title="Leere Excel-Vorlage mit den Spalten Vorname / Nachname / Klasse herunterladen (inkl. Beispielen, auch ein Lehrer).">${ic('table')} Vorlage</button>
         <button class="btn ghost sm" id="btnSim" title="Spielt ein komplettes Turnier mit Zufallsergebnissen durch — testet Auslosung, Tabelle und Pokale.">${ic('play')} Testlauf simulieren</button>
         ${(state.champions||[]).length?`<button class="btn ghost sm" id="btnClearCup" title="Test-Gravur von den Pokalen entfernen (Wall of Fame bleibt).">${ic('trash')} Gravur löschen</button>`:""}
         ${(state.halloffame||[]).length?`<button class="btn ghost sm" id="btnClearWall" title="Gesamte Wall of Fame löschen — nur zum Aufräumen von Testdaten.">${ic('trash')} Wall of Fame leeren</button>`:""}
@@ -630,6 +631,7 @@ function renderRegistration(app){
     const demo=$("#btnDemo"); if(demo) demo.onclick=addDemo;
     const imp=$("#btnImport"); if(imp) imp.onclick=()=>{ const f=$("#impFile"); if(f) f.click(); };
     const impF=$("#impFile"); if(impF) impF.onchange=e=>handleImportFile(e.target.files[0]);
+    const tpl=$("#btnTemplate"); if(tpl) tpl.onclick=downloadTemplate;
     const ih=$("#btnImpHall"); if(ih) ih.onclick=()=>{ const f=$("#impHallFile"); if(f) f.click(); };
     const ihf=$("#impHallFile"); if(ihf) ihf.onchange=e=>importHallCups(e.target.files[0]);
     const sim=$("#btnSim"); if(sim) sim.onclick=simulateTournament;
@@ -700,7 +702,7 @@ function renderRegistration(app){
       <p class="lead">${needEmail?"Du bekommst einen Bestätigungscode per E-Mail.":needCode?"Gib den Code vom Beamer ein, um dich anzumelden.":"Trag deinen Namen ein — du erscheinst sofort in der Liste."}</p>
       <div class="row">
         <div class="field" style="flex:2"><label>Name</label><input id="regName" placeholder="Vor- und Nachname" autocomplete="off"></div>
-        <div class="field" style="flex:1"><label>Klasse</label><input id="regKlasse" placeholder="z.B. 2AHET" autocomplete="off"></div>
+        <div class="field" style="flex:1"><label>Klasse / Funktion</label><input id="regKlasse" placeholder="z.B. 2AHET oder Lehrer" autocomplete="off"></div>
       </div>
       ${needEmail?`<div class="field"><label>E-Mail</label><input id="regEmail" type="email" placeholder="name@schule.at" autocomplete="email"></div>`:""}
       ${needCode?`<div class="field"><label>Anmeldecode (vom Beamer)</label><input id="regCode" inputmode="numeric" maxlength="12" placeholder="Code" autocomplete="off"></div>`:""}
@@ -1175,6 +1177,25 @@ async function simulateTournament(){
   toast("Testlauf fertig — jetzt 'Pokale vergeben' testen ✓");
 }
 
+/* Lädt eine leere Excel-Vorlage mit den richtigen Spalten herunter.
+   Beispielzeilen zeigen: statt Klasse kann auch eine Funktion (Lehrer) stehen. */
+function downloadTemplate(){
+  if(typeof XLSX==="undefined"){ toast("Bitte kurz warten (Bibliothek lädt)"); return; }
+  const aoa=[
+    ["Vorname","Nachname","Klasse"],
+    ["Lena","Maier","2AHET"],
+    ["Paul","Koch","1BHET"],
+    ["Markus","Berger","Lehrer"],
+    ["Sabine","Huber","Direktorin"],
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"]=[{wch:16},{wch:18},{wch:14}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Teilnehmer");
+  XLSX.writeFile(wb, "Teilnehmer-Vorlage.xlsx");
+  toast("Vorlage heruntergeladen ✓");
+}
+
 /* Importiert Teilnehmer aus Excel/CSV — Spalten 'Vorname','Nachname','Klasse'
    (oder 'Name','Klasse'). */
 async function handleImportFile(file){
@@ -1192,7 +1213,7 @@ async function handleImportFile(file){
     vorCol =head.findIndex(h=>h.includes("vorname")||h==="vor");
     nachCol=head.findIndex(h=>h.includes("nachname")||h.includes("familienname")||h==="nach");
     const ni=head.findIndex(h=>h==="name"||(h.includes("name")&&h!=="vorname"&&h!=="nachname"));
-    const ki=head.findIndex(h=>h.includes("klasse")||h.includes("class"));
+    const ki=head.findIndex(h=>h.includes("klasse")||h.includes("class")||h.includes("funktion"));
     if(vorCol>-1||nachCol>-1||ni>-1){ start=1; if(ni>-1)nameCol=ni; klasseCol=(ki>-1?ki:klasseCol); }
     let n=0;
     for(let i=start;i<rows.length;i++){
