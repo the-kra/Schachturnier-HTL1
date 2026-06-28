@@ -45,7 +45,7 @@ Ein schlankes Web-Tool, um an der Schule ein **Schachturnier im Schweizer System
 
 1. **Vorbereitung:** Turniername, Runden, Bedenkzeit, Bretter und Anmeldemodus im Admin einstellen. Bei `?admin` mit Lehrer-Mail **einloggen** (oben erscheint **Abmelden**).
 2. **Anmeldung:** Beamer (`?beamer`) zeigt den QR. Schüler melden sich per Handy an — oder der Lehrer trägt sie über **„Teilnehmer hinzufügen"** / **Excel-Import** ein. Liste füllt sich live.
-3. **Start:** **„Anmeldung schließen & auslosen"** → Runde 1. Danach pro Runde Ergebnisse eintragen (`1:0 / ½ / 0:1`), bei Warteschlange Brett zuweisen, dann **„Runde N auslosen"**.
+3. **Anwesenheit & Start:** Teilnehmer sind standardmäßig **„nicht anwesend"** — vor der Auslosung die Anwesenden **abhaken** (oder Bulk **„Alle anwesend"**). Nur Anwesende werden gelost. Dann **„Anmeldung schließen & auslosen"** → Runde 1. Danach pro Runde Ergebnisse eintragen (`1:0 / ½ / 0:1`), bei Warteschlange Brett zuweisen, dann **„Runde N auslosen"**.
 4. **Während des Turniers:** **Spielpause** (mit Pausentext) ein-/ausschalten, **Aussteiger** in der Zwischenstand-Tabelle zurückziehen, Runden zurückblättern.
 5. **Ende:** nach der letzten Runde **„Turnier beenden"** → **„Pokale gravieren (Top 3)"**. Beamer zeigt die Sieger-Pokale; alte Inhaber wandern in die Wall of Fame. (Test-Gravur via **„Gravur löschen"** entfernbar.)
 
