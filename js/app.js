@@ -326,6 +326,21 @@ function computeStandings(){
 }
 /* Tabellen-Anzeige: Abwesende, die nie gespielt haben, ausblenden (Aussteiger mit Partien bleiben). */
 function standingsView(){ return computeStandings().filter(s=> !s.withdrawn || s.played>0); }
+/* Offene Stechen-Gruppen: echter Gleichstand (Punkte+Buchholz+Sonneborn+Siege gleich),
+   der noch NICHT per Stechen aufgelöst ist (gleiche tiebreak-Werte). Nur im Endstand. */
+function stechenGroups(){
+  if(state.status!=="finished") return [];
+  const st=standingsView(); const out=[]; const seen=new Set();
+  for(const s of st){
+    if(seen.has(s.id)) continue;
+    const grp=st.filter(o=> o.points===s.points && o.buch===s.buch && o.sonn===s.sonn && o.wins===s.wins);
+    grp.forEach(g=>seen.add(g.id));
+    if(grp.length<2) continue;
+    const tbs=grp.map(g=>g.tiebreak||0);
+    if(new Set(tbs).size!==tbs.length) out.push(grp);   // noch nicht eindeutig gereiht
+  }
+  return out;
+}
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 /* ---------- EXCEL-EXPORT (SheetJS) ---------- */
@@ -1326,7 +1341,7 @@ function renderBeamer(){
   }else if(state.status==="running"){
     panels = state.paused ? ["pause"] : ["pairings","standings"];   // Pause-Screen oder Plan/Reihung
   }else{
-    panels=["sieger"];   // Pokale bleiben stehen, Endstand blendet darüber ein/aus
+    panels = stechenGroups().length ? ["stechen"] : ["sieger"];   // erst Stechen, danach Pokale/Endstand
   }
   const panel = panels[ui.beamerIdx % panels.length];
   let body="";
@@ -1375,6 +1390,20 @@ function renderBeamer(){
       }).join("")}</div>
       ${waiting.length?`<div class="bm-wait"><span class="bm-wait-t">⏳ Warteschlange</span>${waiting.map((p,i)=>`<span class="bm-wchip"><b>${i+1}.</b> ${esc(nm(p.white_id))} – ${esc(nm(p.black_id))}</span>`).join("")}</div>`:""}`;
   }
+  else if(panel==="stechen"){
+    const st=standingsView();
+    const groups=stechenGroups();
+    const psc = groups.length>3?0.8:1;
+    body=`<div class="bm-section-title">${ic('flag')} Stechen</div>
+      <div class="bm-pairgrid" style="grid-template-columns:repeat(1,1fr);--pscale:${psc}">${groups.map(grp=>{
+        const idxs=grp.map(g=>st.findIndex(s=>s.id===g.id));
+        const lo=Math.min(...idxs)+1, hi=Math.max(...idxs)+1;
+        const place=lo===hi?`Platz ${lo}`:`Platz ${lo}–${hi}`;
+        const names=grp.map((g,i)=>`<span class="bm-pn${(grp.length===2&&i===1)?" r":""}">${esc(g.name)}</span>`).join('<span class="bm-res">vs</span>');
+        return `<div class="bm-pair">${`<span class="bm-bd lab">${place}</span>`}${names}</div>`;
+      }).join("")}</div>
+      <div class="bm-wait" style="justify-content:center;margin-top:1.6vw"><span class="bm-wait-t">⚡ Blitzpartie entscheidet die Reihung</span></div>`;
+  }
   else if(panel==="standings"){
     const st=standingsView().slice(0,12);
     body=`<div class="bm-section-title">${ic('table')} ${state.status==="finished"?"Endstand":"Gesamtreihung"}</div>
@@ -1414,7 +1443,7 @@ function renderBeamer(){
         <span class="bm-htl" id="bmHtlSlot"></span>
       </div>
     </div>
-    <div class="bm-stage${(panel==="pairings"||panel==="standings"||panel==="sieger"||panel==="joinhall")?"":" center"}">${body}</div>
+    <div class="bm-stage${(panel==="pairings"||panel==="standings"||panel==="sieger"||panel==="joinhall"||panel==="stechen")?"":" center"}">${body}</div>
     ${panels.length>1?`<div class="bm-dots">${panels.map((_,i)=>`<span class="${i===ui.beamerIdx%panels.length?"on":""}"></span>`).join("")}</div>`:""}
     ${state.status==="running"?`<div class="bm-reminder">${ic('reset')} Nach jeder Partie bitte die Figuren wieder aufstellen</div>`
       :state.status==="finished"?`<div class="bm-reminder">${ic('flag')} Bitte alle Bretter aufgebaut stehen lassen — danke!</div>`:""}
