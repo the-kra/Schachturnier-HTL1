@@ -384,7 +384,7 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 /* Beamer: Tabelle */
 .bm-tbl{width:100%;border-collapse:collapse;font-size:2.5vw}
 .bm-tbl td{padding:.7vw 1vw;border-bottom:1px solid var(--line)}
-.bm-tbl .r{font-family:"Bricolage Grotesque";font-weight:800;color:var(--ink-soft);width:3.4vw}
+.bm-tbl .r{font-family:"Bricolage Grotesque";font-weight:800;color:#5b616b;width:3.4vw}
 .bm-tbl .n{font-weight:700}
 .bm-tbl .k{color:var(--ink-soft);font-size:1.9vw}
 .bm-tbl .p{font-family:"Bricolage Grotesque";font-weight:800;color:var(--accent-d);text-align:right}
@@ -409,12 +409,12 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 /* Sieger-Ansicht: Pokale bleiben zentral stehen, Endstand blendet sanft darüber ein und wieder aus */
 .bm-sieger{position:relative;width:100%;margin:0;display:flex;flex-direction:column;justify-content:flex-start;min-height:100%;padding-top:1vh}
 .bm-sieger-cups{width:100%;animation:bmCupsPulse 24s ease-in-out infinite}
-.bm-sieger-cups .trophies{max-width:54vw}
-.bm-sieger-tbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.6vw;padding-top:.5vh;
+.bm-sieger-cups .trophies{max-width:min(54vw,100vh)}
+.bm-sieger-tbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.5vw;padding:.6vh 0 1.6vh;
   background:rgba(8,11,16,.5);border-radius:1vw;opacity:0;pointer-events:none;animation:bmTblPulse 24s ease-in-out infinite}
-.bm-sieger-tbl .bm-tbl{max-width:66vw;font-size:2.05vw}
-.bm-sieger-tbl .bm-tbl td{padding:.42vw 1vw}
-.bm-sieger-tbl .bm-tbl .k,.bm-sieger-tbl .bm-tbl .b{font-size:1.6vw}
+.bm-sieger-tbl .bm-tbl{max-width:66vw;font-size:1.85vw}
+.bm-sieger-tbl .bm-tbl td{padding:.28vw 1vw;line-height:1.15}
+.bm-sieger-tbl .bm-tbl .k,.bm-sieger-tbl .bm-tbl .b{font-size:1.45vw}
 @keyframes bmCupsPulse{0%,33%{opacity:1}45%,63%{opacity:.28}75%,100%{opacity:1}}
 @keyframes bmTblPulse{0%,33%{opacity:0}45%,63%{opacity:1}75%,100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.bm-sieger-cups,.bm-sieger-tbl{animation:none}.bm-sieger-tbl{opacity:0}}
