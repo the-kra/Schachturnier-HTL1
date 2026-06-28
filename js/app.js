@@ -382,8 +382,9 @@ function makePairings(round){
   // Freilos: niedrigstplatzierter Spieler ohne bisheriges Freilos
   let bye=null, pool=[...base];
   if(pool.length%2===1){
-    for(let i=pool.length-1;i>=0;i--){ if(st[pool[i].id].byes===0){ bye=pool[i]; break; } }
-    if(!bye) bye=pool[pool.length-1];
+    // Freilos an den niedrigstplatzierten Spieler mit den WENIGSTEN bisherigen Freilosen
+    let minByes=Infinity;
+    for(let i=pool.length-1;i>=0;i--){ const b=st[pool[i].id].byes; if(b<minByes){ minByes=b; bye=pool[i]; if(b===0) break; } }
     pool=pool.filter(p=>p.id!==bye.id);
   }
 
