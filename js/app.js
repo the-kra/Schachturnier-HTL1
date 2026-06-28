@@ -33,7 +33,7 @@ const TROPHY_CONFIG = {
   plateTopPct:   [89, 89.3, 90],
   plateWidthPct: [45, 45, 45],
   plateLeftPct:  [56, 56, 56],     // horizontale Mitte der Plakette (%)
-  plateRotateDeg:[-2.75, -2.45, -2.3],// Neigung passend zur gebackenen Schrift (Grad, negativ = gegen Uhrzeigersinn)
+  plateRotateDeg:[-2.75, -3.5, -4.6],// Neigung passend zur gebackenen Schrift (Grad, negativ = gegen Uhrzeigersinn)
   plateStyle:    ["engrave", "engrave", "engrave"]
 };
 /* HTL1-LEGENDS-Wall (Banner ueber der Jahres-Doku) */
@@ -67,6 +67,7 @@ let state = {
   reg_text: "",                    // Alternativ-Anmeldung: Hinweistext (wenn Code leer)
   reg_link: "",                    // Alternativ-Anmeldung: externer Link (QR zeigt darauf)
   board_labels: "Brett 1, Brett 2, Brett 3, Brett 4, Brett 5, Brett 6, Brett 7, Brett 8, Brett 9, Brett 10, Brett 11, Brett 12, Brett 13, Brett 14, Brett 15, Brett 16, Brett 17, Brett 18, Brett 19, Brett 20",  // Bretter (Liste); Anzahl = Kapazität, leer = unbegrenzt
+  beamer_boards: true,             // Brettnummern am Beamer anzeigen (ein/aus)
   champions: [],                   // aktuelle Pokal-Inhaber [{rank,name,klasse,tournament,date}]
   players: [],                     // {id,name,klasse,withdrawn,email,verified}
   pairings: [],                    // {id,round,board,white_id,black_id,result,active,board_label}
@@ -161,17 +162,24 @@ async function setResult(id, result, freedBoard){
   if(result && wasOpen && p.active!==false && p.black_id!=null){
     const next = state.pairings.find(x=>x.round===p.round && x.active===false && !x.result && x.black_id!=null);
     if(next){
-      next.active=true; next.board_label=(freedBoard||"").trim();
+      // Brett: bekanntgegebenes Brett vom Ergebnis, sonst was am Wartepaar steht, sonst leer
+      next.active=true; next.board_label=(freedBoard||"").trim() || (next.board_label||"");
       if(SB_MODE){ await sb.from("chess_pairings").update({active:true, board_label:next.board_label}).eq("id",next.id); }
     }
   }
 }
-/* Wartepaar manuell aktiv setzen ("spielt") — optional mit Brett-Bezeichnung */
-async function activatePairing(id, label){
+/* Wartepaar manuell aktiv setzen ("spielt") — behält die ggf. eingegebene Brett-Bezeichnung */
+async function activatePairing(id){
   const p = state.pairings.find(x=>x.id===id); if(!p || p.active!==false) return;
-  p.active=true; p.board_label=(label||"").trim();
-  if(SB_MODE){ await sb.from("chess_pairings").update({active:true, board_label:p.board_label}).eq("id",id); }
+  p.active=true;
+  if(SB_MODE){ await sb.from("chess_pairings").update({active:true}).eq("id",id); }
   render();
+}
+/* Brett-Bezeichnung einer Paarung setzen (Wartepaar oder aktive Partie) */
+async function setBoardLabel(id, val){
+  const p = state.pairings.find(x=>x.id===id); if(!p) return;
+  p.board_label=(val||"").trim();
+  if(SB_MODE){ await sb.from("chess_pairings").update({board_label:p.board_label}).eq("id",id); }
 }
 async function resetAll(){
   // champions + halloffame bleiben bewusst erhalten (Pokale + Wall of Fame)
@@ -293,16 +301,16 @@ function exportExcel(){
 
 /* gemeinsame Buttons für jede Admin-Leiste */
 function adminCommonBtns(){
-  return `<button class="btn ghost sm" id="btnXlsx">${ic('table')} Excel</button>`
-       + ((SB_MODE || ADMIN_PASS) ? `<button class="btn ghost sm" id="btnLogout">${ic('lock')} Abmelden</button>` : "");
+  return `<button class="btn ghost sm" id="btnXlsx">${ic('table')} Excel</button>`;
+}
+async function doLogout(){
+  if(SB_MODE){ try{ await sb.auth.signOut(); }catch(e){} authUser=null; }
+  else { setLocalAdmin(false); }
+  toast("Abgemeldet"); render();
 }
 function wireAdminCommon(){
   const x=$("#btnXlsx"); if(x) x.onclick=exportExcel;
-  const o=$("#btnLogout"); if(o) o.onclick=async()=>{
-    if(SB_MODE){ try{ await sb.auth.signOut(); }catch(e){} authUser=null; }
-    else { setLocalAdmin(false); }
-    toast("Abgemeldet"); render();
-  };
+  const o=$("#btnLogout"); if(o) o.onclick=doLogout;
 }
 
 function assignColors(p,q,st){
@@ -455,11 +463,13 @@ function forecast(){
   const rounds=state.num_rounds||0;
   const { base, inc }=parseTC(state.time_control);
   const games=Math.floor(n/2);
+  const cap=boardCap();
+  const waves = (cap>0 && games>cap) ? games/cap : 1;   // mehr Partien als Bretter -> nacheinander
   const perRound = base + inc*40/60 + 3;   // Min: Grundzeit + Inkrement(~40 Züge) + 3 Overhead
-  const lo = rounds * perRound * 0.83;     // zügig (viele Partien enden früher)
-  const hi = rounds * perRound * 1.12;     // mit Reserve (lange Partien + Verzögerungen)
+  const lo = rounds * perRound * 0.83 * waves;
+  const hi = rounds * perRound * 1.12 * waves;
   const recRounds=Math.max(3, Math.ceil(Math.log2(Math.max(2,n))));
-  return { n, rounds, games, lo, hi, recRounds };
+  return { n, rounds, games, cap, waves, lo, hi, recRounds };
 }
 
 let _painted=false;
@@ -530,6 +540,13 @@ function renderStatusChip(){
     c.classList.add("clickable");
     c.onclick=()=>{ const t=$("#reg-anmeldung"); if(t) t.scrollIntoView({behavior:"smooth",block:"start"}); };
   } else { c.classList.remove("clickable"); c.onclick=null; }
+  // Abmelden-Button im Header (nur Admin + eingeloggt)
+  const lo=$("#hdrLogout");
+  if(lo){
+    const show = IS_ADMIN && isAdmin() && (SB_MODE || ADMIN_PASS);
+    lo.style.display = show ? "" : "none";
+    if(show) lo.onclick=doLogout;
+  }
 }
 function renderBanner(){
   const b=$("#banner"); b.innerHTML="";
@@ -555,11 +572,12 @@ function renderRegistration(app){
           <select id="cfgTime">${["3+2","5+0","5+3","10+0","10+5","15+0"].map(t=>`<option ${t==state.time_control?"selected":""}>${t}</option>`).join("")}</select></div>
       </div>
       <div class="forecast">${ic('clock')}<span>Geschätzte Dauer: <b>ca. ${fmtDur(fc.lo)} – ${fmtDur(fc.hi)}</b></span>
-        <span class="fc-sub">${fc.rounds} Runden · ${fc.games} Partien · ${fc.n} Spieler${fc.n>=2&&fc.rounds<fc.recRounds?` · Tipp: ${fc.recRounds} Runden für ${fc.n} Spieler`:""}</span></div>
+        <span class="fc-sub">${fc.rounds} Runden · ${fc.games} Partien · ${fc.n} Spieler${fc.waves>1?` · ⏳ ${fc.cap} Bretter → ${Math.ceil(fc.waves*10)/10}× nacheinander`:""}${fc.n>=2&&fc.rounds<fc.recRounds?` · Tipp: ${fc.recRounds} Runden`:""}</span></div>
       <div class="codebox">
         <div class="field" style="margin:0;flex:1;min-width:220px"><label>Bretter — Bezeichnungen (eine pro Zeile/Komma · ${boardCap()} Bretter${boardCap()?"":" · leer = unbegrenzt"})</label>
           <textarea id="cfgBoards" rows="2" style="resize:vertical">${esc(state.board_labels||"")}</textarea></div>
-        <span class="code-hint">Mehr Partien als Bretter → Rest wartet in der Warteschlange und rückt automatisch nach. Leer = unbegrenzt (kein Brett).</span>
+        <span class="code-hint">Mehr Partien als Bretter → Rest wartet in der Warteschlange und rückt automatisch nach. Leer = unbegrenzt (kein Brett).
+          <label class="chk" style="display:flex;align-items:center;gap:7px;margin-top:8px;cursor:pointer"><input type="checkbox" id="cfgBeamerBoards" ${state.beamer_boards!==false?"checked":""}> Brettnummern am Beamer anzeigen</label></span>
       </div>
       <div class="modepick">
         <div class="mp-head"><span class="mp-label">Anmeldung</span>
@@ -601,6 +619,7 @@ function renderRegistration(app){
     $("#cfgRounds").onchange=e=>patchState({num_rounds:+e.target.value}).then(render);
     $("#cfgTime").onchange=e=>patchState({time_control:e.target.value}).then(render);
     const cb=$("#cfgBoards"); if(cb) cb.onchange=e=>patchState({board_labels:e.target.value}).then(render);
+    const bb=$("#cfgBeamerBoards"); if(bb) bb.onchange=e=>patchState({beamer_boards:e.target.checked});
     ab.querySelectorAll(".mp").forEach(b=>b.onclick=()=>{
       const m=b.dataset.m;
       if(m===VMODE()) return;
@@ -805,9 +824,8 @@ function renderPlan(app){
       card.appendChild(el); return;
     }
     const res=p.result;
-    const badge = p.board_label ? esc(p.board_label) : (res?"✓":"♟");
-    el.innerHTML=`
-      <span class="bno${p.board_label?" labeled":""}">${badge}</span>
+    const bno = p.board_label ? `<span class="bno labeled">${esc(p.board_label)}</span>` : "";
+    el.innerHTML=`${bno}
       <div class="side"><div class="nm">${esc(nm(p.white_id))}</div><div class="kl">${esc(kl(p.white_id))}</div></div>
       <span class="dot w" title="Weiß"></span>
       <span class="vs">vs</span>
@@ -818,7 +836,9 @@ function renderPlan(app){
       let bdInput=null;
       if(labels.length){
         bdInput=document.createElement("input"); bdInput.className="bd-in"; bdInput.placeholder="Brett"; bdInput.setAttribute("list","boardlist"); bdInput.value=p.board_label||"";
-        bdInput.title="Welches Brett wird frei (optional)"; rc.appendChild(bdInput);
+        bdInput.title="Brett (wird beim Ergebnis frei für das nächste Paar)";
+        bdInput.onchange=()=>setBoardLabel(p.id, bdInput.value).then(render);
+        rc.appendChild(bdInput);
       }
       [["1-0","1:0"],["draw","½"],["0-1","0:1"]].forEach(([v,lbl])=>{
         const b=document.createElement("button"); b.textContent=lbl; if(res===v) b.classList.add("on");
@@ -844,10 +864,17 @@ function renderPlan(app){
       el.innerHTML=`<span class="bno wait">${i+1}</span>
         <div class="side"><div class="nm">${esc(nm(p.white_id))}</div><div class="kl">${esc(kl(p.white_id))}</div></div>
         <span class="vs">vs</span>
-        <div class="side right"><div class="nm">${esc(nm(p.black_id))}</div><div class="kl">${esc(kl(p.black_id))}</div></div>`;
+        <div class="side right"><div class="nm">${esc(nm(p.black_id))}</div><div class="kl">${esc(kl(p.black_id))}</div></div>
+        ${(!IS_ADMIN&&p.board_label)?`<span class="bno labeled">${esc(p.board_label)}</span>`:""}`;
       if(IS_ADMIN){
-        const b=document.createElement("button"); b.className="btn ghost sm wait-go"; b.textContent="spielt"; b.title="Jetzt aktiv setzen"; b.onclick=()=>activatePairing(p.id);
-        el.appendChild(b);
+        const wrap=document.createElement("div"); wrap.className="res";
+        if(labels.length){
+          const bi=document.createElement("input"); bi.className="bd-in"; bi.placeholder="Brett"; bi.setAttribute("list","boardlist"); bi.value=p.board_label||"";
+          bi.title="Brett vorab zuweisen (optional)"; bi.onchange=()=>setBoardLabel(p.id, bi.value).then(render);
+          wrap.appendChild(bi);
+        }
+        const b=document.createElement("button"); b.className="btn ghost sm"; b.textContent="spielt"; b.title="Jetzt aktiv setzen"; b.onclick=()=>activatePairing(p.id);
+        wrap.appendChild(b); el.appendChild(wrap);
       }
       wc.appendChild(el);
     });
@@ -1050,10 +1077,10 @@ function renderBeamer(){
     const playing=allp.filter(p=>!(p.active===false && !p.result)).sort((a,b)=>(a.board||0)-(b.board||0));
     body=`<div class="bm-section-title">${ic('clipboard')} Spielplan · Runde ${state.current_round}</div>
       <div class="bm-pairgrid">${playing.map(p=>{
-        if(p.black_id==null) return `<div class="bm-pair bye"><span class="bm-bd">–</span><span class="bm-pn">${esc(nm(p.white_id))}</span><span class="bm-bye">Freilos</span></div>`;
+        const showBd = state.beamer_boards!==false && p.board_label;
+        if(p.black_id==null) return `<div class="bm-pair bye"><span class="bm-pn">${esc(nm(p.white_id))}</span><span class="bm-bye">Freilos</span></div>`;
         const res=p.result==="1-0"?"1 : 0":p.result==="0-1"?"0 : 1":p.result==="draw"?"½ : ½":"–";
-        const bd=p.board_label?esc(p.board_label):(p.result?"✓":"♟");
-        return `<div class="bm-pair${p.result?" done":""}"><span class="bm-bd${p.board_label?" lab":""}">${bd}</span><span class="bm-pn">${esc(nm(p.white_id))}</span><span class="bm-res">${res}</span><span class="bm-pn r">${esc(nm(p.black_id))}</span></div>`;
+        return `<div class="bm-pair${p.result?" done":""}">${showBd?`<span class="bm-bd lab">${esc(p.board_label)}</span>`:""}<span class="bm-pn">${esc(nm(p.white_id))}</span><span class="bm-res">${res}</span><span class="bm-pn r">${esc(nm(p.black_id))}</span></div>`;
       }).join("")}</div>
       ${waiting.length?`<div class="bm-wait"><span class="bm-wait-t">⏳ Warteschlange</span>${waiting.map((p,i)=>`<span class="bm-wchip"><b>${i+1}.</b> ${esc(nm(p.white_id))} – ${esc(nm(p.black_id))}</span>`).join("")}</div>`:""}`;
   }
@@ -1144,26 +1171,30 @@ async function simulateTournament(){
   toast("Testlauf fertig — jetzt 'Pokale vergeben' testen ✓");
 }
 
-/* Importiert Teilnehmer aus Excel/CSV (Spalten 'Name' und 'Klasse'). */
+/* Importiert Teilnehmer aus Excel/CSV — Spalten 'Vorname','Nachname','Klasse'
+   (oder 'Name','Klasse'). */
 async function handleImportFile(file){
   if(!file) return;
   if(typeof XLSX==="undefined"){ toast("Bitte kurz warten (Bibliothek lädt)"); return; }
+  const S=(r,c)=>String(c>-1&&r[c]!=null?r[c]:"").trim();
   try{
     const buf=await file.arrayBuffer();
     const wb=XLSX.read(buf,{type:"array"});
     const ws=wb.Sheets[wb.SheetNames[0]];
     const rows=XLSX.utils.sheet_to_json(ws,{header:1,blankrows:false});
     if(!rows.length){ toast("Datei ist leer"); return; }
-    let start=0,nameCol=0,klasseCol=1;
+    let start=0,nameCol=0,vorCol=-1,nachCol=-1,klasseCol=1;
     const head=(rows[0]||[]).map(x=>String(x).trim().toLowerCase());
-    const ni=head.findIndex(h=>h.includes("name"));
+    vorCol =head.findIndex(h=>h.includes("vorname")||h==="vor");
+    nachCol=head.findIndex(h=>h.includes("nachname")||h.includes("familienname")||h==="nach");
+    const ni=head.findIndex(h=>h==="name"||(h.includes("name")&&h!=="vorname"&&h!=="nachname"));
     const ki=head.findIndex(h=>h.includes("klasse")||h.includes("class"));
-    if(ni>-1){ start=1; nameCol=ni; klasseCol=(ki>-1?ki:(ni===0?1:0)); }
+    if(vorCol>-1||nachCol>-1||ni>-1){ start=1; if(ni>-1)nameCol=ni; klasseCol=(ki>-1?ki:klasseCol); }
     let n=0;
     for(let i=start;i<rows.length;i++){
       const row=rows[i]||[];
-      const name=String(row[nameCol]==null?"":row[nameCol]).trim();
-      const klasse=String(row[klasseCol]==null?"":row[klasseCol]).trim();
+      const name = (vorCol>-1||nachCol>-1) ? (S(row,vorCol)+" "+S(row,nachCol)).trim() : S(row,nameCol);
+      const klasse=S(row,klasseCol);
       if(name.length<2) continue;
       if(state.players.some(p=>p.name.toLowerCase()===name.toLowerCase() && (p.klasse||"").toLowerCase()===klasse.toLowerCase())) continue;
       await addPlayer(name,klasse); n++;
