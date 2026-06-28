@@ -293,16 +293,13 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 /* Wall of Fame / HTL1 Legends */
 .legends-card{background:#101114;border-color:#2a2c33}
 .legends-card .empty{color:#8b8d84}
-.legends-banner{width:100%;border-radius:12px;display:block;margin-bottom:18px}
-.legend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-.legend-plate{position:relative;border-radius:7px;padding:11px 12px 12px;text-align:center;
-  background:linear-gradient(158deg,#e3c389,#bd9355 46%,#9c763f);
-  border:1px solid #7d5e30;box-shadow:0 2px 6px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,247,225,.5),inset 0 -2px 4px rgba(80,55,20,.35);
-  background-image:radial-gradient(circle at 9px 9px,#5e4622 0 1.6px,transparent 2.4px),radial-gradient(circle at calc(100% - 9px) 9px,#5e4622 0 1.6px,transparent 2.4px),radial-gradient(circle at 9px calc(100% - 9px),#5e4622 0 1.6px,transparent 2.4px),radial-gradient(circle at calc(100% - 9px) calc(100% - 9px),#5e4622 0 1.6px,transparent 2.4px),linear-gradient(158deg,#e3c389,#bd9355 46%,#9c763f)}
-.lp-year{font-family:"Bricolage Grotesque";font-weight:800;font-size:.78rem;letter-spacing:.12em;color:#4a3713;margin-bottom:4px;text-shadow:0 1px 0 rgba(255,247,225,.4)}
-.lp-champ{font-family:"Bricolage Grotesque";font-weight:700;font-size:.94rem;color:#2f2206;line-height:1.15;text-shadow:0 1px 0 rgba(255,247,225,.35)}
-.lp-kl{font-weight:600;font-size:.74rem;color:#6a4f1c}
-.lp-minor{margin-top:5px;font-size:.72rem;font-weight:600;color:#5d451b;border-top:1px solid rgba(94,70,34,.4);padding-top:5px}
+.legends-board{position:relative;container-type:inline-size;border-radius:12px;overflow:hidden}
+.legends-banner{width:100%;display:block}
+.legends-plates{position:absolute;inset:0;pointer-events:none}
+.lp-y,.lp-n{position:absolute;transform:translate(-50%,-50%);text-align:center;white-space:nowrap;font-family:"Bricolage Grotesque";text-shadow:0 .07cqw 0 rgba(255,240,205,.28)}
+.lp-y{font-size:1.0cqw;font-weight:800;letter-spacing:.16em;color:#33240f}
+.lp-n{font-size:1.5cqw;font-weight:800;text-transform:uppercase;color:#241806;max-width:11.5cqw;overflow:hidden;text-overflow:ellipsis}
+.lp-n.prev{color:#7c2f12}
 
 /* ===================== BEAMER ===================== */
 .beamer-body{overflow:hidden}
