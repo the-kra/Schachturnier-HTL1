@@ -778,8 +778,10 @@ function renderRegistration(app){
   if(!(altReg && !IS_ADMIN)){
   const l=document.createElement("div"); l.className="card";
   const list = [...state.players].sort((a,b)=>a.name.localeCompare(b.name,"de"));
+  const absent=state.players.length-active.length;
   l.innerHTML=`
-    <div class="count-badge"><b>${active.length}</b><span>angemeldet${state.players.length!==active.length?` · ${state.players.length-active.length} abgemeldet`:""}</span></div>
+    <div class="count-badge"><b>${active.length}</b><span>${IS_ADMIN?"anwesend":"angemeldet"}${absent>0?` · ${absent} abwesend`:""}</span></div>
+    ${IS_ADMIN&&list.length?'<div class="code-hint" style="margin:0 0 8px">Haken = <b>anwesend</b> und wird ausgelost. Vor der Auslosung Abwesende abhaken.</div>':""}
     <div class="players" id="plist"></div>
     ${list.length===0?'<div class="empty"><div class="ico">'+KNIGHT_SVG+'</div>Noch niemand angemeldet — sei die/der Erste!</div>':""}`;
   app.appendChild(l);
@@ -787,7 +789,13 @@ function renderRegistration(app){
   list.forEach((p,i)=>{
     const d=document.createElement("div"); d.className="pl"+(p.withdrawn?" out":"");
     d.innerHTML=`<span class="idx">${i+1}</span><span class="nm">${esc(p.name)}</span>${p.verified?'<span class="vchk" title="bestätigt">✓</span>':""}${p.klasse?`<span class="kl">${esc(p.klasse)}</span>`:""}`;
-    if(IS_ADMIN){ const x=document.createElement("button"); x.className="x"; x.textContent="×"; x.title="Entfernen"; x.onclick=()=>{ removePlayer(p.id).then(render); }; d.appendChild(x); }
+    if(IS_ADMIN){
+      const chk=document.createElement("label"); chk.className="pres"; chk.title=p.withdrawn?"Abwesend — Haken setzen, um auszulosen":"Anwesend (wird ausgelost)";
+      chk.innerHTML=`<input type="checkbox" ${p.withdrawn?"":"checked"}><span>anw.</span>`;
+      chk.querySelector("input").onchange=e=>toggleWithdrawn(p.id, !e.target.checked).then(render);
+      d.appendChild(chk);
+      const x=document.createElement("button"); x.className="x"; x.textContent="×"; x.title="Entfernen"; x.onclick=()=>{ removePlayer(p.id).then(render); }; d.appendChild(x);
+    }
     pl.appendChild(d);
   });
   }
@@ -825,6 +833,26 @@ function renderRunning(app){
   if(ui.tab==="plan") renderPlan(app);
   else if(ui.tab==="hall") renderHall(app);
   else renderTable(app, false);
+
+  if(IS_ADMIN){
+    const nc=document.createElement("div"); nc.className="card";
+    nc.innerHTML=`<div class="eyebrow">${ic('teacher')} Nachzügler aufnehmen</div>
+      <p class="lead" style="margin:6px 0 10px">Kommt jemand später dazu? Hier aufnehmen — er/sie spielt ab der <b>nächsten Auslosung</b> mit (startet mit 0 Punkten). Wer schon angemeldet war, kann auch oben in der <b>Tabelle</b> per <b>„Aufnehmen"</b> reaktiviert werden.</p>
+      <div class="row">
+        <div class="field" style="flex:2;margin:0"><input id="lateName" placeholder="Vor- und Nachname" autocomplete="off"></div>
+        <div class="field" style="flex:1;margin:0"><input id="lateKlasse" placeholder="Klasse / Funktion" autocomplete="off"></div>
+        <button class="btn sm" id="btnLate" style="flex:none">${ic('check')} Aufnehmen</button>
+      </div>`;
+    app.appendChild(nc);
+    const addLate=async()=>{
+      const n=($("#lateName").value||"").trim(); if(n.length<2){ toast("Bitte Namen eingeben"); return; }
+      await addPlayer(n, ($("#lateKlasse").value||"").trim());
+      $("#lateName").value=""; $("#lateKlasse").value=""; $("#lateName").focus();
+      toast("Aufgenommen — spielt ab der nächsten Runde ✓"); render();
+    };
+    $("#btnLate").onclick=addLate;
+    const lk=$("#lateKlasse"); if(lk) lk.onkeydown=e=>{ if(e.key==="Enter") addLate(); };
+  }
 }
 function renderAdminBarRunning(app){
   const cur=state.current_round;

@@ -129,6 +129,9 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .pl.out{opacity:.45;text-decoration:line-through}
 .pl .x{margin-left:2px;width:22px;height:22px;border-radius:6px;background:transparent;color:var(--ink-soft);font-size:1rem;line-height:1;display:grid;place-items:center}
 .pl .x:hover{background:rgba(180,64,47,.18);color:#ef9a8c}
+.pl .pres{display:inline-flex;align-items:center;gap:4px;font-size:.66rem;color:var(--ink-soft);font-weight:700;text-transform:uppercase;letter-spacing:.03em;cursor:pointer;user-select:none;flex:none;text-decoration:none}
+.pl .pres input{width:15px;height:15px;margin:0;cursor:pointer;accent-color:var(--accent-d)}
+.pl.out .pres{text-decoration:none}
 
 /* QR */
 .qrbox{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
