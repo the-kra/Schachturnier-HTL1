@@ -654,7 +654,7 @@ function renderRegistration(app){
         <div class="field" style="margin:0;max-width:250px"><label>Bedenkzeit pro Spieler</label>
           <select id="cfgTime">${tcOptions(state.time_control)}</select></div>
       </div>
-      <span class="code-hint">Format „Minuten + Sekunden je Zug". „40 Züge (FIDE)" = klassische Turnierzeit: die angegebene Zeit gilt für die ersten 40 Züge.</span>
+      <span class="code-hint">Format „Minuten + Sekunden je Zug" (z. B. 5 + 3 = 5 Min Grundzeit + 3 Sek pro Zug). Nur bei den <b>„… 40 Züge (FIDE)"</b>-Varianten gilt die Zeit für die ersten 40 Züge (klassische Turnierzeit).</span>
       <div class="forecast">${ic('clock')}<span>Geschätzte Dauer: <b>ca. ${fmtDur(fc.lo)} – ${fmtDur(fc.hi)}</b></span>
         <span class="fc-sub">${fc.rounds} Runden · ${fc.games} Partien · ${fc.n} Spieler${fc.waves>1?` · ⏳ ${fc.cap} Bretter → ${Math.ceil(fc.waves*10)/10}× nacheinander`:""}${fc.n>=2?` · empfohlen: <b>${fc.recRounds}</b> Runden (≈ log₂ der Teilnehmer)`:""}</span></div>
       <div class="codebox">
@@ -1378,7 +1378,7 @@ function renderBeamer(){
         <span class="bm-htl" id="bmHtlSlot"></span>
       </div>
     </div>
-    <div class="bm-stage${(panel==="pairings"||panel==="standings"||panel==="sieger")?"":" center"}">${body}</div>
+    <div class="bm-stage${(panel==="pairings"||panel==="standings"||panel==="sieger"||panel==="joinhall")?"":" center"}">${body}</div>
     ${panels.length>1?`<div class="bm-dots">${panels.map((_,i)=>`<span class="${i===ui.beamerIdx%panels.length?"on":""}"></span>`).join("")}</div>`:""}
     ${state.status==="running"?`<div class="bm-reminder">${ic('reset')} Nach jeder Partie bitte die Figuren wieder aufstellen</div>`
       :state.status==="finished"?`<div class="bm-reminder">${ic('flag')} Bitte alle Bretter aufgebaut stehen lassen — danke!</div>`:""}

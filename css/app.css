@@ -360,7 +360,7 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 /* Beamer: Anmeldung */
 .bm-join{display:flex;gap:3vw;align-items:center;height:100%}
 /* Beamer: QR + Pokale gemeinsam */
-.bm-joinhall{display:flex;gap:2.6vw;align-items:center;justify-content:center;height:100%;overflow:hidden}
+.bm-joinhall{display:flex;gap:2.6vw;align-items:flex-start;justify-content:center;height:100%;overflow:hidden;padding-top:2vh}
 .bm-jh-left{flex:none;display:flex;flex-direction:column;align-items:center;gap:1.1vw}
 .bm-jh-right{flex:0 1 auto;min-width:0;display:flex;flex-direction:column;justify-content:center}
 .bm-jh-right .bm-section-title{text-align:center;margin-bottom:.6vw}
