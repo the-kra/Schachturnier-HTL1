@@ -339,14 +339,14 @@ body.no-anim .card,body.no-anim .pair,body.no-anim .pl{animation:none}
 .bm-center{flex:0 0 auto;display:flex;align-items:center;justify-content:center}
 .bm-logo{width:5vw;height:5vw;flex:none;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(232,150,56,.3))}
 .bm-titlestack{min-width:0;display:flex;flex-direction:column;align-items:flex-start}
-.bm-title{font-family:"Orbitron",sans-serif;font-weight:800;font-size:2.9vw;letter-spacing:.02em;line-height:1.04;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 1.4vw rgba(232,150,56,.25)}
+.bm-title{font-family:"Orbitron",sans-serif;font-weight:800;font-size:min(2.9vw,4vh);letter-spacing:.02em;line-height:1.04;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 1.4vw rgba(232,150,56,.25)}
 .bm-sub{font-family:"Orbitron",sans-serif;font-size:1.05vw;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--accent-d);margin-top:.25vw}
 .bm-status{display:inline-block;align-self:flex-start;font-weight:700;font-size:1.05vw;color:var(--accent-d);background:var(--accent-soft);padding:.4vw 1vw;border-radius:999px;white-space:nowrap;margin-top:.6vw}
 .bm-htl{flex:none;display:flex;align-items:center}
 .bm-htl svg{height:9vw;width:auto;display:block}
 /* QR im Header (Mitmachen, während Turnier & Endstand) */
 .bm-hdr-qr{flex:none;display:flex;flex-direction:column;align-items:center;gap:.15vw;max-width:15vw}
-.bm-hdr-qr>div{width:6.4vw;height:6.4vw;background:#fff;border-radius:.5vw;padding:.3vw;box-shadow:0 .2vw .6vw rgba(0,0,0,.4)}
+.bm-hdr-qr>div{width:max(6.4vw,76px);height:max(6.4vw,76px);background:#fff;border-radius:.5vw;padding:.3vw;box-shadow:0 .2vw .6vw rgba(0,0,0,.4)}
 .bm-hdr-qr canvas,.bm-hdr-qr img{width:100%!important;height:100%!important;display:block}
 .bm-hdr-qr .t{font-size:.82vw;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft)}
 .bm-hdr-qr .u{max-width:14vw;font-size:.62vw;color:var(--ink-soft);opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
