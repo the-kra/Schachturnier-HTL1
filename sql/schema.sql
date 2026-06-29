@@ -80,6 +80,17 @@ create table if not exists chess_halloffame (
 alter table chess_halloffame enable row level security;
 create policy "open" on chess_halloffame for all using (true) with check (true);
 
+-- Archiv vergangener Siegerehrungen (Snapshot pro Turnier: Pokale + komplette Liste):
+create table if not exists chess_archive (
+  id uuid primary key default gen_random_uuid(),
+  tournament_name text,
+  event_date date,
+  data jsonb default '{}'::jsonb,          -- { top: [{rank,name,klasse,points,buch}] }
+  created_at timestamptz default now()
+);
+alter table chess_archive enable row level security;
+create policy "open" on chess_archive for all using (true) with check (true);
+
 -- Realtime: alle Tabellen ins Publication (idempotent — Fehler "already member" wird ignoriert)
 do $$ begin alter publication supabase_realtime add table chess_state;      exception when duplicate_object then null; end $$;
 do $$ begin alter publication supabase_realtime add table chess_players;    exception when duplicate_object then null; end $$;

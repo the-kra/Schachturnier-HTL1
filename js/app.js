@@ -53,6 +53,7 @@ function isAdmin(){
   return ADMIN_PASS ? localAdmin : true;   // lokal: Soft-Pass oder offen zum Testen
 }
 const IS_BEAMER = _params.has("beamer");
+const IS_ARCHIVE = _params.has("archiv") || _params.has("archive");
 const SB_MODE  = !!(CONFIG.url && CONFIG.key && window.supabase);
 const sb = SB_MODE ? window.supabase.createClient(CONFIG.url, CONFIG.key) : null;
 
@@ -78,7 +79,8 @@ let state = {
   champions: [],                   // aktuelle Pokal-Inhaber [{rank,name,klasse,tournament,date}]
   players: [],                     // {id,name,klasse,withdrawn,email,verified}
   pairings: [],                    // {id,round,board,white_id,black_id,result,active,board_label}
-  halloffame: []                   // {tournament_name,event_date,rank,name,klasse}
+  halloffame: [],                  // {tournament_name,event_date,rank,name,klasse}
+  archive: []                      // archivierte Siegerehrungen {tournament_name,event_date,data:{top:[...]}}
 };
 let ui = { tab: "plan", viewRound: 0, beamerIdx: 0, regStep: "form", regDraft: {} };
 
@@ -295,6 +297,38 @@ async function deleteHallGroup(date, tournament){
   const ids=grp.map(e=>e.id).filter(Boolean);
   if(SB_MODE && ids.length){ await sb.from("chess_halloffame").delete().in("id",ids); }
   render(); toast("Tafel gelöscht");
+}
+/* ---------- ARCHIV (vergangene Siegerehrungen als Schnappschuss) ---------- */
+async function loadArchive(){
+  if(!SB_MODE){ return; }
+  const { data } = await sb.from("chess_archive").select("*").order("event_date",{ascending:false}).order("created_at",{ascending:false});
+  state.archive = data || [];
+}
+/* Aktuelle Siegerehrung als Schnappschuss speichern (Pokale + komplette Liste). */
+async function archiveTournament(){
+  if(!isAdmin()) return;
+  const all = computeStandings().filter(s=>!s.withdrawn);
+  if(!all.length){ toast("Keine Ergebnisse zum Archivieren"); return; }
+  const top = all.map((s,i)=>({ rank:i+1, name:s.name, klasse:s.klasse||"", points:s.points, buch:s.buch }));
+  const name = state.tournament_name || "Schachturnier";
+  const date = (state.champions && state.champions[0] && state.champions[0].date) || new Date().toISOString().slice(0,10);
+  const rec = { tournament_name:name, event_date:date, data:{ top } };
+  if(SB_MODE){
+    await sb.from("chess_archive").delete().eq("tournament_name",name).eq("event_date",date);   // ersetzt vorhandenen Eintrag (kein Doppel)
+    const { error } = await sb.from("chess_archive").insert(rec);
+    if(error){ toast("Archiv-Tabelle fehlt — bitte SQL ausführen"); return; }
+    await loadArchive();
+  } else {
+    state.archive = [{ ...rec, id:uuid() }, ...(state.archive||[]).filter(a=>!(a.tournament_name===name && a.event_date===date))];
+  }
+  render(); toast("Siegerehrung archiviert ✓");
+}
+async function deleteArchive(id){
+  const a=(state.archive||[]).find(x=>x.id===id); if(!a) return;
+  if(!confirm(`Diesen Archiv-Eintrag löschen?\n\n${a.tournament_name||"Turnier"} · ${fmtDate(a.event_date)}`)) return;
+  state.archive = (state.archive||[]).filter(x=>x.id!==id);
+  if(SB_MODE){ await sb.from("chess_archive").delete().eq("id",id); }
+  render(); toast("Archiv-Eintrag gelöscht");
 }
 /* Wall-of-Fame-Vorschau (NICHT gespeichert) — zum Testen der Gravur/Tafel. Knopf = Toggle. */
 function previewHall(){
@@ -635,6 +669,7 @@ function render(){
   renderStatusChip();
   renderBanner();
   const app=$("#app"); app.innerHTML="";
+  if(IS_ARCHIVE){ renderArchive(app); return; }
   if(IS_ADMIN && !isAdmin()){ renderAdminLogin(app); return; }
   if(state.status==="registration") renderRegistration(app);
   else if(state.status==="running")  renderRunning(app);
@@ -1226,6 +1261,8 @@ function renderFinished(app){
         ${(state.champions||[]).length?`<button class="btn ghost sm" id="btnCert" title="Urkunden für die Top 3 (Schullogo, Pokal, Name, Klasse, Datum) als druckbare PDF öffnen.">${ic('table')} Urkunden (PDF)</button>`:""}
         ${(state.champions||[]).length?`<button class="btn ghost sm" id="btnClearCup" title="Gravur von den Pokalen entfernen (z.B. nach einem Test). Wall of Fame bleibt.">${ic('trash')} Gravur löschen</button>`:""}
         <button class="btn ghost sm" id="btnPreviewHall" title="Test: schreibt die aktuellen Top 3 als Tafel mit Jahreszahl auf die Wall of Fame — nur Vorschau, wird NICHT gespeichert. Knopf nochmal = entfernen.">${ic('trophy')} WoF-Vorschau${(state.halloffame||[]).some(e=>e._preview)?" (entf.)":""}</button>
+        <button class="btn ghost sm" id="btnArchive" title="Diese Siegerehrung (Pokale + ganze Liste) dauerhaft archivieren — bleibt auch nach dem nächsten Turnier abrufbar.">${ic('trophy')} Siegerehrung archivieren</button>
+        <a class="btn ghost sm" href="${esc(location.origin+location.pathname+"?archiv")}" target="_blank" rel="noopener">${ic('table')} Archiv ansehen</a>
         <a class="btn ghost sm" href="${esc(beamer)}" target="_blank" rel="noopener">${ic('monitor')} Beamer</a>
         <button class="btn danger sm" id="btnReset">${ic('reset')} Neues Turnier</button>
         ${adminCommonBtns()}
@@ -1235,6 +1272,7 @@ function renderFinished(app){
     if($("#cfgNameFin")) $("#cfgNameFin").onchange=e=>patchState({tournament_name:e.target.value||"Schachturnier"}).then(render);
     if($("#btnAward")) $("#btnAward").onclick=awardTrophies;
     if($("#btnCert")) $("#btnCert").onclick=printCertificates;
+    if($("#btnArchive")) $("#btnArchive").onclick=archiveTournament;
     if($("#btnClearCup")) $("#btnClearCup").onclick=()=>clearTrophies().then(()=>render());
     if($("#btnPreviewHall")) $("#btnPreviewHall").onclick=previewHall;
     $("#btnReset").onclick=()=>confirmReset();
@@ -1367,6 +1405,36 @@ function renderHall(container){
     container.appendChild(t);
   }
   renderWall(container);
+}
+/* Archiv-Seite (?archiv): vergangene Siegerehrungen — Pokale + Liste, dauerhaft. */
+let _archiveLoaded=false;
+function renderArchive(app){
+  if(SB_MODE && !_archiveLoaded){
+    _archiveLoaded=true; loadArchive().then(render);
+    const c=document.createElement("div"); c.className="card lg"; c.innerHTML='<div class="empty" style="padding:24px 10px">Archiv wird geladen…</div>'; app.appendChild(c); return;
+  }
+  const list = state.archive||[];
+  const head=document.createElement("div"); head.className="card lg";
+  head.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('trophy')} Archiv</div>
+    <h2 style="text-align:center;margin-bottom:4px">Vergangene Siegerehrungen</h2>
+    <p class="lead" style="text-align:center">Danke fürs Mitspielen! ${list.length?`${list.length} ${list.length===1?"Turnier":"Turniere"} verewigt.`:"Noch nichts archiviert."}</p>`;
+  app.appendChild(head);
+  list.forEach(a=>{
+    const top=((a.data&&a.data.top)||[]);
+    const champs=top.slice(0,3).map(t=>({rank:t.rank,name:t.name,klasse:t.klasse||""}));
+    const card=document.createElement("div"); card.className="card lg"; card.style.position="relative";
+    card.innerHTML=`${IS_ADMIN?`<button class="btn ghost sm" data-del="${esc(a.id)}" style="position:absolute;top:14px;right:14px;z-index:2">${ic('trash')} Löschen</button>`:""}
+      <div class="eyebrow" style="text-align:center">${esc(a.tournament_name||"Turnier")}</div>
+      <h2 style="text-align:center;margin-bottom:4px">${ic('trophy')} Siegerehrung</h2>
+      <p class="lead" style="text-align:center">${esc(fmtDate(a.event_date))}</p>`;
+    app.appendChild(card);
+    renderTrophies(card, champs);
+    const t=document.createElement("table"); t.className="tbl"; t.style.marginTop="14px";
+    t.innerHTML=`<thead><tr><th>#</th><th>Name</th><th>Kl.</th><th style="text-align:right">Pkt</th></tr></thead><tbody>${
+      top.slice(0,8).map(r=>`<tr class="${r.rank<=3?"top"+r.rank:""}"><td class="rk">${r.rank}</td><td class="nm">${esc(r.name)}</td><td class="kl">${esc(r.klasse||"")}</td><td class="pts">${fmt(r.points)}</td></tr>`).join("")}</tbody></table>`;
+    card.appendChild(t);
+    if(IS_ADMIN){ const db=card.querySelector("[data-del]"); if(db) db.onclick=()=>deleteArchive(a.id); }
+  });
 }
 /* Urkunden (Top 3) als druckbare A4-Quer-Seiten -> Druckdialog -> "Als PDF speichern". */
 function printCertificates(){
