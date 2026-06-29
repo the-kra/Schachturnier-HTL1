@@ -1280,7 +1280,9 @@ function renderFinished(app){
   }
 
   const lb=document.createElement("div"); lb.className="card hints";
-  lb.innerHTML=`<div class="hint-row">${ic('flag')}<span><b>Danke fürs Mitspielen!</b> Bitte alle <b>Bretter aufgebaut stehen lassen</b> — Figuren in Grundstellung.</span></div>`;
+  lb.innerHTML = state.awarded
+    ? `<div class="hint-row">${ic('trophy')}<span><b>Danke fürs Mitspielen — bis zum nächsten Turnier!</b></span></div>`
+    : `<div class="hint-row">${ic('flag')}<span><b>Danke fürs Mitspielen!</b> Bitte alle <b>Bretter aufgebaut stehen lassen</b> — Figuren in Grundstellung.</span></div>`;
   app.appendChild(lb);
 
   const st=standingsView();
@@ -1294,6 +1296,18 @@ function renderFinished(app){
     renderTrophies(card, champs);
   }
   renderTable(app, true);
+  // Teilen-QR (Schüler): Seite weitergeben — beim Runterscrollen
+  if(!IS_ADMIN){
+    const shareUrl=location.origin+location.pathname;
+    const share=document.createElement("div"); share.className="card"; share.style.textAlign="center";
+    share.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('monitor')} Seite teilen</div>
+      <h2 style="text-align:center;margin-bottom:4px">Zum Weitergeben</h2>
+      <p class="lead" style="text-align:center">Code scannen oder Link öffnen — Endstand, Pokale &amp; Archiv.</p>
+      <div class="qrbox"><div id="shareqrfin"></div>
+        <div class="linkfield"><div class="linkrow"><input readonly value="${esc(shareUrl)}"><a class="btn sm" href="${esc(shareUrl)}">Öffnen</a></div></div></div>`;
+    app.appendChild(share);
+    try{ new QRCode($("#shareqrfin"), {text:shareUrl, width:150, height:150, colorDark:"#20211d", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
+  }
   renderWall(app);
 }
 
@@ -1380,6 +1394,11 @@ function renderWall(container){
   }
   card.innerHTML=html; container.appendChild(card);
   if(IS_ADMIN) card.querySelectorAll(".lp-del").forEach(b=>b.onclick=()=>deleteHallGroup(b.dataset.d, b.dataset.t));
+  // Link zum Archiv (vergangene Siegerehrungen) — für alle, auf Anmelde- & Endstand-Seite
+  const al=document.createElement("a"); al.className="btn ghost block"; al.style.marginTop="12px";
+  al.href=location.origin+location.pathname+"?archiv"; al.target="_blank"; al.rel="noopener";
+  al.innerHTML=ic('trophy')+" Vergangene Siegerehrungen ansehen";
+  container.appendChild(al);
 }
 function renderHall(container){
   const running = state.status==="running";
@@ -1405,11 +1424,6 @@ function renderHall(container){
     container.appendChild(t);
   }
   renderWall(container);
-  // Link zum Archiv (vergangene Siegerehrungen) — für alle sichtbar
-  const al=document.createElement("a"); al.className="btn ghost block"; al.style.marginTop="12px";
-  al.href=location.origin+location.pathname+"?archiv"; al.target="_blank"; al.rel="noopener";
-  al.innerHTML=ic('trophy')+" Vergangene Siegerehrungen ansehen";
-  container.appendChild(al);
 }
 /* Archiv-Seite (?archiv): vergangene Siegerehrungen — Pokale + Liste, dauerhaft. */
 let _archiveLoaded=false;
