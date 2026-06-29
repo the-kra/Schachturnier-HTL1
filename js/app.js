@@ -180,8 +180,8 @@ async function toggleWithdrawn(id, val){
 async function tiebreakWinner(id){
   const st=computeStandings();
   const me=st.find(s=>s.id===id); if(!me) return;
-  const group=st.filter(s=> s.points===me.points && s.buch===me.buch && s.sonn===me.sonn && s.wins===me.wins);
-  if(group.length<2){ toast("Hier gibt es keinen echten Gleichstand"); return; }
+  const group=st.filter(s=> s.points===me.points);
+  if(group.length<2){ toast("Hier gibt es keine Punktgleichheit"); return; }
   const others=group.filter(s=>s.id!==id).map(s=>s.tiebreak||0);
   const already=(me.tiebreak||0) > Math.max(0,...others);
   const val=already ? 0 : Math.max(0,...group.map(s=>s.tiebreak||0))+1;
@@ -337,7 +337,7 @@ function computeStandings(){
   return state.players.map(p=>({
     id:p.id, name:p.name, klasse:p.klasse, withdrawn:p.withdrawn,
     points:pts[p.id], buch:buch[p.id], sonn:sonn[p.id], wins:wins[p.id], played:played[p.id], tiebreak:p.tiebreak||0
-  })).sort((a,b)=> (b.points-a.points) || (b.buch-a.buch) || (b.sonn-a.sonn) || (b.wins-a.wins) || (b.tiebreak-a.tiebreak) || a.name.localeCompare(b.name,"de"));
+  })).sort((a,b)=> (b.points-a.points) || (b.tiebreak-a.tiebreak) || (b.buch-a.buch) || (b.sonn-a.sonn) || (b.wins-a.wins) || a.name.localeCompare(b.name,"de"));
 }
 /* Tabellen-Anzeige: Abwesende, die nie gespielt haben, ausblenden (Aussteiger mit Partien bleiben). */
 function standingsView(){ return computeStandings().filter(s=> !s.withdrawn || s.played>0); }
@@ -1119,12 +1119,11 @@ function renderTable(app, finalMode){
   const st=standingsView();
   const canEdit = IS_ADMIN && state.status==="running";   // Aussteiger
   const canTb   = IS_ADMIN && state.status==="finished";   // Stechen
-  const sameRank=(a,b)=> a.points===b.points && a.buch===b.buch && a.sonn===b.sonn && a.wins===b.wins;
   const tied=new Set();
-  if(canTb) st.forEach((s,i)=>{ if(st.some((o,j)=>i!==j && sameRank(s,o))) tied.add(s.id); });
+  if(canTb) st.forEach((s,i)=>{ if(st.some((o,j)=>i!==j && s.points===o.points)) tied.add(s.id); });
   const card=document.createElement("div"); card.className="card";
   card.innerHTML=`<h2 style="margin-bottom:14px">${finalMode?"Endstand":"Zwischenstand"}</h2>
-    ${(canTb&&tied.size)?'<div class="code-hint" style="margin:-6px 0 12px">Echter Gleichstand (gleiche Punkte, Buchholz, Sonneborn-Berger & Siege). Nach einem <b>Stechen</b> (Blitzpartie) den Sieger mit <b>„Stechen ↑"</b> nach vorne setzen.</div>':""}
+    ${(canTb&&tied.size)?'<div class="code-hint" style="margin:-6px 0 12px">Bei <b>Punktgleichheit</b> kannst du ein <b>Stechen</b> (Blitzpartie) spielen lassen und den Sieger mit <b>„Stechen ↑"</b> nach vorne setzen — das überschreibt die Buchholz-Reihung. Sonst entscheidet automatisch Buchholz.</div>':""}
     <table class="tbl"><thead><tr><th>#</th><th>Name</th><th>Kl.</th><th style="text-align:right">Pkt</th><th style="text-align:right">Buchh.</th>${(canEdit||canTb)?"<th></th>":""}</tr></thead><tbody id="tb"></tbody></table>`;
   app.appendChild(card);
   const tb=$("#tb");
