@@ -340,7 +340,11 @@ function computeStandings(){
   })).sort((a,b)=> (b.points-a.points) || (b.tiebreak-a.tiebreak) || (b.buch-a.buch) || (b.sonn-a.sonn) || (b.wins-a.wins) || a.name.localeCompare(b.name,"de"));
 }
 /* Tabellen-Anzeige: Abwesende, die nie gespielt haben, ausblenden (Aussteiger mit Partien bleiben). */
-function standingsView(){ return computeStandings().filter(s=> !s.withdrawn || s.played>0); }
+function standingsView(){
+  // Ausgeschiedene (Aussteiger / außer Wertung) ans Ende, sonst Reihenfolge erhalten (stabile Sortierung)
+  return computeStandings().filter(s=> !s.withdrawn || s.played>0)
+    .sort((a,b)=> (a.withdrawn?1:0)-(b.withdrawn?1:0));
+}
 /* Offene Stechen-Gruppen: echter Gleichstand (Punkte+Buchholz+Sonneborn+Siege gleich),
    der noch NICHT per Stechen aufgelöst ist (gleiche tiebreak-Werte). Nur im Endstand. */
 function stechenGroups(){
@@ -1127,12 +1131,14 @@ function renderTable(app, finalMode){
     <table class="tbl"><thead><tr><th>#</th><th>Name</th><th>Kl.</th><th style="text-align:right">Pkt</th><th style="text-align:right">Buchh.</th>${(canEdit||canTb)?"<th></th>":""}</tr></thead><tbody id="tb"></tbody></table>`;
   app.appendChild(card);
   const tb=$("#tb");
+  let rank=0;
   st.forEach((s,i)=>{
+    const r = s.withdrawn ? null : ++rank;   // Rangnummern überspringen Ausgeschiedene -> Rest rückt nach
     const tr=document.createElement("tr");
-    if(i===0) tr.className="top1"; else if(i===1) tr.className="top2"; else if(i===2) tr.className="top3";
+    if(r===1) tr.className="top1"; else if(r===2) tr.className="top2"; else if(r===3) tr.className="top3";
     if(s.withdrawn) tr.classList.add("out");
     if(canTb) tr.title=`Sonneborn-Berger ${fmt(s.sonn)} · Siege ${s.wins}`;
-    tr.innerHTML=`<td class="rk">${i+1}</td><td class="nm">${esc(s.name)}${s.withdrawn?' <span class="kl">· ausgestiegen</span>':""}</td><td class="kl">${esc(s.klasse||"")}</td>
+    tr.innerHTML=`<td class="rk">${r??"–"}</td><td class="nm">${esc(s.name)}${s.withdrawn?' <span class="kl">· außer Wertung</span>':""}</td><td class="kl">${esc(s.klasse||"")}</td>
       <td class="pts">${fmt(s.points)}</td><td class="bz">${fmt(s.buch)}</td>`;
     if(canEdit){
       const td=document.createElement("td"); td.style.textAlign="right";
@@ -1142,13 +1148,18 @@ function renderTable(app, finalMode){
       b.onclick=()=>toggleWithdrawn(s.id, !s.withdrawn).then(()=>{ toast(s.withdrawn?"Wieder dabei ✓":"Ausgestiegen — ab nächster Runde nicht mehr ausgelost"); render(); });
       td.appendChild(b); tr.appendChild(td);
     } else if(canTb){
-      const td=document.createElement("td"); td.style.textAlign="right";
-      if(tied.has(s.id)){
+      const td=document.createElement("td"); td.style.textAlign="right"; td.style.whiteSpace="nowrap";
+      if(tied.has(s.id) && !s.withdrawn){
         const b=document.createElement("button"); b.className="btn ghost sm"; b.textContent="Stechen ↑";
-        b.title="Sieger des Stechens — bei Gleichstand nach vorne (nochmal klicken = zurücksetzen)";
+        b.title="Sieger des Stechens — bei Punktgleichheit nach vorne (nochmal klicken = zurücksetzen)";
         b.onclick=()=>tiebreakWinner(s.id);
         td.appendChild(b);
       }
+      const x=document.createElement("button"); x.className="btn ghost sm"; x.style.marginLeft="6px";
+      x.textContent = s.withdrawn ? "Werten" : "Raus";
+      x.title = s.withdrawn ? "Wieder in die Wertung aufnehmen" : "Aus der Wertung nehmen (z.B. Lehrkraft) — zählt nicht fürs Podest/die Pokale, Schüler rücken nach";
+      x.onclick=()=>toggleWithdrawn(s.id, !s.withdrawn).then(()=>{ toast(s.withdrawn?"Wieder in der Wertung ✓":"Aus der Wertung genommen — Schüler rücken nach"); render(); });
+      td.appendChild(x);
       tr.appendChild(td);
     }
     tb.appendChild(tr);
