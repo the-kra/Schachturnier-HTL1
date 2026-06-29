@@ -250,6 +250,8 @@ async function resetAll(){
 async function awardTrophies(){
   const top = computeStandings().filter(s=>!s.withdrawn).slice(0,3);
   if(top.length===0){ toast("Keine Platzierungen vorhanden"); return; }
+  const pt=podiumTie();
+  if(pt && !confirm(`Achtung: Im Podest sind ${pt.names.join(" und ")} punktgleich (${fmt(pt.points)}) und nur per Buchholz getrennt.\n\nBitte erst ein Stechen spielen und mit „Stechen ↑" ordnen.\n\nTrotzdem jetzt nach Buchholz gravieren?`)) return;
 
   // 1) bisherige Pokal-Inhaber wandern in die Wall of Fame
   const archive = (state.champions||[]).map(c=>({
@@ -356,13 +358,40 @@ function standingsView(){
   return computeStandings().filter(s=> !s.withdrawn || s.played>0)
     .sort((a,b)=> (a.withdrawn?1:0)-(b.withdrawn?1:0));
 }
-/* Stechen-Gruppe für den Beamer = die vom Admin markierten Spieler (state.stechen_ids). */
+/* Stechen-Gruppen für den Beamer: zeigt "Stechen" + Paarung, bis graviert wird.
+   1) Vorrang: vom Admin manuell markierte Spieler (state.stechen_ids).
+   2) Sonst automatisch: Punktgleichheit, die das Podest (Platz 1-3 / 3-4) betrifft. */
 function stechenGroups(){
-  if(state.status!=="finished") return [];
+  if(state.status!=="finished" || state.awarded) return [];
   const ids=Array.isArray(state.stechen_ids)?state.stechen_ids:[];
-  if(ids.length<2) return [];
-  const grp=standingsView().filter(s=> ids.includes(s.id));
-  return grp.length>=2 ? [grp] : [];
+  if(ids.length>=2){
+    const grp=standingsView().filter(s=> ids.includes(s.id));
+    if(grp.length>=2) return [grp];
+  }
+  const act=standingsView().filter(s=>!s.withdrawn);
+  const out=[], seen=new Set();
+  for(let i=0;i<3 && i+1<act.length;i++){
+    const pts=act[i].points;
+    if(act[i+1].points===pts && !seen.has(pts)){
+      const grp=act.filter(s=> s.points===pts);
+      if(grp.length>=2){ out.push(grp); seen.add(pts); }
+    }
+  }
+  return out;
+}
+/* Ungelöster Punktgleichstand, der das Podest (Top 3) betrifft: zwei benachbarte
+   Spieler auf Platz 1-2, 2-3 oder 3-4 mit gleichen Punkten UND gleichem Stechen-Wert
+   (also nur per Buchholz getrennt). Gibt {names,points} zurück, sonst null. */
+function podiumTie(){
+  const act=standingsView().filter(s=>!s.withdrawn);
+  for(let i=0;i<3 && i+1<act.length;i++){
+    const a=act[i], b=act[i+1];
+    if(a.points===b.points && (a.tiebreak||0)===(b.tiebreak||0)){
+      const grp=act.filter(s=> s.points===a.points && (s.tiebreak||0)===(a.tiebreak||0));
+      return { names: grp.map(s=>s.name), points: a.points };
+    }
+  }
+  return null;
 }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
@@ -1130,9 +1159,11 @@ function renderTable(app, finalMode){
   const tied=new Set();
   if(canTb) st.forEach((s,i)=>{ if(st.some((o,j)=>i!==j && s.points===o.points)) tied.add(s.id); });
   const stIds=(canTb && Array.isArray(state.stechen_ids))?state.stechen_ids:[];
+  const pt = canTb ? podiumTie() : null;
   const card=document.createElement("div"); card.className="card";
   card.innerHTML=`<h2 style="margin-bottom:14px">${finalMode?"Endstand":"Zwischenstand"}</h2>
-    ${(canTb&&tied.size)?'<div class="code-hint" style="margin:-6px 0 12px">Bei <b>Punktgleichheit</b> kannst du ein <b>Stechen</b> (Blitzpartie) spielen lassen und den Sieger mit <b>„Stechen ↑"</b> nach vorne setzen — das überschreibt die Buchholz-Reihung. Mit <b>„Beamer"</b> zeigst du die Paarung am Beamer.</div>':""}
+    ${pt?`<div class="podium-warn">${ic('flag')} <b>Podest punktgleich:</b> ${esc(pt.names.join(", "))} (${fmt(pt.points)} Pkt) — bitte ein <b>Stechen</b> spielen und mit <b>„Stechen ↑"</b> ordnen, bevor du die Pokale gravierst. Der Beamer zeigt das Stechen automatisch, bis graviert ist.</div>`:""}
+    ${(canTb&&tied.size)?'<div class="code-hint" style="margin:-6px 0 12px">Bei <b>Punktgleichheit</b> (Zeilen mit ⇅) ein <b>Stechen</b> spielen und den Sieger mit <b>„Stechen ↑"</b> nach vorne setzen — das überschreibt Buchholz. Mit <b>„Beamer"</b> eine eigene Auswahl am Beamer zeigen.</div>':""}
     ${(stIds.length>=2)?`<div class="code-hint" style="margin:-6px 0 12px;color:var(--accent-d)">${ic('monitor')} <b>Stechen läuft am Beamer</b> (${stIds.length} Spieler). <button class="btn ghost sm" id="btnStEnd" style="margin-left:8px">Anzeige beenden</button></div>`:""}
     <table class="tbl"><thead><tr><th>#</th><th>Name</th><th>Kl.</th><th style="text-align:right">Pkt</th><th style="text-align:right">Buchh.</th>${(canEdit||canTb)?"<th></th>":""}</tr></thead><tbody id="tb"></tbody></table>`;
   app.appendChild(card);
@@ -1144,9 +1175,11 @@ function renderTable(app, finalMode){
     const tr=document.createElement("tr");
     if(r===1) tr.className="top1"; else if(r===2) tr.className="top2"; else if(r===3) tr.className="top3";
     if(s.withdrawn) tr.classList.add("out");
+    const isTie = canTb && tied.has(s.id) && !s.withdrawn;
+    if(isTie) tr.classList.add("tiept");
     if(canTb) tr.title=`Sonneborn-Berger ${fmt(s.sonn)} · Siege ${s.wins}`;
     tr.innerHTML=`<td class="rk">${r??"–"}</td><td class="nm">${esc(s.name)}${s.withdrawn?' <span class="kl">· außer Wertung</span>':""}</td><td class="kl">${esc(s.klasse||"")}</td>
-      <td class="pts">${fmt(s.points)}</td><td class="bz">${fmt(s.buch)}</td>`;
+      <td class="pts">${fmt(s.points)}${isTie?' <span class="tiebadge" title="Punktgleich – Stechen nötig">⇅</span>':''}</td><td class="bz">${fmt(s.buch)}</td>`;
     if(canEdit){
       const td=document.createElement("td"); td.style.textAlign="right";
       const b=document.createElement("button"); b.className="btn ghost sm";
