@@ -15,10 +15,10 @@ Damit lässt sich das HTL1-Schachturnier von Grund auf an eine **neue** Supabase
 **SQL Editor → New query** → kompletten Inhalt von **`sql/schema.sql`** einfügen → **Run**.
 
 Das legt an:
-- Tabellen `chess_state`, `chess_players`, `chess_pairings`, `chess_halloffame`
-- **alle Spalten** (Status, Runden, Bedenkzeit, Pokale, Anmeldemodus, externer Link, **Pause + Pausentext**, Bretter/Warteschlange, Beamer-Brettnummern, E-Mail-Bestätigung …)
+- Tabellen `chess_state`, `chess_players`, `chess_pairings`, `chess_halloffame`, **`chess_archive`** (Siegerehrungs-Archiv)
+- **alle Spalten** (Status, Runden, Bedenkzeit, Pokale, Anmeldemodus, externer Link, **Spiel-Live-Modus**, **Stechen** (`tiebreak`/`stechen_ids`), **Pause + Pausentext**, Bretter/Warteschlange, Beamer-Brettnummern, E-Mail-Bestätigung …)
 - die **offenen** Policies (vorläufig — werden in Schritt 4 ersetzt)
-- die **Realtime-Publication** für alle 4 Tabellen (idempotent — Mehrfach-Ausführen ist ok)
+- die **Realtime-Publication** für die Live-Tabellen (idempotent — Mehrfach-Ausführen ist ok). `chess_archive` braucht kein Realtime (wird nur beim Öffnen von `?archiv` geladen).
 
 > Das Skript ist so geschrieben, dass es **mehrfach** laufen kann (alle Spalten mit `add column if not exists`, Realtime mit Fehler-Ignorieren). Auf einer leeren DB genau einmal nötig.
 
@@ -81,10 +81,13 @@ do $$ begin alter publication supabase_realtime add table chess_halloffame; exce
 ---
 
 ## Spalten-Übersicht (zur Kontrolle)
-**chess_state** (eine Zeile, `id=1`): `tournament_name, status, num_rounds, current_round, time_control, champions(jsonb), awarded, event_code, verify_mode, reg_text, reg_link, qr_extern, live_only, paused, pause_text, board_labels, beamer_boards, updated_at`
-**chess_players**: `id, name, klasse, withdrawn, email, verified, created_at`
+**chess_state** (eine Zeile, `id=1`): `tournament_name, status, num_rounds, current_round, time_control, champions(jsonb), awarded, event_code, verify_mode, reg_text, reg_link, qr_extern, live_only, stechen_ids(jsonb), paused, pause_text, board_labels, beamer_boards, updated_at`
+**chess_players**: `id, name, klasse, withdrawn, email, verified, tiebreak, created_at`
 **chess_pairings**: `id, round, board, white_id, black_id, result, active, board_label, created_at`
 **chess_halloffame**: `id, tournament_name, event_date, rank, name, klasse, created_at`
+**chess_archive**: `id, tournament_name, event_date, data(jsonb: {top:[{rank,name,klasse,points,buch}]}), created_at`
+
+> Spalten dieser Session (auf einer bestehenden DB nachziehen — `sql/schema.sql` ist idempotent und macht das automatisch): `chess_state.live_only`, `chess_state.stechen_ids`, `chess_players.tiebreak` sowie die neue Tabelle **`chess_archive`**.
 
 ## Häufige Stolpersteine
 | Symptom | Ursache / Fix |

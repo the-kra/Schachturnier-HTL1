@@ -1422,7 +1422,7 @@ function renderArchive(app){
   const head=document.createElement("div"); head.className="card lg";
   head.innerHTML=`<div class="eyebrow" style="text-align:center">${ic('trophy')} Archiv</div>
     <h2 style="text-align:center;margin-bottom:4px">Vergangene Siegerehrungen</h2>
-    <p class="lead" style="text-align:center">Danke fürs Mitspielen! ${list.length?`${list.length} ${list.length===1?"Turnier":"Turniere"} verewigt.`:"Noch nichts archiviert."}</p>`;
+    <p class="lead" style="text-align:center">Danke fürs Mitspielen — bis zum nächsten Turnier! ${list.length?`${list.length} ${list.length===1?"Turnier":"Turniere"} verewigt.`:"Noch nichts archiviert."}</p>`;
   app.appendChild(head);
   list.forEach(a=>{
     const top=((a.data&&a.data.top)||[]);
@@ -1679,7 +1679,9 @@ function renderBeamer(){
     <div class="bm-stage${(panel==="pairings"||panel==="standings"||panel==="sieger"||panel==="joinhall"||panel==="stechen")?"":" center"}">${body}</div>
     ${panels.length>1?`<div class="bm-dots">${panels.map((_,i)=>`<span class="${i===ui.beamerIdx%panels.length?"on":""}"></span>`).join("")}</div>`:""}
     ${state.status==="running"?`<div class="bm-reminder">${ic('reset')} Nach jeder Partie bitte die Figuren wieder aufstellen</div>`
-      :state.status==="finished"?`<div class="bm-reminder">${ic('flag')} Bitte alle Bretter aufgebaut stehen lassen — danke!</div>`:""}
+      :state.status==="finished"?(state.awarded
+          ?`<div class="bm-reminder">${ic('trophy')} Danke fürs Mitspielen — bis zum nächsten Turnier!</div>`
+          :`<div class="bm-reminder">${ic('flag')} Bitte alle Bretter aufgebaut stehen lassen — danke!</div>`):""}
     <div class="bm-foot"><span id="bmFootSlot"></span></div>`;
   mountBeamerClock(); mountBeamerLogo(); mountBeamerFoot();
 
