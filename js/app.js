@@ -1405,6 +1405,11 @@ function renderHall(container){
     container.appendChild(t);
   }
   renderWall(container);
+  // Link zum Archiv (vergangene Siegerehrungen) — für alle sichtbar
+  const al=document.createElement("a"); al.className="btn ghost block"; al.style.marginTop="12px";
+  al.href=location.origin+location.pathname+"?archiv"; al.target="_blank"; al.rel="noopener";
+  al.innerHTML=ic('trophy')+" Vergangene Siegerehrungen ansehen";
+  container.appendChild(al);
 }
 /* Archiv-Seite (?archiv): vergangene Siegerehrungen — Pokale + Liste, dauerhaft. */
 let _archiveLoaded=false;
