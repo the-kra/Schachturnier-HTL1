@@ -70,6 +70,7 @@ let state = {
   reg_link: "",                    // Externer Link: URL
   qr_extern: false,                // QR/Anmeldung zeigt auf: false = Schüleransicht (App), true = externer Link
   live_only: false,                // "Spiel Live": keine Anmeldung, alle Links/QR -> Schüler-Liveansicht
+  stechen_ids: [],                 // Spieler-IDs, die gerade als Stechen am Beamer angezeigt werden
   paused: false,                   // Spielpause (Beamer/Handy zeigen Pausen-Screen)
   pause_text: "",                  // optionaler Pausentext (z.B. "Mittagspause bis 13:00")
   board_labels: "Brett 1, Brett 2, Brett 3, Brett 4, Brett 5, Brett 6, Brett 7, Brett 8, Brett 9, Brett 10, Brett 11, Brett 12, Brett 13, Brett 14, Brett 15, Brett 16, Brett 17, Brett 18, Brett 19, Brett 20",  // Bretter (Liste); Anzahl = Kapazität, leer = unbegrenzt
@@ -90,6 +91,7 @@ function isTyping(){ const e=document.activeElement; return !!(e && (e.tagName==
 function stateSig(){
   return [state.updated_at, state.status, state.current_round, state.paused, state.pause_text,
     state.awarded, (state.champions||[]).length, (state.halloffame||[]).length,
+    (state.stechen_ids||[]).join(","), state.players.map(p=>p.tiebreak||0).join(","),
     state.players.length, state.players.map(p=>p.withdrawn?1:0).join(""),
     state.pairings.map(p=>(p.result||"")+(p.active?"1":"0")+(p.board_label||"")).join("|")
   ].join("~");
@@ -146,6 +148,7 @@ async function loadAll(){
   ]);
   if(st.data){ Object.assign(state, st.data); }
   state.champions  = Array.isArray(state.champions) ? state.champions : [];
+  state.stechen_ids = Array.isArray(state.stechen_ids) ? state.stechen_ids : [];
   state.players    = pl.data || [];
   state.pairings   = pr.data || [];
   state.halloffame = hf.data || [];
@@ -190,6 +193,14 @@ async function tiebreakWinner(id){
   if(SB_MODE){ await sb.from("chess_players").update({tiebreak:val}).eq("id",id); }
   render(); toast(already ? "Stechen zurückgesetzt" : p.name+" als Stechen-Sieger nach vorne ✓");
 }
+/* Spieler für die Stechen-Anzeige am Beamer markieren (Toggle). */
+async function toggleStechenBeamer(id){
+  const cur=Array.isArray(state.stechen_ids)?state.stechen_ids:[];
+  const next = cur.includes(id) ? cur.filter(x=>x!==id) : [...cur, id];
+  await patchState({stechen_ids:next});
+  render();
+}
+async function clearStechenBeamer(){ await patchState({stechen_ids:[]}); render(); }
 async function insertPairings(arr){
   arr.forEach(p=>{ if(!p.id) p.id=uuid(); });
   state.pairings.push(...arr);
@@ -345,20 +356,13 @@ function standingsView(){
   return computeStandings().filter(s=> !s.withdrawn || s.played>0)
     .sort((a,b)=> (a.withdrawn?1:0)-(b.withdrawn?1:0));
 }
-/* Offene Stechen-Gruppen: echter Gleichstand (Punkte+Buchholz+Sonneborn+Siege gleich),
-   der noch NICHT per Stechen aufgelöst ist (gleiche tiebreak-Werte). Nur im Endstand. */
+/* Stechen-Gruppe für den Beamer = die vom Admin markierten Spieler (state.stechen_ids). */
 function stechenGroups(){
   if(state.status!=="finished") return [];
-  const st=standingsView(); const out=[]; const seen=new Set();
-  for(const s of st){
-    if(seen.has(s.id)) continue;
-    const grp=st.filter(o=> o.points===s.points && o.buch===s.buch && o.sonn===s.sonn && o.wins===s.wins);
-    grp.forEach(g=>seen.add(g.id));
-    if(grp.length<2) continue;
-    const tbs=grp.map(g=>g.tiebreak||0);
-    if(new Set(tbs).size!==tbs.length) out.push(grp);   // noch nicht eindeutig gereiht
-  }
-  return out;
+  const ids=Array.isArray(state.stechen_ids)?state.stechen_ids:[];
+  if(ids.length<2) return [];
+  const grp=standingsView().filter(s=> ids.includes(s.id));
+  return grp.length>=2 ? [grp] : [];
 }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
@@ -1125,11 +1129,14 @@ function renderTable(app, finalMode){
   const canTb   = IS_ADMIN && state.status==="finished";   // Stechen
   const tied=new Set();
   if(canTb) st.forEach((s,i)=>{ if(st.some((o,j)=>i!==j && s.points===o.points)) tied.add(s.id); });
+  const stIds=(canTb && Array.isArray(state.stechen_ids))?state.stechen_ids:[];
   const card=document.createElement("div"); card.className="card";
   card.innerHTML=`<h2 style="margin-bottom:14px">${finalMode?"Endstand":"Zwischenstand"}</h2>
-    ${(canTb&&tied.size)?'<div class="code-hint" style="margin:-6px 0 12px">Bei <b>Punktgleichheit</b> kannst du ein <b>Stechen</b> (Blitzpartie) spielen lassen und den Sieger mit <b>„Stechen ↑"</b> nach vorne setzen — das überschreibt die Buchholz-Reihung. Sonst entscheidet automatisch Buchholz.</div>':""}
+    ${(canTb&&tied.size)?'<div class="code-hint" style="margin:-6px 0 12px">Bei <b>Punktgleichheit</b> kannst du ein <b>Stechen</b> (Blitzpartie) spielen lassen und den Sieger mit <b>„Stechen ↑"</b> nach vorne setzen — das überschreibt die Buchholz-Reihung. Mit <b>„Beamer"</b> zeigst du die Paarung am Beamer.</div>':""}
+    ${(stIds.length>=2)?`<div class="code-hint" style="margin:-6px 0 12px;color:var(--accent-d)">${ic('monitor')} <b>Stechen läuft am Beamer</b> (${stIds.length} Spieler). <button class="btn ghost sm" id="btnStEnd" style="margin-left:8px">Anzeige beenden</button></div>`:""}
     <table class="tbl"><thead><tr><th>#</th><th>Name</th><th>Kl.</th><th style="text-align:right">Pkt</th><th style="text-align:right">Buchh.</th>${(canEdit||canTb)?"<th></th>":""}</tr></thead><tbody id="tb"></tbody></table>`;
   app.appendChild(card);
+  const btnEnd=$("#btnStEnd"); if(btnEnd) btnEnd.onclick=clearStechenBeamer;
   const tb=$("#tb");
   let rank=0;
   st.forEach((s,i)=>{
@@ -1149,7 +1156,13 @@ function renderTable(app, finalMode){
       td.appendChild(b); tr.appendChild(td);
     } else if(canTb){
       const td=document.createElement("td"); td.style.textAlign="right"; td.style.whiteSpace="nowrap";
+      const inStechen=(Array.isArray(state.stechen_ids)?state.stechen_ids:[]).includes(s.id);
       if(tied.has(s.id) && !s.withdrawn){
+        const bm=document.createElement("button"); bm.className="btn ghost sm"+(inStechen?" on":""); bm.style.marginRight="6px";
+        bm.innerHTML=ic('monitor')+(inStechen?" am Beamer":" Beamer");
+        bm.title=inStechen?"Wird am Beamer als Stechen gezeigt (klicken = entfernen)":"Diesen Spieler ins Stechen am Beamer aufnehmen";
+        bm.onclick=()=>toggleStechenBeamer(s.id);
+        td.appendChild(bm);
         const b=document.createElement("button"); b.className="btn ghost sm"; b.textContent="Stechen ↑";
         b.title="Sieger des Stechens — bei Punktgleichheit nach vorne (nochmal klicken = zurücksetzen)";
         b.onclick=()=>tiebreakWinner(s.id);

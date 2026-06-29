@@ -47,6 +47,7 @@ alter table chess_state add column if not exists reg_text text default '';
 alter table chess_state add column if not exists reg_link text default '';
 alter table chess_state add column if not exists qr_extern boolean default false;
 alter table chess_state add column if not exists live_only boolean default false;
+alter table chess_state add column if not exists stechen_ids jsonb default '[]'::jsonb;
 alter table chess_state add column if not exists paused boolean default false;
 alter table chess_state add column if not exists pause_text text default '';
 
